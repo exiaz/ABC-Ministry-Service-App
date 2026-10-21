@@ -6,6 +6,7 @@ import {createRosterServer} from '../backend/server.mjs';
 import {createTestCredentialStore} from '../backend/access-control.mjs';
 import {createRosterRepository} from '../backend/roster.mjs';
 import {createPrototypeServer} from '../server.mjs';
+import {createInMemoryCredentialRepository,createInMemoryRosterRepository} from '../backend/repositories.mjs';
 import {scope,fictionalRosterData} from './fixtures/roster.mjs';
 
 const route=values=>'/api/roster?'+new URLSearchParams(values);
@@ -123,5 +124,27 @@ test('Legacy frontend remains fictional and insecure, and cannot serve backend m
   assert.equal((await fetch(base+'/sw.js')).status,200);
   for(const target of [route(scope),'/backend/access-control.mjs','/backend/roster.mjs','/tests/fixtures/roster.mjs','/.env','/.git/config']){
     assert.equal((await fetch(base+target)).status,404,target);
+  }
+});
+
+test('API awaits asynchronous credential and roster adapters without changing the response contract',async t=>{
+  const credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(fictionalRosterData());
+  const token=await credentials.issue({grants:[scope]});
+  const later=()=>new Promise(resolve=>setImmediate(resolve));
+  const base=await start(t,createRosterServer({credentials:{async authenticate(header){await later();return credentials.authenticate(header);}},repository:{async read(value){await later();return repository.read(value);}}}));
+  const response=await fetch(base+route(scope),{headers:{Authorization:'Bearer '+token}});
+  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.deepEqual(await response.json(),{...scope,students:[{id:'fictional-1',name:'Siswa Fiktif Snapshot',schoolClass:'4A'}]});
+  await credentials.revoke(token);
+  assert.equal((await fetch(base+route(scope),{headers:{Authorization:'Bearer '+token}})).status,401);
+});
+
+test('Rejected asynchronous adapters return the existing generic error without data or tokens',async t=>{
+  const credentials=createInMemoryCredentialRepository(),token=await credentials.issue({grants:[scope]});
+  const failure=async()=>{await new Promise(resolve=>setImmediate(resolve));throw Error('WALI_FIKTIF_PRIVAT '+token);};
+  for(const adapters of [{credentials:{authenticate:failure}},{credentials,repository:{read:failure}}]){
+    const base=await start(t,createRosterServer(adapters));
+    const response=await fetch(base+route(scope),{headers:{Authorization:'Bearer '+token}});
+    assert.equal(response.status,500);assert.deepEqual(await response.json(),{error:'Roster tidak dapat dibaca.'});
   }
 });

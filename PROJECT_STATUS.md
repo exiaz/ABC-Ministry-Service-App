@@ -1,6 +1,23 @@
 # ABC Attendance — status revisi
 
-**21 Oktober 2026 · Milestone 1: fondasi otorisasi roster server · prototipe lokal tetap tersedia · tidak dipublikasikan**
+**21 Oktober 2026 · M2A.1: kontrak repository asinkron · prototipe lokal tetap tersedia · tidak dipublikasikan**
+
+## M2A.1 — Asynchronous Repository Contracts
+
+- `backend/repository-contracts.mjs` mendefinisikan kontrak JavaScript/JSDoc berbasis Promise untuk kredensial dan grant, autentikasi dengan pemeriksaan kedaluwarsa/pencabutan, pembacaan roster internal, serta pembacaan roster berotorisasi. Ini bukan pemeriksaan tipe TypeScript atau integrasi Firebase.
+- `backend/repositories.mjs` menyediakan adapter in-memory asinkron sebagai default server dan satu boundary otorisasi `readAuthorized(authorization, scope)`. Factory sinkron Milestone 1 tetap tersedia untuk pemanggil/tes lama. Adapter mendatang dapat disuntikkan melalui parameter server yang sama, tanpa perubahan kontrak HTTP.
+- API menunggu operasi repository dengan `await`; autentikasi dilakukan sebelum validasi cakupan, lalu grant/kedaluwarsa/pencabutan diperiksa kembali setelah I/O. Request yang kehilangan izin saat menunggu ditolak. Penolakan 400/401/403, error umum 500, header keamanan, dan format respons sukses tetap kompatibel.
+- Proyeksi field minimum dipakai kembali di batas asinkron: tambahan field privat dari adapter dibuang, konteks respons yang tidak sesuai ditolak, dan error penyimpanan tidak memicu fallback ke seed/localStorage. Pembacaan tetap tanpa mutasi batch, ID, snapshot atau riwayat.
+- Berkas baru: `backend/repository-contracts.mjs`, `backend/repositories.mjs`, `tests/repository-contracts.test.mjs`. Diperbarui: `backend/roster.mjs`, `backend/server.mjs`, `tests/roster-api.test.mjs`, `README.md`, `PROJECT_STATUS.md`.
+- Tidak ada perubahan frontend, data browser, skema/migrasi, dependensi, emulator, Firebase, autentikasi produksi, cloud resource, billing, deployment, commit atau push.
+
+Validasi M2A.1:
+
+- **9/9 tes kontrak lulus**: Promise/result shape, kredensial valid/tidak valid, expiry/revoke, sekolah/kelompok/sesi, deny-by-default, preservasi data/field privat, snapshot scope/grant, kehilangan izin selama I/O, serta kegagalan adapter tanpa fallback.
+- **27/27 tes terarah lulus** (kontrak + akses + API), termasuk dua tes HTTP baru untuk adapter yang benar-benar tertunda dan Promise yang ditolak. Seluruh pemeriksaan keamanan/akses statis Milestone 1 tetap lulus.
+- **87/87 tes regresi lulus; 0 gagal**, **39 modul JS/MJS** lulus sintaks/import lokal, `git diff --check` lulus. `npm.cmd run check` dan `npm.cmd test` dicoba tetapi npm tidak tersedia pada PATH; memakai `node tests/check.mjs` dan `node --test tests/*.test.mjs`. Tes HTTP memakai izin loopback lokal; tidak memasang paket. QA browser tidak diulang pada revisi backend ini.
+
+Siap untuk perencanaan/implementasi M2A.2 setelah persetujuan: kontrak menjadi titik ekstensi bagi penyimpanan persisten, tetapi belum ada adapter Firestore, persistensi grant, audit terpusat, atau autentikasi produksi. Batas keamanan legacy Milestone 1 tetap berlaku; seluruh proyek hanya untuk data fiktif.
 
 ## Milestone 1 — Server-Side Roster Authorization Foundation
 

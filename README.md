@@ -1,5 +1,15 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2A.1 — kontrak repository asinkron
+
+Server roster kini memakai adapter in-memory berbasis Promise sebagai default. Kontrak JavaScript/JSDoc ada di `backend/repository-contracts.mjs`; factory dan boundary otorisasi ada di `backend/repositories.mjs`:
+
+- `createInMemoryCredentialRepository()`: gunakan `await issue({grants, ttlMs})`, `await authenticate(authorization)`, dan `await revoke(token)`. Pemeriksaan kedaluwarsa/pencabutan tetap dilakukan server pada setiap autentikasi.
+- `createInMemoryRosterRepository(source)`: `await read(scope)` adalah operasi data internal tanpa mutasi; bukan pengganti pemeriksaan izin.
+- `createAuthorizedRosterRepository({credentials, repository})`: `await readAuthorized(authorization, scope)` memeriksa identitas dan grant sebelum membaca, memeriksa ulang izin setelah I/O, lalu mengembalikan hasil berjenis `ok`, `unauthenticated`, `invalid-scope`, atau `forbidden`. Field privat tidak diteruskan, sekalipun adapter mengembalikannya. Kegagalan penyimpanan menolak Promise dan dipetakan API menjadi error umum 500, tanpa fallback.
+
+Adapter mendatang diinjeksikan ke `createRosterServer({credentials, repository})` melalui kontrak yang sama. Factory sinkron Milestone 1 tetap tersedia; endpoint, format/status HTTP, dan frontend tidak berubah. Tes kontrak: `node --test tests/repository-contracts.test.mjs`; tambahkan adapter mendatang ke daftar factory pada suite yang sama. Belum ada Firebase, emulator, dependensi baru, atau autentikasi produksi; gunakan data fiktif saja.
+
 ## Milestone 1 — fondasi otorisasi roster server (uji lokal)
 
 **Seluruh proyek masih hanya untuk data fiktif.** Autentikasi produksi belum tersedia. Prototipe di port 4173 tetap memakai kode demo/localStorage dan tidak dihubungkan ke API ini.
