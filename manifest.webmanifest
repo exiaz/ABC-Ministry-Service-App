@@ -1,0 +1,13 @@
+{
+  "id": "./",
+  "name": "ABC Goes to School — Prototipe",
+  "short_name": "ABC Sekolah",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#1463e5",
+  "description": "Prototipe absensi dengan data fiktif dan penyimpanan lokal.",
+  "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

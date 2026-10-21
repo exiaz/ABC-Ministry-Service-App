@@ -1,0 +1,12 @@
+{
+  "name": "abc-goes-to-school-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node tests/check.mjs",
+    "test:browser": "node tests/browser.mjs"
+  }
+}
