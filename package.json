@@ -11,6 +11,7 @@
     "emulators:start": "node tests/emulator/run.mjs start",
     "test:emulator": "node tests/emulator/run.mjs test",
     "test:admin-auth": "node tests/emulator/run.mjs auth-test",
+    "test:pairing": "node tests/emulator/run.mjs pairing-test",
     "test:emulator:recovery": "node tests/emulator/run.mjs recovery"
   },
   "dependencies": {

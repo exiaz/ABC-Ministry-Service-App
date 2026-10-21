@@ -70,6 +70,7 @@ test('Device revocation persists across a real API process restart',async t=>{
 
 test('Neither unauthenticated nor mentor requests can access grant, device admin or audit endpoints',async t=>{
   const c=await fixture(t),token=await c.deviceAuthorization.issue({deviceId:'fictional-http-device',grants:[scope]});
+  const before=await Promise.all(['devices','credentials','authorizationEvents','pairingCodes'].map(async name=>[name,(await c.root.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}))]));
   const server=createRosterServer(c);server.listen(0,'127.0.0.1');await once(server,'listening');
   t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));
   for(const path of ['/api/grants','/api/devices','/api/admin/grants','/api/audit','/backend/firestore-emulator.mjs']){
@@ -77,6 +78,9 @@ test('Neither unauthenticated nor mentor requests can access grant, device admin
       const response=await fetch('http://127.0.0.1:'+server.address().port+path,{method:'POST',headers});
       // M2B.1 reserves the admin namespace and fails closed when unconfigured.
       assert.equal(response.status,path.startsWith('/api/admin/')?503:404);
+      assert.deepEqual(await response.json(),{error:path.startsWith('/api/admin/')?'Autentikasi admin lokal tidak tersedia.':'Tidak ditemukan.'});
     }
   }
+  const after=await Promise.all(before.map(async([name])=>[name,(await c.root.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}))]));
+  assert.deepEqual(after,before); // Rejection must not issue a grant or mutate audit/device state.
 });

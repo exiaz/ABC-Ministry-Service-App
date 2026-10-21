@@ -1,5 +1,44 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.2 — API pairing perangkat mentor lokal
+
+Fondasi M2B.1 dan adapter Firestore Emulator digunakan kembali; in-memory dan frontend lama tetap tersedia tanpa pairing. Seluruh API ini hanya untuk `demo-abc-attendance`, Auth/Firestore loopback, dan data fiktif. Jalankan emulator dan context autentikasi sebagaimana M2B.1 di bawah. `createConfiguredRepositories()` pada mode Firestore kini menyediakan `pairing`; `createRosterServer({...adapters, adminAuthentication})` mengaktifkan route berikut. Tanpa adapter Firestore, route pairing tidak tersedia (503), tanpa fallback penyimpanan.
+
+Operator server tepercaya perlu memberi izin tambahan di `emulatorNamespaces/{namespace}/adminPairingPermissions/{uid}` dengan bentuk `{active:true, grants:[{schoolId,groupId,serviceSessionId}]}`. UID tetap harus allowlisted dan token admin tetap harus lolos M2B.1. **Tidak ada izin pairing bawaan**, wildcard, atau endpoint publik untuk menulis izin ini. Izin mencocokkan tepat sekolah/kelompok/pelayanan yang valid; mencakup seluruh grants yang diminta, bukan hanya salah satunya. Izin admin ini terpisah dari penugasan mentor tetap/pengganti; pairing tidak mengubah keduanya.
+
+| Endpoint | Perilaku |
+|---|---|
+| `POST /api/admin/pairing-codes` | Admin terotorisasi mengirim `{grants,codeTtlMs?,grantTtlMs?}`; 201 mengembalikan `{pairingId,code,expiresAt}` satu kali. |
+| `POST /api/admin/pairing-codes/{pairingId}/revoke` | Admin yang memiliki seluruh cakupan kode mengirim `{}`; mencabut kode pending. Bila penebusan sudah menang, state tetap `redeemed`; cabut perangkat secara terpisah. |
+| `POST /api/pairing/redeem` | Tanpa akun mentor: kirim `{code,publicKey}` dengan bukti tanda tangan perangkat. 201 mengembalikan `{deviceId,credential,expiresAt}`. Tidak menerima grants/deviceId/peran dari klien. |
+| `GET /api/device/status` | Kredensial serta bukti perangkat sah memberikan `{deviceId,state:"active",expiresAt,grants}`. Kredensial expired/revoked atau bukti tidak sah memberi 401. |
+| `GET /api/admin/devices/{deviceId}` | Admin dengan seluruh cakupan perangkat dapat membaca ID, grants, expiry dan state `active`/`expired`/`revoked`. Hanya perangkat hasil pairing. |
+| `POST /api/admin/devices/{deviceId}/revoke` | Admin terotorisasi mengirim `{}`; mencabut seluruh akses perangkat, idempoten. Tidak menghapus kredensial/riwayat. |
+
+Kode memakai 128 bit acak (`randomBytes(16)`, 22 karakter base64url); default berlaku 5 menit, batas 1 detik–10 menit. Hanya hash SHA-256 yang disimpan sebagai ID/hash dokumen; tidak menyimpan atau mencatat kode mentah. Credential memakai mekanisme M2A.3 yang sama (256 bit acak, hash di database), bukan jenis token baru. Grant default 1 jam, batas 1 detik–1 jam **sejak penebusan**. Respons berisi rahasia hanya dikirim no-store, tanpa CORS; jangan mencatatnya atau memasukkannya ke URL/file. Body JSON maksimal 8192 byte, query/field tambahan/origin browser tidak diterima pada mutasi pairing.
+
+Transaksi Firestore memeriksa ulang izin server/relasi, state/expiry kode, lalu sekaligus mengonsumsi kode, membuat ID perangkat UUID server, device/key binding, credential/grants, dan audit. Satu kode menghasilkan paling banyak satu perangkat/kredensial, termasuk saat request serentak. Kode revoked/expired/reused/unknown memberi pesan 400 yang sama. Jika respons sukses terputus setelah commit, kode tetap habis; admin perlu menerbitkan kode baru, bukan menebus ulang. Permission pairing yang dicabut atau issuer yang dihapus dari allowlist menolak penebusan kode pending. Otorisasi admin diperiksa ulang sesudah I/O sebelum transaksi tulis commit.
+
+**Bukti perangkat:** perangkat membuat pasangan kunci ECDSA P-256; private key sebaiknya nonextractable dalam Web Crypto dan tidak dikirim ke server. `publicKey` adalah SPKI DER dalam base64url tanpa padding. Device dan credential hasil pairing memiliki penanda `binding:"p256-v1"`; penanda/kunci yang hilang atau rusak menolak akses, tidak menurunkannya menjadi bearer-only. Pada penebusan dan setiap request memakai credential pairing (roster maupun status), sertakan tepat satu header `X-Device-Timestamp` (epoch milidetik, 13 digit), `X-Device-Nonce` (16 byte acak, 22 karakter base64url), dan `X-Device-Signature` (ECDSA SHA-256, format IEEE-P1363 64 byte, base64url tanpa padding). Format signature diverifikasi dengan [API kriptografi Node](https://nodejs.org/docs/latest/api/crypto.html#cryptoverifyalgorithm-data-key-signature-callback). Pesan UTF-8 yang ditandatangani adalah tujuh baris berikut, tanpa newline penutup:
+
+```text
+ABC-DEVICE-V1
+METHOD
+/path?query-persis-request
+sha256(token-atau-kode)-hex
+sha256(body-UTF8-persis)-hex
+timestamp
+nonce
+```
+
+Untuk redeem, token pada pesan adalah kode pairing dan body berisi JSON persis yang dikirim. Untuk GET roster/status, token adalah credential dan body kosong. Toleransi waktu ±60 detik. Nonce per perangkat disimpan atomik di Firestore sampai jendela replay berlalu; replay ditolak termasuk setelah restart API. Penyimpanan dibatasi 120 nonce aktif per perangkat; budget habis memberi penolakan 401 sampai nonce kedaluwarsa. `device-proof.mjs` mendefinisikan format; tes memakai private key Web Crypto nonextractable. Token yang dicuri tanpa kunci tidak cukup. ID perangkat kiriman klien, localStorage atau fingerprint browser bukan bukti otorisasi.
+
+Limiter persisten memakai transaksi dan jendela menit server: maksimal **10 percobaan redeem/menit per alamat socket** (termasuk request gagal), serta **20 operasi pairing admin/menit per UID**. Header proxy/ID klien diabaikan. Dalam mode loopback, perangkat uji berbagi budget alamat lokal. Limit menghasilkan 429 dan `Retry-After: 60`; restart context/API tidak mereset counter. Kode berentropi tinggi tetap menjadi perlindungan utama terhadap tebakan. State credential, device revocation, permissions, code consumption, audit, limiter dan nonce bertahan selama emulator yang sama/data snapshot yang sama dipakai. Admission token admin M2B.1 tetap harus dibuat ulang setelah restart API.
+
+Verifikasi terarah: `npm.cmd run test:pairing`; regresi final: `npm.cmd run check`, `npm.cmd test`, `npm.cmd run test:emulator`. Identitas/penugasan/siswa tes seluruhnya fiktif. Tes juga memastikan roster, ID, absensi, profil privat dan penugasan mentor tidak diubah.
+
+Batas: ini pengikatan ke kunci, bukan attestasi perangkat fisik. Proses lokal tepercaya, malware/XSS yang bisa memakai kunci, pembagian kode sebelum redeem, dan hilangnya penyimpanan kunci tetap menjadi batas web/platform. Belum ada UI pairing/login, pemulihan kunci/credential, sinkronisasi otomatis perubahan penugasan, TLS publik atau proteksi rollback eksternal. Pemilik emulator dapat mengubah data; restore snapshot lama dapat menghidupkan kembali kode/izin/counter sebelum konsumsi/pencabutan. Jangan buka emulator/API ke LAN/internet atau gunakan data anak nyata. Prototipe demo tetap tidak aman dan terpisah dari API. Siap menjadi fondasi M2B.3, belum produksi.
+
 ## M2B.1 — autentikasi admin khusus emulator lokal
 
 `firebase.json` dan runner menjalankan **Auth (127.0.0.1:9099) serta Firestore (127.0.0.1:8080)** pada project `demo-abc-attendance`. Tidak ada project Firebase produksi, service account, signing key, login Google, SDK browser baru, atau login UI. Jalankan `npm.cmd run emulators:start` dengan prasyarat Java/TCP lokal yang dijelaskan di bawah. Snapshot baru dari runner dapat memuat kedua emulator; snapshot lama tetap tidak ditimpa. Bagian milestone sebelumnya di bawah merupakan riwayat.

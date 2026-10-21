@@ -13,9 +13,13 @@
  * @typedef {object} CredentialRepository
  * @property {(options:CredentialOptions)=>Promise<string>} issue
  * @property {(token:string)=>Promise<boolean>} revoke
- * @property {(authorization:string|undefined)=>Promise<CredentialPrincipal|null>} authenticate
+ * @property {(authorization:string|undefined, requestProof?:{deviceId:string}|null)=>Promise<CredentialPrincipal|null>} authenticate
  * authenticate must check server time and revocation on every call. Never return
  * an expired/revoked principal, trust a client role, or expose the raw token.
+ * For paired devices, requestProof is an internal capability produced only
+ * after signature/freshness/persistent nonce verification by the API. It must
+ * never be copied from a client-supplied device ID. Legacy/in-memory adapters
+ * retain their existing behavior without this optional context.
  *
  * @typedef {object} RosterRepository
  * @property {(scope:RosterScope)=>Promise<RosterResponse|null>} read
