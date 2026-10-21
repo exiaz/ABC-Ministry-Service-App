@@ -74,7 +74,9 @@ test('Neither unauthenticated nor mentor requests can access grant, device admin
   t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));
   for(const path of ['/api/grants','/api/devices','/api/admin/grants','/api/audit','/backend/firestore-emulator.mjs']){
     for(const headers of [{},{Authorization:'Bearer '+token}]){
-      assert.equal((await fetch('http://127.0.0.1:'+server.address().port+path,{method:'POST',headers})).status,404);
+      const response=await fetch('http://127.0.0.1:'+server.address().port+path,{method:'POST',headers});
+      // M2B.1 reserves the admin namespace and fails closed when unconfigured.
+      assert.equal(response.status,path.startsWith('/api/admin/')?503:404);
     }
   }
 });

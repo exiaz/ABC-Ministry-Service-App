@@ -1,5 +1,33 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.1 — autentikasi admin khusus emulator lokal
+
+`firebase.json` dan runner menjalankan **Auth (127.0.0.1:9099) serta Firestore (127.0.0.1:8080)** pada project `demo-abc-attendance`. Tidak ada project Firebase produksi, service account, signing key, login Google, SDK browser baru, atau login UI. Jalankan `npm.cmd run emulators:start` dengan prasyarat Java/TCP lokal yang dijelaskan di bawah. Snapshot baru dari runner dapat memuat kedua emulator; snapshot lama tetap tidak ditimpa. Bagian milestone sebelumnya di bawah merupakan riwayat.
+
+Untuk mengaktifkan fondasi admin pada proses Node tepercaya, atur konfigurasi server berikut sebelum membuat context autentikasi:
+
+```powershell
+$env:ABC_ADMIN_AUTH_MODE='firebase-auth-emulator'
+$env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
+$env:FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'
+$env:ABC_ADMIN_UIDS='["fictional-admin-uid"]'
+```
+
+UID harus sudah merupakan identitas fiktif di Auth Emulator dan diotorisasi operator melalui allowlist server. `ABC_ADMIN_UIDS` wajib berupa array JSON dengan UID unik berkarakter huruf/angka/underscore/tanda minus (1–128 karakter); `[]` menolak semua admin. Tidak ada UID bawaan, promosi melalui email, endpoint pendaftaran/role, atau kepercayaan pada custom claim `admin`. Penghapusan/perubahan allowlist dilakukan operator server dan memerlukan restart context; perubahan environment saat context aktif langsung menutup akses.
+
+`backend/admin-auth.mjs` menyediakan `createLocalAdminAuthentication()` dan `createConfiguredAdminAuthentication()`. Gunakan context yang sama sebagai `createRosterServer({...adapters, adminAuthentication})`. Dari **kode server/operator lokal tepercaya saja**, `await adminAuthentication.signIn({email, password})` melakukan login password ke Auth Emulator dan mengembalikan ID token untuk klien uji lokal. Akun tidak dibuat otomatis. Jangan menulis password/token ke kode, log, file, URL, shell history, atau snapshot; tes memakai nilai acak di memori. Helper ini tidak dipublikasikan melalui HTTP dan CLI API tidak melakukan login otomatis. Contoh penggunaan lengkap dengan identitas fiktif sementara ada di `tests/emulator/admin-auth.test.mjs`.
+
+**Alasan admission token:** [Auth Emulator menerbitkan ID token tanpa tanda tangan](https://firebase.google.com/docs/emulator-suite/connect_auth). Verifikasi SDK emulator saja tidak dapat membuktikan bahwa token benar-benar diterbitkan emulator. Context karena itu menyimpan hanya hash SHA-256 token hasil login tepercaya. Pada setiap request, server memakai `verifyIdToken(token, true)` (project/issuer, expiry, account existence, disabled/revocation), memeriksa waktu secara ketat, allowlist UID, serta kecocokan hash token. Token dengan UID/klaim yang dipalsukan tetap ditolak. Token dari login langsung klien ke emulator belum diterima sampai login melalui context server tersebut; refresh juga harus melalui helper tepercaya. `revoke(token)` menghapus admission lokal. Restart context/API menghapus semua admission; token lama memerlukan login ulang. Tidak ada refresh token atau password yang disimpan oleh context.
+
+- `GET /api/admin/session`, dengan tepat satu header `Authorization: Bearer <ID token>`, mengembalikan hanya `{uid, mode:"emulator-lokal"}` setelah seluruh pemeriksaan. Semua jalur `/api/admin/*` melewati guard yang sama. Belum ada operasi tulis admin/perangkat/absensi atau pembacaan profil privat.
+- Konfigurasi admin tidak diaktifkan: jalur admin memberi 503. Token hilang/invalid/expired/forged/revoked/tidak di-admit memberi 401; identitas terautentikasi di luar allowlist memberi 403. Query/cookie/flag browser/localStorage/kode demo/peran klien tidak memberikan izin. Header ganda ditolak. Jalur/metode yang belum tersedia tetap 404/405 setelah otorisasi.
+- Mode harus eksplisit, host wajib literal `127.0.0.1:port`, project hanya demo. Konfigurasi hilang/invalid/berubah, emulator tidak tersedia, project bertentangan, environment berkredensial cloud, atau `NODE_ENV=production` menutup akses; tidak ada fallback cloud. CLI tidak dimulai bila konfigurasi admin eksplisit invalid. Listener CLI dan akses admin dibatasi loopback.
+- Respons tidak di-cache, tanpa izin CORS atau session cookie; tidak menambahkan alur cookie/CSRF. Otorisasi mentor tetap menggunakan kredensial/grant perangkat yang sudah ada. Token admin tidak menjadi kredensial roster mentor, dan sebaliknya.
+
+Verifikasi: `npm.cmd run test:admin-auth` untuk Auth Emulator terarah; `npm.cmd run test:emulator` untuk seluruh kontrak/regresi emulator; `npm.cmd run check` dan `npm.cmd test` untuk regresi biasa. Seluruh identitas/siswa tes fiktif. Runner memakai project/port lokal tetap, tanpa login cloud/deployment/billing.
+
+**Batas keamanan:** emulator dan pemilik proses/komputer lokal tetap tepercaya; emulator tanpa tanda tangan bukan sistem identitas produksi. Admission tambahan melindungi boundary API dari token buatan klien, tetapi tidak melindungi dari operator lokal yang mengubah kode, allowlist, atau akun emulator. Admission tidak persisten dan tidak ikut snapshot recovery. Belum ada login UI/endpoint, pairing UI, rate limiting produksi, audit admin terpusat, TLS publik, atau integrasi frontend. Prototipe port 4173 tetap memakai kode demo/localStorage dan **tidak menjadi aman** karena API ini tersedia. Tetap gunakan data fiktif dan origin terpisah. Siap untuk pekerjaan M2B.2 sesuai scope berikutnya, bukan penggunaan produksi.
+
 ## M2A.3 — otorisasi perangkat persisten dan recovery lokal
 
 Bagian yang sudah tersedia pada M2A.2 (token acak 256 bit/hash SHA-256, grants, expiry, revocation, filter roster, guard demo/loopback) dipakai kembali. Adapter Firestore kini mengaitkan setiap kredensial ke dokumen `devices/{deviceId}`. Perangkat hilang, dicabut atau tidak valid membuat autentikasi ditolak; seluruh kredensial perangkat dicabut melalui satu perubahan state.

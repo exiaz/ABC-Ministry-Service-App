@@ -1,6 +1,26 @@
 # ABC Attendance — status revisi
 
-**21 Oktober 2026 · M2A.3: otorisasi perangkat persisten dan recovery emulator · prototipe tetap tersedia · tidak dipublikasikan**
+**21 Oktober 2026 · M2B.1: fondasi autentikasi admin emulator lokal · prototipe tetap tersedia · tidak dipublikasikan**
+
+## M2B.1 — Admin Authentication
+
+- Auth Emulator ditambahkan pada `127.0.0.1:9099`, project tetap `demo-abc-attendance`; runner lokal kini menjalankan Auth dan Firestore bersama. SDK Admin/dependency Node yang sudah ada dipakai kembali, tanpa instalasi/dependency baru atau konfigurasi Firebase produksi.
+- `backend/admin-auth.mjs` memerlukan mode `ABC_ADMIN_AUTH_MODE=firebase-auth-emulator`, project demo eksplisit, host loopback literal dan `ABC_ADMIN_UIDS` berupa allowlist JSON server. Tidak ada admin bawaan; array kosong menolak semua. Kredensial cloud, mode produksi, konfigurasi hilang/invalid/berubah dan emulator tidak tersedia menutup akses tanpa fallback cloud.
+- Server memverifikasi ID token memakai Firebase Admin `verifyIdToken(token, true)`, mengecek waktu token secara ketat, status akun/revocation, dan UID pada allowlist. Autentikasi saja, custom claim/peran `admin`, flag browser/localStorage, kode demo, cookie, query token atau header identitas klien tidak memberi izin admin. Header Authorization ganda ditolak.
+- Karena token Auth Emulator **tidak ditandatangani**, verifikasi SDK/UID saja belum dapat menolak pemalsuan UID yang sah. Ditambahkan admission berbasis hash token: hanya token hasil `adminAuthentication.signIn({email,password})` melalui proses server lokal tepercaya yang diterima context tersebut. Tidak ada HTTP login/admission/registrasi/role endpoint; akun harus sudah ada secara terpisah. Password/refresh token tidak disimpan, token mentah tidak dicatat; context menyimpan hanya hash/UID/expiry. Token buatan atau diubah tetap ditolak walau meniru UID allowlisted. Restart API/context menghapus admission; refresh/login ulang harus melalui helper tepercaya. `revoke(token)` mencabut admission lokal.
+- `backend/server.mjs` memasang guard pada namespace `/api/admin/*`. Satu operasi baca-saja `GET /api/admin/session` mengembalikan UID/mode lokal setelah otorisasi. Tidak ada operasi administrasi data/perangkat, profil privat, atau tulis absensi. Tidak dikonfigurasi → 503; token invalid/tidak di-admit → 401; UID terautentikasi tanpa izin → 403. Operasi lain tetap tidak tersedia setelah guard. Listener CLI/akses admin dibatasi loopback, respons no-store, tanpa CORS/cookie sesi.
+- Jalur kredensial/grant mentor M2A.3 dipertahankan; token admin tidak memberi akses roster mentor dan token mentor tidak memberi akses admin. Frontend, demo, localStorage, ID, absensi historis dan snapshot tidak diubah. API tetap terpisah dari origin prototipe tidak aman. Tidak membuat login UI, pairing UI, migrasi data nyata, deployment, billing, commit atau push.
+
+Validasi M2B.1:
+
+- `npm.cmd run test:admin-auth`: **7/7 lulus, 0 gagal** pada Auth Emulator nyata (enam skenario + parent test): allowlist/admission, klaim admin tanpa izin, token hilang/expired/invalid/forged/lintas project, pemalsuan UID admin, header ganda, cookie/query/demo, disabled/revoked/deleted account, restart context, revoke lokal, konfigurasi hilang/remote/berubah, emulator tidak tersedia, isolasi aset dan preservasi mentor. Tes melarang koneksi non-loopback; tidak ada percobaan koneksi cloud.
+- `npm.cmd test` dijalankan **sekali**: **91/91 lulus, 0 gagal**, termasuk 89 tes sebelumnya + 2 tes konfigurasi/boundary admin. `npm.cmd run check` dijalankan **sekali**: **55 modul JS/MJS** lulus sintaks/import lokal. `git diff --check` lulus.
+- `npm.cmd run test:emulator` dijalankan **sekali**: **27/28 lulus**, satu ekspektasi lama `/api/admin/grants` masih mengharapkan 404; guard baru saat context admin tidak diaktifkan mengembalikan 503. Ekspektasi diperbarui (akses tetap ditolak) lalu **hanya tes tersebut diulang: 1/1 lulus, 0 gagal**. Semua 28 kasus emulator memiliki hasil lulus setelah koreksi; tidak mengklaim pengulangan suite penuh. Regresi mencakup kontrak Firestore, restart API, credential/device revocation, audit, rules, proyeksi privat dan no-cloud. Recovery export/import dan QA browser luas tidak diulang.
+- Runner pertama dalam sandbox gagal membuka hub loopback sebelum tes berjalan; tes emulator dijalankan dengan izin proses lokal. Satu kegagalan tes autentikasi awal berasal dari request header ganda tanpa Host (HTTP parser memberi 400); fixture request diperbaiki dan skenario header ganda kini lulus 401. Emulator dihentikan otomatis setelah setiap run.
+
+Batas keamanan tersisa: emulator/owner komputer dan kode server lokal tetap tepercaya; token emulator unsigned bukan identitas produksi. Admission hanya di memori, tidak ikut snapshot; belum ada handoff/login UI, provisioning/pairing, rate limiting produksi, audit admin terpusat atau TLS publik. Allowlist dikelola operator server, bukan klien. Prototipe masih mengekspos data demo/runtime/localStorage sebagaimana sebelumnya dan tidak aman untuk data anak nyata. Hanya identitas/siswa fiktif digunakan. **Fondasi siap untuk M2B.2 sesuai scope berikutnya; belum siap produksi.**
+
+Berkas: `backend/admin-auth.mjs` (baru), `backend/server.mjs`, `firebase.json`, `package.json`, `tests/admin-auth.test.mjs` (baru), `tests/emulator/admin-auth.test.mjs` (baru), `tests/emulator/device-authorization.test.mjs`, `tests/emulator/run.mjs`, `README.md`, `PROJECT_STATUS.md`.
 
 ## M2A.3 — Persistent Mentor-Device Authorization
 

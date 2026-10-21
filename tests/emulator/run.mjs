@@ -27,10 +27,11 @@ const version=spawnSync(java,['-version'],{encoding:'utf8',windowsHide:true});
 if(version.status!==0||!/(?:openjdk|java) version "(?:2[1-9]|[3-9]\d)\./.test(version.stderr+version.stdout))throw Error('Java JDK 21+ wajib tersedia melalui JAVA_HOME atau PATH.');
 env.ABC_ROSTER_ADAPTER='firestore-emulator';env.ABC_FIREBASE_PROJECT_ID=DEMO_PROJECT_ID;
 env.GCLOUD_PROJECT=DEMO_PROJECT_ID;env.GOOGLE_CLOUD_PROJECT=DEMO_PROJECT_ID;
-env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8080';env.CI='true';
+env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8080';env.FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099';env.CI='true';
+env.ABC_ADMIN_AUTH_MODE='firebase-auth-emulator';env.ABC_ADMIN_UIDS='[]';
 if(env.JAVA_HOME)env.PATH=path.join(env.JAVA_HOME,'bin')+path.delimiter+env.PATH;
 const command=process.argv[2]??'test';
-if(!['test','start','recovery'].includes(command))throw Error('Perintah emulator tidak valid.');
+if(!['test','auth-test','start','recovery'].includes(command))throw Error('Perintah emulator tidak valid.');
 const stateRoot=path.join(root,'.emulator-data');
 const newSnapshot=()=>path.join(stateRoot,'snapshot-'+Date.now()+'-'+randomUUID());
 function localSnapshot(value){
@@ -40,7 +41,7 @@ function localSnapshot(value){
   return selected;
 }
 async function run(kind,script,options=[]){
-  const args=[path.join(root,'node_modules/firebase-tools/lib/bin/firebase.js'),kind,'--only','firestore','--project',DEMO_PROJECT_ID,'--non-interactive',...options];
+  const args=[path.join(root,'node_modules/firebase-tools/lib/bin/firebase.js'),kind,'--only','firestore,auth','--project',DEMO_PROJECT_ID,'--non-interactive',...options];
   if(script)args.push(script);
   await new Promise((resolve,reject)=>{
     const child=spawn(process.execPath,args,{cwd:root,env,stdio:'inherit',windowsHide:true});
@@ -48,7 +49,7 @@ async function run(kind,script,options=[]){
   });
 }
 try{
-  if(command==='test')await run('emulators:exec','node --test tests/emulator/*.test.mjs');
+  if(command==='test'||command==='auth-test')await run('emulators:exec',command==='auth-test'?'node --test tests/emulator/admin-auth.test.mjs':'node --test tests/emulator/*.test.mjs');
   else if(command==='start'){
     const options=['--export-on-exit='+newSnapshot()];
     if(env.ABC_EMULATOR_IMPORT_DIR)options.push('--import='+localSnapshot(env.ABC_EMULATOR_IMPORT_DIR));
