@@ -33,6 +33,8 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
   db.settings({host:config.host,ssl:false,universeDomain:'googleapis.com'});
   const root=db.collection('emulatorNamespaces').doc(config.namespace);
   const collection=name=>root.collection(name);
+  const audit=(event,deviceId,credentialId=null)=>({event,deviceId,credentialId,at:now(),actor:'local-trusted-process'});
+  const validDevice=id=>typeof id==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(id);
   const close=async()=>{await db.terminate();await deleteApp(app);};
   try{
     // Establish a real Firestore connection now; never silently use another store.
@@ -40,11 +42,18 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
   }catch(error){await close();throw error;}
 
   const credentials={
-    async issue({grants,ttlMs=300000}){
-      if(!Number.isSafeInteger(ttlMs)||ttlMs<=0||ttlMs>3600000||!Array.isArray(grants)||!grants.length||!grants.every(validRosterScope))throw Error('Cakupan atau masa berlaku kredensial uji tidak valid.');
+    async issue({grants,ttlMs=300000,deviceId=randomUUID()}){
+      if(!validDevice(deviceId)||!Number.isSafeInteger(ttlMs)||ttlMs<=0||ttlMs>3600000||!Array.isArray(grants)||!grants.length||!grants.every(validRosterScope))throw Error('Cakupan atau masa berlaku kredensial uji tidak valid.');
       const token=randomBytes(32).toString('base64url');
-      const entry={expiresAt:now()+ttlMs,revokedAt:null,grants:copyGrants(grants)};
-      await collection('credentials').doc(digest(token)).create(entry);
+      const entry={deviceId,expiresAt:now()+ttlMs,revokedAt:null,grants:copyGrants(grants)};
+      const device=collection('devices').doc(deviceId),credential=collection('credentials').doc(digest(token)),event=collection('authorizationEvents').doc(randomUUID());
+      await db.runTransaction(async transaction=>{
+        const snapshot=await transaction.get(device);
+        if(snapshot.exists&&(snapshot.data().id!==deviceId||snapshot.data().state!=='active'||snapshot.data().revokedAt!==null))throw Error('Perangkat tidak aktif; penerbitan izin ditolak.');
+        if(!snapshot.exists)transaction.create(device,{id:deviceId,state:'active',createdAt:now(),revokedAt:null});
+        transaction.create(credential,entry);
+        transaction.create(event,audit('credential-issued',deviceId,credential.id));
+      });
       return token;
     },
     async revoke(token){
@@ -53,14 +62,18 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       return db.runTransaction(async transaction=>{
         const snapshot=await transaction.get(ref),entry=snapshot.data();
         if(!snapshot.exists||entry.revokedAt!==null)return false;
-        transaction.update(ref,{revokedAt:now()});return true;
+        transaction.update(ref,{revokedAt:now()});
+        transaction.create(collection('authorizationEvents').doc(randomUUID()),audit('credential-revoked',entry.deviceId??null,ref.id));
+        return true;
       });
     },
     async authenticate(authorization){
       const match=typeof authorization==='string'&&/^Bearer ([A-Za-z0-9_-]{43})$/.exec(authorization);
       if(!match)return null;
       const snapshot=await collection('credentials').doc(digest(match[1])).get(),entry=snapshot.data();
-      if(!entry||entry.revokedAt!==null||!Number.isSafeInteger(entry.expiresAt)||entry.expiresAt<=now()||!Array.isArray(entry.grants)||!entry.grants.length||!entry.grants.every(validRosterScope))return null;
+      if(!entry||!validDevice(entry.deviceId)||entry.revokedAt!==null||!Number.isSafeInteger(entry.expiresAt)||entry.expiresAt<=now()||!Array.isArray(entry.grants)||!entry.grants.length||!entry.grants.every(validRosterScope))return null;
+      const device=(await collection('devices').doc(entry.deviceId).get()).data();
+      if(device?.id!==entry.deviceId||device.state!=='active'||device.revokedAt!==null||entry.expiresAt<=now())return null;
       return {expiresAt:entry.expiresAt,grants:copyGrants(entry.grants)};
     }
   };
@@ -81,6 +94,27 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       return toRosterResponse(scope,students.docs.map(s=>s.data()).filter(s=>!used.has(s.id)));
     }
   };
+  // Trusted server/local-operator boundary only. No HTTP grant/admin endpoint.
+  // Reuse existing roster relation checks and credential issuance; do not mint a
+  // second kind of token or accept browser-supplied roles/device flags.
+  const deviceAuthorization={
+    async issue({deviceId,grants,ttlMs=300000}){
+      if(!validDevice(deviceId)||!Array.isArray(grants)||!grants.length||!grants.every(validRosterScope))throw Error('Perangkat atau cakupan izin tidak valid.');
+      const scopes=copyGrants(grants);
+      for(const scope of scopes)if(!await repository.read(scope))throw Error('Sekolah, kelompok, atau pelayanan tidak sesuai.');
+      return credentials.issue({deviceId,grants:scopes,ttlMs});
+    },
+    async revoke(deviceId){
+      if(!validDevice(deviceId))return false;
+      const ref=collection('devices').doc(deviceId),event=collection('authorizationEvents').doc(randomUUID());
+      return db.runTransaction(async transaction=>{
+        const snapshot=await transaction.get(ref),entry=snapshot.data();
+        if(!entry||entry.state!=='active'||entry.revokedAt!==null)return false;
+        transaction.update(ref,{state:'revoked',revokedAt:now()});
+        transaction.create(event,audit('device-revoked',deviceId));return true;
+      });
+    }
+  };
   // db/root are trusted test-fixture hooks only; never exposed by the API.
-  return {credentials,repository,close,db,root,config};
+  return {credentials,repository,deviceAuthorization,close,db,root,config};
 }

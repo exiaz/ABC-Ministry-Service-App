@@ -1,6 +1,25 @@
 # ABC Attendance — status revisi
 
-**21 Oktober 2026 · M2A.2: adapter Firestore Emulator lokal · prototipe tetap tersedia · tidak dipublikasikan**
+**21 Oktober 2026 · M2A.3: otorisasi perangkat persisten dan recovery emulator · prototipe tetap tersedia · tidak dipublikasikan**
+
+## M2A.3 — Persistent Mentor-Device Authorization
+
+- Inspeksi awal menemukan token acak/hash, grant, expiry, pencabutan kredensial, otorisasi sekolah/kelompok/sesi, filter privat dan restart API sudah bekerja pada M2A.2. Seluruhnya digunakan kembali; tidak membuat token service/backend baru.
+- `backend/firestore-emulator.mjs`: kredensial terikat ID perangkat opaque di `devices`; autentikasi memeriksa keberadaan/state perangkat dan waktu server. `deviceAuthorization.issue` hanya untuk kode server/operator lokal tepercaya, memvalidasi relasi melalui repository roster yang ada. Pencabutan perangkat memblokir semua kredensialnya, bertahan setelah restart API, dan menolak penerbitan ulang ke perangkat yang dicabut.
+- Issuance, pencabutan satu kredensial dan pencabutan perangkat menghasilkan audit atomik pada `authorizationEvents`: hanya event, timestamp, deviceId, credentialId hash, dan actor `local-trusted-process`. Tidak menyimpan token mentah/PII/roster; request baca/gagal tidak membanjiri audit. Tidak ada endpoint grant, registrasi admin/perangkat, atau audit HTTP publik.
+- Kredensial legacy tanpa deviceId ditolak secara tertutup dan tetap disimpan; tidak ada backfill, migrasi, perubahan ID atau penulisan absensi. In-memory tetap default; frontend, fitur, data pengguna dan penugasan mentor tidak disentuh.
+- Runner emulator memakai snapshot baru di `.emulator-data/snapshot-*` untuk export saat shutdown normal dan mendukung import snapshot lokal melalui `ABC_EMULATOR_IMPORT_DIR`; snapshot lama tidak ditimpa. Project tetap `demo-abc-attendance`, seluruh koneksi emulator tetap loopback. Recovery test memakai token fiktif acak di memori/env proses, tidak menulis bearer ke berkas/snapshot/log.
+
+Validasi M2A.3:
+
+- **21/21 tes emulator lulus; 0 gagal** (16 yang ada + 5 tes perangkat): grant invalid, field/hash/audit minimal, revocation idempoten, pencabutan seluruh perangkat, expiry/legacy/missing-device, restart API nyata, endpoint admin tertutup; seluruh kontrak/filter/isolation M2A.2 tetap lulus.
+- **Recovery export → shutdown → import ke emulator baru lulus**: token valid tetap valid; kredensial revoked, perangkat revoked dan expired tetap ditolak; roster, ID batch dan empat event audit utuh.
+- Regresi dijalankan **sekali setelah implementasi**: **89/89 lulus; 0 gagal**. Pemeriksaan sintaks/import lokal dan `git diff --check` dijalankan; frontend tidak berubah dan QA browser luas tidak diulang.
+- Tidak ada dependency baru, audit paket berulang, riset ulang arsitektur, login Google, Firebase produksi, billing, deployment, commit atau push. Emulator tes dimatikan otomatis; snapshot recovery fiktif tetap tersimpan lokal dan diabaikan Git.
+
+Batas: operator/owner emulator lokal masih tepercaya dan dapat melewati rules/mengubah data/audit; belum ada autentikasi admin produksi, pairing perangkat, rate limiting, atau integrasi frontend. Restore snapshot lama dapat mengembalikan grant yang dicabut setelah waktu snapshot, sehingga izin perlu dicabut/diterbitkan ulang saat pemulihan lama; belum ada sumber revocation anti-rollback eksternal. Hanya untuk data fiktif. Siap menjadi fondasi M2B (autentikasi/provisioning/integrasi bertahap), belum sistem produksi.
+
+Berkas: `backend/firestore-emulator.mjs`, `backend/repository-contracts.mjs`, `tests/emulator/run.mjs`, `tests/emulator/device-authorization.test.mjs`, `tests/emulator/recovery-phase.mjs`, `package.json`, `README.md`, `PROJECT_STATUS.md`.
 
 ## M2A.2 — Firestore Emulator Adapter
 

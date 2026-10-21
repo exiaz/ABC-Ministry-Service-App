@@ -9,7 +9,8 @@
     "check": "node tests/check.mjs",
     "test:browser": "node tests/browser.mjs",
     "emulators:start": "node tests/emulator/run.mjs start",
-    "test:emulator": "node tests/emulator/run.mjs test"
+    "test:emulator": "node tests/emulator/run.mjs test",
+    "test:emulator:recovery": "node tests/emulator/run.mjs recovery"
   },
   "dependencies": {
     "firebase-admin": "14.5.0"

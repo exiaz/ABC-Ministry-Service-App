@@ -6,7 +6,7 @@
  *
  * @typedef {{schoolId:string, groupId:string, serviceSessionId:string}} RosterScope
  * @typedef {{expiresAt:number, grants:RosterScope[]}} CredentialPrincipal
- * @typedef {{grants:RosterScope[], ttlMs?:number}} CredentialOptions
+ * @typedef {{grants:RosterScope[], ttlMs?:number, deviceId?:string}} CredentialOptions
  * @typedef {{id:string, name:string, schoolClass:string|null}} RosterStudent
  * @typedef {RosterScope & {students:RosterStudent[]}} RosterResponse
  *
@@ -28,5 +28,11 @@
  * @property {(authorization:string|undefined, scope:RosterScope|null)=>Promise<AuthorizedRosterResult>} readAuthorized
  * Deny by default; authenticate before scope validation, enforce the exact tuple,
  * revalidate credentials after I/O, and project only the public roster fields.
+ *
+ * @typedef {object} DeviceAuthorizationRepository
+ * @property {(options:{deviceId:string,grants:RosterScope[],ttlMs?:number})=>Promise<string>} issue
+ * @property {(deviceId:string)=>Promise<boolean>} revoke
+ * Emulator-only trusted operator extension: validate existing roster relations
+ * before issuance; revoke all credentials for a device. Never a public endpoint.
  */
 export {};

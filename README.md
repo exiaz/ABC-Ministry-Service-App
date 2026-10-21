@@ -1,5 +1,20 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2A.3 — otorisasi perangkat persisten dan recovery lokal
+
+Bagian yang sudah tersedia pada M2A.2 (token acak 256 bit/hash SHA-256, grants, expiry, revocation, filter roster, guard demo/loopback) dipakai kembali. Adapter Firestore kini mengaitkan setiap kredensial ke dokumen `devices/{deviceId}`. Perangkat hilang, dicabut atau tidak valid membuat autentikasi ditolak; seluruh kredensial perangkat dicabut melalui satu perubahan state.
+
+- Hanya dari **kode server/operator lokal tepercaya** pada context Firestore: `await adapters.deviceAuthorization.issue({deviceId, grants, ttlMs})`. Gunakan ID perangkat opaque seperti UUID, bukan nama/identitas anak. Setiap grant harus mengacu sekolah/kelompok/pelayanan yang benar-benar ada; helper menggunakan pembacaan roster yang sama, bukan resolver baru.
+- `await adapters.credentials.revoke(token)` mencabut satu kredensial; `await adapters.deviceAuthorization.revoke(deviceId)` mencabut seluruh akses perangkat dan menolak penerbitan ulang ke ID perangkat itu. Tidak ada endpoint grant/admin/audit publik; kredensial tidak diberikan berdasarkan flag browser. Factory in-memory dan format respons API tetap.
+- `authorizationEvents` hanya menyimpan `event`, `deviceId`, `credentialId` (hash), `at`, dan actor tetap `local-trusted-process`. Issuance/revocation dan audit ditulis atomik. Pembacaan dan penolakan autentikasi tidak menulis log per request. Tidak ada token mentah, nama siswa, alamat, DOB, atau isi roster pada audit. Log ini bukan audit tahan manipulasi terhadap pemilik SDK lokal.
+- Kredensial lama yang tidak memiliki pengaitan perangkat ditolak tanpa dihapus/dimigrasikan. Terbitkan izin baru melalui helper tepercaya bila diperlukan. Tidak ada perubahan absensi atau profil lama.
+
+Recovery: `npm.cmd run emulators:start` sekarang mengekspor ke snapshot baru di `.emulator-data/snapshot-*` saat shutdown normal; snapshot sebelumnya tidak ditimpa. Untuk memuat snapshot fiktif yang sudah ada, set `$env:ABC_EMULATOR_IMPORT_DIR='.emulator-data/snapshot-...'`, lalu jalankan perintah start yang sama. Import dibatasi ke snapshot di bawah `.emulator-data` dengan metadata export; akses API tetap hanya ke demo/loopback. Jangan menyimpan data nyata di folder ini atau memasukkannya ke Git. Force-kill tidak menjamin export selesai.
+
+`npm.cmd run test:emulator:recovery` menguji dua masa hidup emulator terpisah: seed fiktif, export, shutdown, import, lalu verifikasi grant valid, pencabutan kredensial/perangkat, expiry, roster/ID, dan audit. Nilai bearer uji acak hanya berada di memori/environment anak proses; snapshot hanya memuat hash. Gunakan JAVA_HOME dan opsi TCP Windows yang sama seperti M2A.2.
+
+**Batas recovery:** snapshot merefleksikan keadaan saat export. Restore snapshot sebelum suatu pencabutan dapat mengembalikan izin lama yang belum kedaluwarsa; cabut/terbitkan ulang izin setelah restore lama. Belum ada proteksi rollback dari sumber revocation eksternal. M2B masih perlu autentikasi admin, provisioning/pairing yang aman dan integrasi frontend; proyek ini tetap hanya untuk data fiktif.
+
 ## M2A.2 — adapter Firestore Emulator lokal
 
 Prasyarat: Node >=22, npm, JDK 21+ (`JAVA_HOME` atau PATH). Dependency dipatok pada `firebase-admin@14.5.0` dan devDependency `firebase-tools@15.34.0`; lockfile disertakan. Tidak ada SDK Firebase browser, login Google, key service account, atau project cloud.

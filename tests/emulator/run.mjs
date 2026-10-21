@@ -1,7 +1,8 @@
 import {spawn,spawnSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {existsSync} from 'node:fs';
+import {existsSync,realpathSync} from 'node:fs';
+import {randomBytes,randomUUID} from 'node:crypto';
 import {DEMO_PROJECT_ID} from '../../backend/emulator-config.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -29,9 +30,36 @@ env.GCLOUD_PROJECT=DEMO_PROJECT_ID;env.GOOGLE_CLOUD_PROJECT=DEMO_PROJECT_ID;
 env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8080';env.CI='true';
 if(env.JAVA_HOME)env.PATH=path.join(env.JAVA_HOME,'bin')+path.delimiter+env.PATH;
 const command=process.argv[2]??'test';
-if(!['test','start'].includes(command))throw Error('Perintah emulator tidak valid.');
-const args=[path.join(root,'node_modules/firebase-tools/lib/bin/firebase.js'),command==='test'?'emulators:exec':'emulators:start','--only','firestore','--project',DEMO_PROJECT_ID,'--non-interactive'];
-if(command==='test')args.push('node --test tests/emulator/*.test.mjs');
-const child=spawn(process.execPath,args,{cwd:root,env,stdio:'inherit',windowsHide:true});
-child.on('error',()=>{console.error('Firebase CLI lokal tidak dapat dijalankan.');process.exitCode=1;});
-child.on('exit',code=>{process.exitCode=code??1;});
+if(!['test','start','recovery'].includes(command))throw Error('Perintah emulator tidak valid.');
+const stateRoot=path.join(root,'.emulator-data');
+const newSnapshot=()=>path.join(stateRoot,'snapshot-'+Date.now()+'-'+randomUUID());
+function localSnapshot(value){
+  const selected=path.resolve(root,value);
+  const within=(base,target)=>target.toLowerCase().startsWith(base.toLowerCase()+path.sep);
+  if(!within(stateRoot,selected)||!existsSync(path.join(selected,'firebase-export-metadata.json'))||!within(realpathSync(stateRoot),realpathSync(selected)))throw Error('Snapshot wajib berada di .emulator-data dan memiliki metadata export lokal.');
+  return selected;
+}
+async function run(kind,script,options=[]){
+  const args=[path.join(root,'node_modules/firebase-tools/lib/bin/firebase.js'),kind,'--only','firestore','--project',DEMO_PROJECT_ID,'--non-interactive',...options];
+  if(script)args.push(script);
+  await new Promise((resolve,reject)=>{
+    const child=spawn(process.execPath,args,{cwd:root,env,stdio:'inherit',windowsHide:true});
+    child.once('error',reject);child.once('exit',code=>code===0?resolve():reject(Error('Perintah emulator gagal: '+code)));
+  });
+}
+try{
+  if(command==='test')await run('emulators:exec','node --test tests/emulator/*.test.mjs');
+  else if(command==='start'){
+    const options=['--export-on-exit='+newSnapshot()];
+    if(env.ABC_EMULATOR_IMPORT_DIR)options.push('--import='+localSnapshot(env.ABC_EMULATOR_IMPORT_DIR));
+    await run('emulators:start',null,options);
+  }else{
+    const snapshot=newSnapshot();env.ABC_FIRESTORE_NAMESPACE='recovery-'+randomUUID();
+    // Random fictional test credentials live only in this process/child env,
+    // never in command arguments, logs, fixture files or the exported snapshot.
+    for(const key of ['VALID','REVOKED','DEVICE_REVOKED','EXPIRED'])env['ABC_RECOVERY_'+key]=randomBytes(32).toString('base64url');
+    await run('emulators:exec','node tests/emulator/recovery-phase.mjs seed',['--export-on-exit='+snapshot]);
+    await run('emulators:exec','node tests/emulator/recovery-phase.mjs verify',['--import='+localSnapshot(snapshot)]);
+    console.log('Pemulihan emulator lulus: grant, pencabutan, expiry, roster dan audit tetap sesuai snapshot.');
+  }
+}catch(error){console.error(error.message);process.exitCode=1;}
