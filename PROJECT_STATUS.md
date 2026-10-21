@@ -1,6 +1,37 @@
 # ABC Attendance — status revisi
 
-**21 Oktober 2026 · M2A.1: kontrak repository asinkron · prototipe lokal tetap tersedia · tidak dipublikasikan**
+**21 Oktober 2026 · M2A.2: adapter Firestore Emulator lokal · prototipe tetap tersedia · tidak dipublikasikan**
+
+## M2A.2 — Firestore Emulator Adapter
+
+- JDK yang sudah dipasang pengguna diverifikasi sebelum perubahan: Temurin JDK/javac **21.0.12.1**. Memakai Node **24.22.0** dan npm **11.19.1** yang sudah ada, tanpa perubahan sistem. Instalasi yang disetujui selesai: `firebase-admin@14.5.0`, devDependency `firebase-tools@15.34.0`, binary resmi `cloud-firestore-emulator-v1.22.0.jar` melalui CLI. `package-lock.json` dibuat; tidak ada framework/SDK browser tambahan.
+- `.firebaserc`, `firebase.json`, rules deny-all dan indeks kosong mengonfigurasi hanya Firestore pada **demo-abc-attendance** dan loopback. Runner tidak melakukan login Google, membuat project cloud, atau memakai service account/key. Test namespaces dibersihkan otomatis; log/state lokal diabaikan Git.
+- `backend/emulator-config.mjs` menolak konfigurasi hilang/bertentangan, project selain demo, host selain literal `127.0.0.1:port`, namespace tidak valid dan kredensial cloud pada environment. SDK diimpor setelah validasi; endpoint SDK dipatok ke loopback dan universe diatur eksplisit agar tidak mencoba penemuan ADC/metadata.
+- `backend/firestore-emulator.mjs` mengimplementasikan kontrak M2A.1: roster baca-saja dari sekolah/kelompok/siswa/pelayanan/batch ber-ID stabil, serta hash kredensial, grants, expiry dan revokedAt tersimpan per namespace. Pencabutan memakai transaksi. Token mentah tidak disimpan; operasi penerbitan/pencabutan tetap hanya dari kode server tepercaya.
+- `backend/configured-repositories.mjs` menjaga **in-memory sebagai default**. CLI API memilih Firestore hanya jika mode diaktifkan eksplisit; emulator tidak tersedia berarti gagal, tanpa fallback. API tetap memeriksa ulang izin sesudah I/O, menyaring field privat, dan menolak akses statis. Frontend/localStorage/ID/riwayat lama tidak dimigrasikan atau diubah.
+- Tes kontrak M2A.1 diekstrak ke helper yang sama untuk adapter memory dan Firestore. Tes baru mencakup konfigurasi tertutup, isolasi namespace, hash/grant/ID, restart proses API nyata, revocation setelah restart, direct client rules, preservasi dokumen, expiry, grant rusak, dan percobaan koneksi non-loopback/metadata.
+
+Validasi M2A.2:
+
+- **16/16 tes emulator lulus; 0 gagal**, memakai CLI demo project dan emulator nyata; **89/89 tes regresi lulus; 0 gagal**. **50 modul JS/MJS** lulus sintaks/import; `git diff --check` lulus.
+- Smoke test Chrome profil sementara **390/1365 px** lulus: isolasi aset baru, mentor, kalender, 8 kelompok, 12 siswa snapshot, admin, Birthday Tracker, reload, riwayat sama dan tanpa error JavaScript. Tidak menulis screenshot atau mengakses profil browser pengguna.
+- Kendala lokal awal: selector Java AF_UNIX gagal membuat loopback pada sandbox Windows. Diatasi dengan flag runner khusus proses `ABC_JAVA_TCP_FALLBACK=1`, tanpa mengubah sistem/JDK. SDK awal mencoba penemuan metadata; konfigurasi universe eksplisit menghilangkan percobaan tersebut. Tes akhir memblokir dan memastikan **tidak ada percobaan koneksi non-loopback atau MetadataLookupWarning** dari adapter.
+- `npm audit --omit=dev`: **0 temuan**. Audit lengkap: **7 temuan (4 moderate, 3 high)** pada rantai Firebase CLI devDependency; dicatat tanpa `audit fix`/upgrade di luar versi yang disetujui. Emulator dihentikan otomatis sesudah tes.
+
+Batasan: emulator hanya alat development pada komputer tepercaya; SDK Admin/owner lokal dapat melewati rules. Restart API mempertahankan data selama emulator yang sama berjalan, sedangkan restart emulator tanpa export/import tidak menjamin persistensi. Belum ada autentikasi produksi, audit terpusat, UI provisioning, endpoint penulisan absensi, offline sync, migrasi frontend/data, cloud resource, billing, hosting atau deployment. Seluruh data tetap fiktif. Fondasi siap untuk pembahasan M2A.3 setelah persetujuan; bukan izin memakai data anak nyata. Tidak ada commit/push.
+
+Berkas: `.gitignore`, `.firebaserc`, `firebase.json`, `firestore.rules`, `firestore.indexes.json`, `package.json`, `package-lock.json`, `backend/server.mjs`, `backend/configured-repositories.mjs`, `backend/emulator-config.mjs`, `backend/firestore-emulator.mjs`, `tests/repository-contracts.test.mjs`, `tests/contracts/repositories.mjs`, `tests/emulator-config.test.mjs`, `tests/emulator/{run,fixture,contracts.test,integration.test,no-cloud.test,server-process}.mjs`, `README.md`, `PROJECT_STATUS.md`.
+
+## Riwayat pemeriksaan prasyarat M2A.2 — sebelum persetujuan instalasi
+
+- Pemeriksaan baca-saja: working tree awal bersih; kontrak M2A.1 tetap menjadi acuan. Node bundled v24.19.0 tersedia. Instalasi Windows terpisah ditemukan di `C:\Program Files\nodejs`: Node v24.22.0 dan npm v11.19.1; npm dapat dipanggil dengan path absolut tanpa memasang ulang Node/npm atau mengubah PATH.
+- Belum ditemukan Java pada PATH/lokasi instalasi umum, `JAVA_HOME`, Firebase CLI, cache binary Firestore Emulator, maupun paket proyek/bundled `firebase-admin`, `firebase-tools`, dan `@google-cloud/firestore`. Proyek belum memiliki node_modules atau dependensi Firebase.
+- Kebutuhan yang diajukan untuk persetujuan: Java JDK 21 LTS; `firebase-admin@14.5.0` sebagai dependency server; `firebase-tools@15.34.0` sebagai devDependency lokal; unduhan binary Firestore Emulator resmi oleh CLI. Versi paket dan engine diverifikasi lewat metadata registry npm resmi, tanpa instalasi. Admin SDK mensyaratkan Node >=22; kedua runtime Node yang tersedia memenuhi kebutuhan ini. SDK Firestore menjadi dependency transitif Admin SDK, tanpa paket browser Firebase.
+- JDK 21 dipilih mengikuti [catatan kesiapan emulator](https://firebase.google.com/docs/emulator-suite/connect_firestore). Setelah disetujui, konfigurasi akan dibatasi ke project `demo-abc-attendance` dan loopback; tidak memerlukan Firebase login, project cloud, kredensial produksi, billing, atau deployment.
+- Sesuai instruksi pengguna, implementasi adapter dan instalasi dihentikan sampai persetujuan diberikan. Tidak membuat konfigurasi emulator, mengunduh binary, menulis adapter, atau mengubah package.json/lockfile. Hanya catatan status ini diperbarui.
+- Baseline diverifikasi melalui path absolut npm: `npm.cmd run check` lulus **39 modul**; `npm.cmd test` lulus **87/87; 0 gagal**, termasuk pengujian akses HTTP prototipe legacy dan keamanan API. Tes HTTP memakai izin loopback lokal. Tidak ada perubahan frontend/data/riwayat; QA browser tidak diulang. Integrasi emulator, isolasi database, dan persistensi setelah restart belum dapat diuji.
+
+M2A.2 belum diimplementasikan; belum siap M2A.3. Tidak ada instalasi, koneksi proyek Firebase nyata, resource cloud, billing, deployment, commit atau push.
 
 ## M2A.1 — Asynchronous Repository Contracts
 

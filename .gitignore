@@ -134,3 +134,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Local Firebase emulator state, logs, and scratch data (never student data).
+.firebase/
+.emulator-data/
+firestore-debug.log
+ui-debug.log
+firebase-debug.log*

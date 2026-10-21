@@ -7,6 +7,14 @@
     "start": "node server.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node tests/check.mjs",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "emulators:start": "node tests/emulator/run.mjs start",
+    "test:emulator": "node tests/emulator/run.mjs test"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "15.34.0"
   }
 }

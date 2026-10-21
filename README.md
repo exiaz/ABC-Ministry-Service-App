@@ -1,5 +1,32 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2A.2 — adapter Firestore Emulator lokal
+
+Prasyarat: Node >=22, npm, JDK 21+ (`JAVA_HOME` atau PATH). Dependency dipatok pada `firebase-admin@14.5.0` dan devDependency `firebase-tools@15.34.0`; lockfile disertakan. Tidak ada SDK Firebase browser, login Google, key service account, atau project cloud.
+
+- `npm.cmd run test:emulator`: CLI menjalankan **hanya Firestore**, project `demo-abc-attendance`, menjalankan tes kontrak/integrasi, kemudian mematikan emulator. Fixture fiktif memakai namespace `test-<UUID>` dan dibersihkan per tes; tidak membaca localStorage/file siswa pengguna.
+- `npm.cmd run emulators:start`: menjalankan emulator lokal kosong. `firebase.json` mengikat service ke loopback, menonaktifkan UI, dan memakai Security Rules yang menolak semua akses client. SDK Admin tetap melewati rules; otorisasi API wajib. Emulator bukan batas keamanan terhadap proses lokal tepercaya yang dapat memakai akses owner emulator; jangan buka port ke LAN/internet.
+- Pada PowerShell mesin ini, set `$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot'`. Jika npm belum di PATH, gunakan `& 'C:\Program Files\nodejs\npm.cmd' run test:emulator`.
+- Khusus sandbox Windows yang mengalami `Unable to establish loopback connection` pada Java, set `$env:ABC_JAVA_TCP_FALLBACK='1'` sebelum perintah emulator. Runner memakai opsi JVM `jdk.net.unixdomain.tmpdir` menuju direktori tidak tersedia agar pipe internal JDK beralih ke TCP. Opsi hanya berlaku pada subprocess emulator; tidak mengubah OS, instalasi Java, atau PATH sistem.
+
+Aktivasi API (terminal terpisah setelah emulator berjalan):
+
+```powershell
+$env:ABC_ROSTER_ADAPTER='firestore-emulator'
+$env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
+$env:FIRESTORE_EMULATOR_HOST='127.0.0.1:8080'
+$env:ABC_FIRESTORE_NAMESPACE='development'
+node backend/server.mjs
+```
+
+Tanpa `ABC_ROSTER_ADAPTER`, API tetap memakai adapter in-memory kosong. Mode emulator menolak host hilang/non-loopback, project lain, namespace tidak valid, kredensial cloud di environment, atau emulator tidak tersedia, tanpa fallback. Target gRPC dipatok ke host lokal; universe SDK diatur eksplisit untuk mencegah penemuan ADC/metadata otomatis. Tidak ada endpoint untuk menerbitkan token atau mengisi database.
+
+Data berada di `emulatorNamespaces/{namespace}/...`: schools, groups, students, serviceSessions, sessions (snapshot roster), credentials (ID hash SHA-256, expiresAt, revokedAt, grant sekolah/kelompok/sesi). Fixture profil privat berada terpisah dan tidak dibaca oleh adapter roster. ID asli disimpan pada field dan document ID; membaca tidak menulis absensi. API menampilkan field minimum yang sama seperti Milestone 1.
+
+Restart **API** mempertahankan kredensial, pencabutan dan roster selama emulator yang sama tetap berjalan. Restart **emulator** tanpa export/import mengosongkan data; durability/backup produksi belum tersedia. Frontend masih prototipe localStorage dan tidak dihubungkan ke adapter. Jangan gunakan data anak nyata.
+
+Verifikasi tambahan: `npm.cmd run check`, `npm.cmd test`. Suite emulator dijalankan terpisah agar regresi biasa tetap bekerja tanpa Java/emulator. Audit runtime saat implementasi: 0 advisori; audit lengkap: 7 temuan pada rantai devDependency Firebase CLI (4 moderate, 3 high). Tidak menjalankan `audit fix` atau mengganti versi yang disetujui; perlu evaluasi versi CLI sebelum penggunaan produksi.
+
 ## M2A.1 — kontrak repository asinkron
 
 Server roster kini memakai adapter in-memory berbasis Promise sebagai default. Kontrak JavaScript/JSDoc ada di `backend/repository-contracts.mjs`; factory dan boundary otorisasi ada di `backend/repositories.mjs`:
