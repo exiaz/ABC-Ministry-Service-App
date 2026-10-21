@@ -1,8 +1,27 @@
 # ABC Attendance — status revisi
 
-**21 Oktober 2026 · filter admin, gender, ulang tahun dan XLSX · prototipe lokal · tidak dipublikasikan**
+**21 Oktober 2026 · Milestone 1: fondasi otorisasi roster server · prototipe lokal tetap tersedia · tidak dipublikasikan**
 
-## Revisi terbaru
+## Milestone 1 — Server-Side Roster Authorization Foundation
+
+- Ditambahkan satu endpoint baca-saja `GET /api/roster` pada server API terpisah (`backend/server.mjs`, localhost port 4175). Startup tanpa data/kredensial; frontend lama tidak beralih sumber data dan tetap memakai port 4173.
+- `backend/access-control.mjs`: token uji acak 256 bit, hash dalam memori, TTL default 5 menit/maksimal 1 jam, kedaluwarsa diperiksa setiap request, pencabutan langsung, invalidasi saat restart. Penerbitan/pencabutan hanya melalui proses server tepercaya, tanpa endpoint registrasi/login/issuance publik.
+- Izin menolak secara default dan mencocokkan tepat sekolah/kelompok/pelayanan. Flag admin/perangkat, localStorage, kode `ABC2026`, cookie, query token, dan ID pilihan browser tidak memberikan izin. Relasi sekolah/kelompok/pelayanan divalidasi kembali di repository.
+- `backend/roster.mjs`: repository uji terpisah dan baca-saja, mempertahankan snapshot batch/ID. Respons hanya ID konteks, ID siswa, nama, kelas; field lain termasuk DOB/wali/alamat/profil privat tidak dikirim. GET tidak membuat batch atau mengubah absensi/penugasan.
+- Pemeriksaan jalur alternatif: server API menolak seluruh aset statis/modul backend/fixture/service worker; server legacy menolak modul backend/fixture/API. Namun `/data.js` legacy tetap mengekspos roster fiktif dan `/app.js` memakai kode demo serta runtime/localStorage bersama, termasuk profil privat dan backup. **Seluruh proyek tetap hanya untuk data fiktif; belum aman bagi data anak nyata.** Jangan gabungkan kedua origin/server.
+- `server.mjs` hanya diekstrak menjadi factory yang dapat diuji dan diberi header penanda prototipe; cara menjalankan, allowlist aset, UI, data dan cache prototipe tetap. Tidak ada migrasi localStorage, penulisan absensi, perubahan ID/riwayat, Firebase, cloud, dependency, billing, deployment, commit atau push.
+- Berkas baru: `backend/access-control.mjs`, `backend/roster.mjs`, `backend/server.mjs`, `tests/access-control.test.mjs`, `tests/roster-api.test.mjs`, `tests/fixtures/roster.mjs`. Berkas diperbarui: `server.mjs`, `tests/check.mjs`, `README.md`, `MASTER_BRIEF.md`, `PROJECT_STATUS.md`.
+
+Validasi saat ini:
+
+- Tes terarah: **16/16 lulus**, mencakup kredensial valid/hilang/palsu/kedaluwarsa/dicabut, invalidasi restart, cakupan lintas sekolah/kelompok/sesi, grant dengan relasi salah, parameter ambigu, header Authorization ganda, field minimum, preservasi snapshot, metode tulis/registrasi terlarang, akses langsung aset/fixture pada kedua server, dan error tanpa data sensitif.
+- Regresi lengkap: **76/76 lulus; 0 gagal** (60 tes sebelumnya + 16 tes baru). **36 modul JS/MJS** lulus sintaks dan import lokal, termasuk backend/fixture.
+- Percobaan awal tes HTTP di sandbox gagal karena koneksi loopback `EACCES`; seluruh tes HTTP kemudian dijalankan ulang dengan izin koneksi lokal dan lulus. npm tidak tersedia pada PATH; memakai skrip Node ekuivalen, tanpa memasang paket.
+- Smoke test Chrome headless 390 px dengan profil sementara lulus: sekolah/izin demo, kalender, 8 kelompok Pakel, 12 siswa snapshot, admin demo, Birthday Tracker dan reload. Riwayat absensi sebelum/sesudah sama, halaman tidak melebar, tanpa error JavaScript. Tidak menulis screenshot atau mengakses profil browser pengguna. QA Android fisik dan browser suite penuh tidak diulang.
+
+Batasan tersisa: kredensial/grant dan repository hanya dalam memori untuk pengujian, belum ada identitas/admin provisioning produksi, pengikatan perangkat, sinkronisasi grant terhadap perubahan penugasan, TLS publik, database, audit terpusat, rate limiting produksi, backup cloud atau sinkronisasi offline. Tidak ada klaim bahwa seluruh aplikasi sudah aman karena endpoint ini tersedia. Detail kontrak dan batas operasi ada di `README.md`.
+
+## Revisi frontend sebelumnya — filter admin, gender, ulang tahun dan XLSX
 
 - Kelompok & mentor: filter Sekolah/Kelompok Mentor, reset kelompok saat sekolah berubah, jumlah terfilter/total; edit/tambah/penugasan tetap tersedia. Konfigurasi tetap 16 kelompok aktif (8/4/4).
 - Direktori pilihan mentor dibatasi pada delapan identitas otoritatif. Alias ejaan dinormalisasi; orang/penugasan demo seperti Kak Raka disimpan untuk riwayat tetapi dinonaktifkan dari pilihan/rencana aktif. Raka berasal dari direktori/QA prototipe lama; tidak dianggap penugasan baru yang disahkan. `disabledFrom`, snapshot dan audit mempertahankan riwayat. Fasilitas pengganti satu sesi/permanen bertanggal tetap bekerja dengan mentor sah.

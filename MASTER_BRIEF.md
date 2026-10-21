@@ -2,6 +2,8 @@
 
 **Status:** prototipe frontend lokal, 21 Oktober 2026. Bukan sistem operasional. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna. Siswa, jadwal awal, catatan kehadiran, otorisasi, dan proses verifikasi tetap simulasi lokal.
 
+**Tambahan Milestone 1:** fondasi API roster baca-saja dan otorisasi kredensial uji tersedia pada server terpisah; belum merupakan backend/autentikasi produksi dan tidak mengganti penyimpanan atau akses demo frontend. Seluruh proyek tetap khusus data fiktif. Kontrak, pemisahan jalur legacy, bukti tes dan batasnya dijelaskan pada `README.md` dan revisi terbaru `PROJECT_STATUS.md`; pernyataan batas backend di bawah tetap berlaku untuk operasi produksi/prototipe frontend.
+
 ## Tujuan dan lingkup
 
 Menggantikan percobaan alur laporan WhatsApp dengan absensi sederhana bagi mentor dan rekap bagi admin. Nama sekolah resmi: **SDN Pacarkeling V**, **SDN Airlangga III**, **SDN Kertajaya IV**, tetap memakai ID s1/s2/s3. Satu arah visual: biru muda, merah koral, kuning, tipografi sistem, ilustrasi vektor lokal, tombol besar. Logo memakai berkas asli yang disediakan pengguna.
