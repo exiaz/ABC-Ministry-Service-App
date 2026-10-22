@@ -1,5 +1,76 @@
 # ABC Goes to School — Prototipe lokal
 
+## Setup demo lokal M2B.5B — akun admin dan data pairing
+
+Helper **CLI tepercaya**, bukan endpoint web: `npm.cmd run demo:provision`. Menggunakan validasi konfigurasi Auth/Firestore Emulator yang sudah ada serta data dan pemetaan dokumen fixture M2B.5B. Hanya project **demo-abc-attendance**, host literal **127.0.0.1**, namespace eksplisit dan data fiktif; konfigurasi produksi/cloud ditolak sebelum akses SDK. Tidak mengubah autentikasi, admission, device proof, atau lifecycle pairing.
+
+Jalankan dari root proyek di Windows PowerShell interaktif:
+
+1. **Terminal Emulator:** jika Auth 9099 dan Firestore 8080 sudah aktif, gunakan instance yang sama. Jika belum:
+
+```powershell
+Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+$env:ABC_JAVA_TCP_FALLBACK='1'
+npm.cmd run emulators:start
+```
+
+2. **Konfigurasi bersama:** salin blok berikut ke terminal provisioning, terminal API, dan terminal Admin. Semua harus memakai namespace yang sama; jangan mengganti ID sesi dengan tanggal atau memakai namespace tes sementara.
+
+```powershell
+Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+$env:ABC_ROSTER_ADAPTER='firestore-emulator'
+$env:ABC_ADMIN_AUTH_MODE='firebase-auth-emulator'
+$env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
+$env:GCLOUD_PROJECT='demo-abc-attendance'
+$env:GOOGLE_CLOUD_PROJECT='demo-abc-attendance'
+$env:FIRESTORE_EMULATOR_HOST='127.0.0.1:8080'
+$env:FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'
+$env:ABC_FIRESTORE_NAMESPACE='local-demo-m2b5b'
+$env:ABC_ADMIN_UIDS='["demo-admin-local"]'
+```
+
+3. **Terminal provisioning:** setelah konfigurasi di atas, jalankan:
+
+```powershell
+npm.cmd run demo:provision
+```
+
+Jika akun belum ada, ketik password uji pilihan sendiri **12–128 karakter** saat prompt, Enter, lalu ulangi. Karakter tidak ditampilkan, termasuk tanda bintang. Jangan memasukkan password ke argumen command, environment, source, chat, pipe atau redirect. Salah konfirmasi/Ctrl+C membatalkan sebelum akun dibuat. Helper menolak terminal noninteraktif dan argumen tambahan; tidak mencetak password/token/SDK error mentah.
+
+Identitas tetap: **email `admin.demo@abc-attendance.test`**, **UID `demo-admin-local`**. Keduanya dicetak setelah setup berhasil. Allowlist di atas harus dipakai pada **kedua server API dan Admin**, lalu restart server lama agar membaca konfigurasi tersebut; claim/flag browser tidak memberi izin.
+
+Helper membuat akun jika belum ada dan menambahkan 48 dokumen create-only: 3 sekolah, 16 kelompok, 8 mentor, 16 penugasan tetap, 3 Jumat pelayanan, 1 siswa fiktif Hagai dan 1 permission admin. Menggunakan ID fixture yang sudah ada: **s1 / g13 / mentor-louis / demo-pakel-2026-10-09 / fictional-hagai**, tanggal **9 Oktober 2026**, **SDN Pacarkeling V / Hagai / Kak Louis**. Permission di `emulatorNamespaces/local-demo-m2b5b/adminPairingPermissions/demo-admin-local` aktif untuk 16 tuple fixture. Kelompok lain disediakan sesuai mapping resmi, roster lainnya kosong. Tidak membuat profil privat, batch/history absensi, credential perangkat, atau kode pairing otomatis.
+
+**Idempoten tanpa overwrite:** record identik dilewati dan password akun yang sudah ada tidak diminta/diubah. Record berbeda, permission dicabut, UID/email konflik atau akun disabled membuat helper berhenti; tidak ada flag force, reset password, re-enable, delete atau pemulihan izin otomatis. Gunakan namespace demo kosong yang lain pada seluruh terminal bila isi Firestore sudah berubah, atau tinjau lewat operator. Akun Auth bersifat project-wide dan tetap memakai password lama di namespace lain. Auth dan Firestore tidak memiliki transaksi bersama; kegagalan setelah pembuatan akun dapat meninggalkan akun tanpa semua fixture. Perbaiki koneksi/konflik lalu jalankan ulang; data yang sudah ada dipertahankan. Helper tidak melakukan export snapshot atau menyimpan rahasia ke berkas; snapshot runtime runner emulator tetap berada di `.emulator-data/` yang diabaikan Git.
+
+4. **Terminal API** (blok konfigurasi bersama di atas):
+
+```powershell
+$env:ABC_ROSTER_PORT='4175'
+$env:ABC_MENTOR_ORIGIN='http://127.0.0.1:4176'
+node backend/server.mjs
+```
+
+5. **Terminal Admin** (blok konfigurasi bersama yang sama):
+
+```powershell
+$env:ABC_ADMIN_PORT='4177'
+npm.cmd run start:admin
+```
+
+6. **Terminal Mentor:**
+
+```powershell
+Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+$env:ABC_API_ORIGIN='http://127.0.0.1:4175'
+$env:ABC_MENTOR_PORT='4176'
+npm.cmd run start:mentor
+```
+
+7. Chrome **http://127.0.0.1:4177** → login email fiktif dan password yang tadi diketik → **Perangkat Mentor** → **SDN Pacarkeling V** → **2026-10-09** → **Hagai / Kak Louis** → terbitkan kode. Masukkan kode secara privat pada aktivasi mentor **http://127.0.0.1:4176** dalam 5 menit, pilih scope yang sama dan periksa **Siswa Hagai Fiktif**. Kode hanya tampil sekali dan tidak dapat ditebus dua kali. Admin → Muat ulang perangkat → Cabut akses → konfirmasi; mentor → Periksa izin harus kehilangan akses. Login admin memerlukan password pribadi uji Anda; kode demo lama tidak digunakan. Tidak ada layanan manual yang dihentikan otomatis oleh helper.
+
+Pemeriksaan terarah helper: `node --test tests/provision-demo.test.mjs`; dengan emulator aktif dan blok konfigurasi bersama, `node --test tests/emulator/provision-demo.test.mjs tests/emulator/device-management.test.mjs`. Tes membuat akun/namespace sementara dan membersihkannya; tidak membuat akun demo persisten dengan password acak untuk pengguna. Tanpa menjalankan helper interaktif, akun persisten belum disiapkan. Tidak untuk produksi/data anak nyata; tidak ada dependency/endpoint baru, deploy, commit atau push.
+
 ## M2B.5B — Perangkat Mentor, admin terautentikasi
 
 Tab **Perangkat Mentor** pada admin **4177** menggunakan autentikasi M2B.1 dan adapter/lifecycle pairing M2B.2 yang sama dengan mentor **4176** melalui API **4175**. Pilih sekolah, Jumat pelayanan dan satu atau beberapa kelompok; nama kelompok memakai konfigurasi resmi **3 sekolah / 16 kelompok**, dengan subtitle mentor efektif dari resolver server. Pilihan hanya berasal dari izin operator server, tidak memberi izin baru. Kode berlaku **5 menit**, sekali tebus, dan akses perangkat **1 jam sejak penebusan** untuk tuple yang dipilih. Perubahan cakupan memerlukan pencabutan dan pairing baru.

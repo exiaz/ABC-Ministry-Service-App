@@ -1,6 +1,21 @@
 # ABC Attendance — status revisi
 
-**22 Oktober 2026 · M2B.5B: Perangkat Mentor lewat admin terautentikasi · Auth/Firestore Emulator · tidak dipublikasikan**
+**22 Oktober 2026 · M2B.5B + helper provisioning demo lokal interaktif · Auth/Firestore Emulator · tidak dipublikasikan**
+
+## Provisioning demo lokal setelah M2B.5B
+
+- Ditambahkan CLI tepercaya `provision-demo.mjs` / **`npm.cmd run demo:provision`**. Memakai validator konfigurasi Auth/Firestore yang sudah ada; hanya project `demo-abc-attendance`, loopback literal, namespace eksplisit dan mode emulator. Tidak ada endpoint pembuatan akun/permission, auth bypass, grant lifecycle baru, dependency, produksi atau billing. Server/frontend autentikasi/pairing tidak diubah.
+- Akun fiktif tetap **UID `demo-admin-local`**, **email `admin.demo@abc-attendance.test`**. Password baru diminta dua kali di terminal interaktif tanpa echo/tanda bintang; panjang 12–128 karakter. Tidak menerima password dari argv/env/pipe, tidak mencetak password/token/stack SDK, tidak menulis credential/berkas konfigurasi/snapshot/private key. Ctrl+C/konfirmasi berbeda membatalkan sebelum pembuatan akun. Setelah sukses hanya UID/email/namespace/jumlah record dan instruksi allowlist server yang dicetak. Password akun yang sudah ada tidak diganti.
+- Menggunakan kembali sumber fixture M2B.5B yang diekstrak ke `tests/emulator/device-management-source.mjs` dan mapper `fixtureRecords` dari fixture emulator. Namespace panduan **`local-demo-m2b5b`**, sama untuk API **4175** dan Admin **4177**. 48 dokumen fiktif create-only: mapping 3 sekolah/16 kelompok, 8 mentor, 16 penugasan efektif, 3 Jumat, 1 siswa Hagai dan permission admin 16 tuple. Contoh bekerja: **SDN Pacarkeling V / s1 / Hagai / g13 / Kak Louis / mentor-louis / demo-pakel-2026-10-09 / fictional-hagai**. Tidak membuat profil privat, batch/history, credential perangkat atau kode pairing. Mentor **4176** tetap memakai pairing aman yang sama.
+- Idempoten: akun/record identik dilewati. Record berbeda/permission revoked/email-UID konflik/disabled ditolak, tanpa overwrite, re-enable, reset atau force. Read-before-create dalam transaksi Firestore mencegah menimpa perubahan konkuren; absensi/history yang sudah ada tidak ditargetkan. Auth dan Firestore tidak atomik bersama: kegagalan parsial dapat meninggalkan akun, lalu setup dapat diulang setelah operator memeriksa konflik. README memuat startup PowerShell aktual keempat layanan, shared environment/allowlist, password runtime, login dan pairing/revoke mentor. Akun demo persisten dibuat **saat pengguna menjalankan CLI interaktif**, bukan oleh tes dengan password acak yang tidak diketahui pengguna.
+
+Validasi terarah saja (tanpa regresi penuh):
+
+- `node --test tests/provision-demo.test.mjs`: **3/3 lulus**, meliputi konfigurasi cloud/non-loopback/production ditolak, input tanpa echo/backspace/Ctrl+C/raw-mode/pause dipulihkan, argumen password/pipe ditolak tanpa mencetak rahasia.
+- Dengan emulator demo manual yang sudah aktif dan environment eksplisit, `node --test tests/emulator/provision-demo.test.mjs tests/emulator/device-management.test.mjs`: **8/8 lulus, 0 gagal**. Pembuatan akun/48 dokumen, rerun tanpa password reset/duplikasi, login admitted, scope metadata 3/16, Hagai/Kak Louis, issue/redeem/proof/roster API lama, history tetap, permission revoked/record berubah/disabled ditolak, perubahan konkuren rollback dan konfigurasi drift menolak akun baru. Run pertama mendapat 3 kegagalan fixture karena import lokal `hagai` terlewat setelah ekstraksi source; diperbaiki, run ulang seluruh tes terarah lulus. Akun/namespace/server tes dibersihkan; layanan manual tetap berjalan.
+- `npm.cmd run check`: **94 modul JS/MJS lulus** sintaks/import; `git diff --check` lulus. Tidak menjalankan regresi penuh/Chrome ulang, memasang dependency, deploy, commit atau push.
+
+Berkas baru: `provision-demo.mjs`, `tests/provision-demo.test.mjs`, `tests/emulator/provision-demo.test.mjs`, `tests/emulator/device-management-source.mjs`. Diperbarui: `tests/emulator/device-management-fixture.mjs`, `tests/emulator/fixture.mjs`, `package.json`, `README.md`, `PROJECT_STATUS.md`. Batas: helper lokal/data fiktif, tidak ada reset otomatis atau migrasi data berbeda; akun Auth global per project emulator, namespace hanya Firestore. Data runtime dapat hilang bila emulator dimulai ulang tanpa snapshot yang sesuai; jangan commit snapshot/credential. Scope M2B.5B tetap dan prosedur demo kini dapat diulang secara aman.
 
 ## M2B.5B — Admin Device Management
 
