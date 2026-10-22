@@ -3,6 +3,8 @@ import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
 import {emulatorConfig} from './emulator-config.mjs';
 import {adminAuthConfig} from './admin-auth.mjs';
 import {hash,devicePublicKey,validDeviceProof} from './device-proof.mjs';
+import {SCHOOL_CONFIG,GROUP_CONFIG} from '../group-config.js';
+import {toRosterContext} from './roster.mjs';
 
 export class PairingError extends Error{
   constructor(status,message){super(message);this.status=status;}
@@ -44,6 +46,46 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
   };
   return {
     limit,
+    async adminContext(uid,stillAuthorized=async()=>true){
+      if(!assertAdminLocal().uids.includes(uid))throw denied();
+      const initial=(await permissionRef(uid).get()).data();
+      if(!permitted(initial,initial?.grants))throw denied();
+      const scopes=copy(initial.grants);
+      const contexts=await Promise.all(scopes.map(async scope=>{
+        const school=SCHOOL_CONFIG.find(s=>s.id===scope.schoolId),group=GROUP_CONFIG.find(g=>g.id===scope.groupId&&g.schoolId===scope.schoolId);
+        if(!school||!group)throw denied();
+        const metadata=toRosterContext(scope,await repository.describe(scope));
+        return {...metadata,schoolName:school.name,groupName:group.name};
+      }));
+      return db.runTransaction(async tx=>{
+        const permission=(await tx.get(permissionRef(uid))).data();
+        if(!permitted(permission,scopes))throw denied();
+        await relations(tx,scopes);assertAdminLocal();await currentAdmin(stillAuthorized);
+        return {contexts};
+      });
+    },
+    async listDevices(uid,stillAuthorized=async()=>true){
+      if(!assertAdminLocal().uids.includes(uid))throw denied();
+      return db.runTransaction(async tx=>{
+        const permission=(await tx.get(permissionRef(uid))).data();
+        if(!permitted(permission,permission?.grants))throw denied();
+        const snapshots=await tx.get(col('devices').where('binding','==','p256-v1'));
+        const devices=[];
+        for(const snapshot of snapshots.docs){
+          const entry=snapshot.data();
+          // A partially permitted device is never listed; revoke requires the
+          // same full-grant permission as the existing adminDevice operation.
+          if(!permitted(permission,entry.grants))continue;
+          if(!validId(entry.id)||entry.id!==snapshot.id||!['active','revoked'].includes(entry.state)||!Number.isSafeInteger(entry.expiresAt)||!Number.isSafeInteger(entry.createdAt)||!(entry.revokedAt===null||Number.isSafeInteger(entry.revokedAt)))throw denied();
+          const events=(await tx.get(col('authorizationEvents').where('deviceId','==',entry.id))).docs.map(d=>d.data()).filter(e=>['pairing-redeemed','pairing-device-revoked','device-revoked'].includes(e.event)&&Number.isSafeInteger(e.at)&&typeof e.actor==='string');
+          events.sort((a,b)=>b.at-a.at||Number(b.event==='pairing-device-revoked')-Number(a.event==='pairing-device-revoked'));
+          const last=events[0];
+          devices.push({deviceId:entry.id,state:entry.state==='revoked'?'revoked':entry.expiresAt<=now()?'expired':'active',expiresAt:entry.expiresAt,createdAt:entry.createdAt,revokedAt:entry.revokedAt,grants:copy(entry.grants),lastEvent:last?{event:last.event,at:last.at,actor:last.actor}:null});
+        }
+        assertAdminLocal();await currentAdmin(stillAuthorized);
+        return {devices:devices.sort((a,b)=>b.createdAt-a.createdAt||a.deviceId.localeCompare(b.deviceId))};
+      });
+    },
     async issue(uid,{grants,codeTtlMs=300000,grantTtlMs=3600000},stillAuthorized=async()=>true){
       if(!assertAdminLocal().uids.includes(uid))throw denied();
       if(!validGrants(grants)||!Number.isSafeInteger(codeTtlMs)||codeTtlMs<1000||codeTtlMs>600000||!Number.isSafeInteger(grantTtlMs)||grantTtlMs<1000||grantTtlMs>3600000)throw new PairingError(400,'Parameter pairing tidak valid.');

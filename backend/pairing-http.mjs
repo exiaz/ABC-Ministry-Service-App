@@ -18,23 +18,25 @@ async function jsonBody(req,keys,mentorOrigin){
   if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).some(key=>!keys.includes(key)))throw new PairingError(400,'Permintaan pairing tidak valid.');
   return {body,raw};
 }
-export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,send}){
+export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,send,adminOrigin}){
   const code=/^\/api\/admin\/pairing-codes\/([a-f0-9]{64})\/revoke$/.exec(url.pathname);
   const device=/^\/api\/admin\/devices\/([A-Za-z0-9_-]{1,128})(\/revoke)?$/.exec(url.pathname);
   const issue=url.pathname==='/api/admin/pairing-codes';
-  if(!code&&!device&&!issue)return false;
-  if(!pairing)throw new PairingError(503,'Pairing emulator lokal tidak tersedia.');
-  const method=device&&!device[2]?'GET':'POST';
+  const context=url.pathname==='/api/admin/pairing-context',list=url.pathname==='/api/admin/devices';
+  if(!code&&!device&&!issue&&!context&&!list)return false;
+  const method=context||list||device&&!device[2]?'GET':'POST';
   if(req.method!==method){send(405,{error:'Metode tidak diizinkan.'},{Allow:method});return true;}
+  if(!pairing)throw new PairingError(503,'Pairing emulator lokal tidak tersedia.');
   if(url.search)throw new PairingError(400,'Parameter pairing tidak valid.');
-  await pairing.limit('admin',uid,20);
+  await pairing.limit(context||list?'admin-read':'admin',uid,context||list?60:20);
+  if(context||list){send(200,await pairing[context?'adminContext':'listDevices'](uid,stillAuthorized));return true;}
   if(issue){
-    const {body}=await jsonBody(req,['grants','codeTtlMs','grantTtlMs']);
+    const {body}=await jsonBody(req,['grants','codeTtlMs','grantTtlMs'],adminOrigin);
     send(201,await pairing.issue(uid,body,stillAuthorized));
   }else if(code){
-    await jsonBody(req,[]);send(200,await pairing.revokeCode(uid,code[1],stillAuthorized));
+    await jsonBody(req,[],adminOrigin);send(200,await pairing.revokeCode(uid,code[1],stillAuthorized));
   }else{
-    if(device[2])await jsonBody(req,[]);
+    if(device[2])await jsonBody(req,[],adminOrigin);
     send(200,await pairing.adminDevice(uid,device[1],Boolean(device[2]),stillAuthorized));
   }
   return true;

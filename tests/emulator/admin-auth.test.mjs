@@ -64,7 +64,7 @@ test('Local admin authentication and authorization against real Auth Emulator',a
     assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('set-cookie'),null);
     assert.equal(response.headers.get('access-control-allow-origin'),null);
     assert.equal((await f.request(token,'/api/admin/session',{method:'POST'})).status,405);
-    assert.equal((await f.request(token,'/api/admin/devices',{method:'POST'})).status,404);
+    assert.equal((await f.request(token,'/api/admin/devices',{method:'POST'})).status,405);
     assert.equal((await f.request(undefined,'/api/admin/devices',{method:'POST'})).status,401);
     assert.equal((await f.request(token,'/api/roster?'+new URLSearchParams(scope))).status,401);
     assert.equal((await f.request(f.mentorToken,'/api/roster?'+new URLSearchParams(scope))).status,200);

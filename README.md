@@ -1,5 +1,48 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.5B — Perangkat Mentor, admin terautentikasi
+
+Tab **Perangkat Mentor** pada admin **4177** menggunakan autentikasi M2B.1 dan adapter/lifecycle pairing M2B.2 yang sama dengan mentor **4176** melalui API **4175**. Pilih sekolah, Jumat pelayanan dan satu atau beberapa kelompok; nama kelompok memakai konfigurasi resmi **3 sekolah / 16 kelompok**, dengan subtitle mentor efektif dari resolver server. Pilihan hanya berasal dari izin operator server, tidak memberi izin baru. Kode berlaku **5 menit**, sekali tebus, dan akses perangkat **1 jam sejak penebusan** untuk tuple yang dipilih. Perubahan cakupan memerlukan pencabutan dan pairing baru.
+
+Kode mentah hanya muncul setelah respons penerbitan berhasil, di memori halaman saat itu. **Sembunyikan kode**, pindah pilihan/tab, pemeriksaan sesi, logout, reload, error atau expiry menghapus tampilannya; tidak dapat dibuka kembali. UI tidak mencatat kode di log/storage/daftar perangkat. Respons penerbitan yang hilang tidak diulang otomatis; kode yang tidak diterima dibiarkan kedaluwarsa. **Batalkan kode terakhir** memakai ID hash yang sudah ada dan memerlukan konfirmasi. Kode yang sudah ditebus harus ditangani lewat pencabutan perangkat.
+
+Daftar hanya menampilkan perangkat yang seluruh grant-nya diizinkan untuk admin tersebut: ID perangkat, status Aktif/Kedaluwarsa/Dicabut, cakupan, waktu daftar/expiry/pencabutan dan jejak aktivasi/pencabutan terakhir (jenis, waktu, aktor). Tidak mengirim code/hash credential/public key/profil siswa. **Cabut akses perangkat** memerlukan konfirmasi dan dinyatakan sukses hanya setelah respons server serta pembacaan ulang daftar. Mentor kehilangan akses pada permintaan berikutnya; absensi dan riwayat dipertahankan. Error API/izin mengunci perubahan sampai muat ulang, tanpa fallback demo. Sesi admin invalid/expired/revoked menutup dashboard.
+
+Endpoint same-origin berikut memakai bearer yang sudah di-admit M2B.1 dan verifikasi ulang server. Tidak ada cookie, CORS admin, endpoint publik pemberian izin, atau provisioning alternatif.
+
+| Endpoint | Kontrak minimum |
+|---|---|
+| `GET /api/admin/pairing-context` (baru) | `{contexts:[{schoolId,groupId,serviceSessionId,schoolName,groupName,mentorName,serviceDate}]}`; hanya scope berizin, relasi server valid. |
+| `GET /api/admin/devices` (baru) | `{devices:[{deviceId,state,createdAt,expiresAt,revokedAt,grants,lastEvent}]}`; proyeksi minimum tanpa rahasia. |
+| `POST /api/admin/pairing-codes` | Lifecycle lama, body `{grants,codeTtlMs:300000,grantTtlMs:3600000}`; 201 `{pairingId,code,expiresAt}`; raw code hanya pada respons ini. |
+| `POST /api/admin/pairing-codes/{pairingId}/revoke` | Lifecycle lama, body `{}`; membatalkan kode pending. |
+| `GET /api/admin/devices/{deviceId}` / `POST /api/admin/devices/{deviceId}/revoke` | Lifecycle lama; revoke body `{}`; server memeriksa seluruh grant. |
+
+Read baru dibatasi 60 request/admin/menit, mutasi memakai limiter lama 20/admin/menit. Seluruh respons no-store. 401 menutup sesi, 403 menolak scope/permission, 429 batas percobaan, 503 adapter tidak tersedia. Transaksi, hash token, device proof P-256, single-use, nonce, audit dan validasi relasi M2B.2 tetap digunakan.
+
+Uji manual Windows PowerShell dari root proyek:
+
+1. Gunakan emulator `demo-abc-attendance` yang sudah aktif, atau jalankan `npm.cmd run emulators:start` pada terminal terpisah (opsi TCP Java Windows di bawah tetap berlaku). Operator tepercaya harus sudah menyediakan akun Auth fiktif, data sekolah/kelompok/mentor/sesi/roster fiktif sesuai kontrak, dan dokumen **`emulatorNamespaces/{namespace}/adminPairingPermissions/{uid}`** dengan `{active:true,grants:[{schoolId,groupId,serviceSessionId},...]}`. Maksimum 16 tuple. UID juga wajib berada di `ABC_ADMIN_UIDS`; login saja tidak memberi izin pairing. Tidak ada auto-seed/migrasi ataupun UI pemberian permission. Prosedur operator M2B.2 di bawah tetap berlaku.
+2. Pada terminal API dan admin, gunakan **namespace fiktif yang sama dengan data yang sudah disiapkan**, serta allowlist UID yang sama. Isi placeholder bukan token berikut sesuai fixture lokal:
+
+```powershell
+$env:ABC_ADMIN_AUTH_MODE='firebase-auth-emulator'
+$env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
+$env:FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'
+$env:FIRESTORE_EMULATOR_HOST='127.0.0.1:8080'
+$env:ABC_ROSTER_ADAPTER='firestore-emulator'
+$env:ABC_FIRESTORE_NAMESPACE='NAMESPACE_FIKTIF_YANG_SUDAH_DISIAPKAN'
+$env:ABC_ADMIN_UIDS='["UID_ADMIN_FIKTIF_YANG_SUDAH_ADA"]'
+```
+
+3. Pada terminal API dengan konfigurasi di atas, jalankan `$env:ABC_MENTOR_ORIGIN='http://127.0.0.1:4176'` lalu `node backend/server.mjs` (4175). Pada terminal admin dengan konfigurasi yang sama jalankan `npm.cmd run start:admin` (4177). Pada terminal mentor jalankan `npm.cmd run start:mentor` (4176). Jangan menjalankan server kedua jika port sudah terpakai; server lama perlu dimulai ulang untuk membaca perubahan kode/config. Mode login admin tanpa adapter tetap tersedia, tetapi pengelolaan perangkat menjawab 503.
+4. Chrome **http://127.0.0.1:4177** → login akun fiktif → **Perangkat Mentor** → sekolah/Jumat/kelompok → terbitkan kode. Untuk SDN Pacarkeling V / Hagai gunakan scope **s1/g13** dengan ID sesi server yang memang diizinkan, bukan tanggal sebagai ID. Periksa subtitle mentor efektif. Bagikan kode secara privat ke mentor, jangan screenshot/log kode. Pada **http://127.0.0.1:4176**, masukkan kode ke alur aktivasi yang sudah ada. Penebusan kedua/kode kedaluwarsa harus ditolak.
+5. Kembali ke admin → **Muat ulang perangkat** → periksa cakupan/status → **Cabut akses perangkat** → Batal harus tidak mengubah data; ulangi dan konfirmasi. Pada mentor **Periksa izin** harus menutup akses. Uji logout admin, akun tanpa permission, dan API terputus: data/kode tidak boleh muncul lewat fallback. Reload admin memerlukan login baru.
+
+Tes otomatis terarah: `node --test tests/admin-devices.test.mjs tests/admin-client.test.mjs tests/admin-login.test.mjs` dan `npm.cmd run test:admin-devices`. Runner emulator memerlukan port bebas dan membuat akun/namespace fiktif sementara, termasuk seluruh mapping 3/16; membersihkannya setelah selesai. Jika emulator manual sudah aktif, gunakan environment demo/Auth/Firestore di atas (UID runner `[]`) lalu `node --test tests/emulator/device-management.test.mjs tests/emulator/device-management-ui.mjs`. Screenshot tanpa kode: `screenshots/admin-devices-mobile.png` dan `screenshots/admin-devices-desktop.png`.
+
+Batas: khusus emulator/owner proses lokal tepercaya. Tidak ada produksi, provisioning permission UI, ubah grant perangkat aktif, refresh credential, offline sync, migrasi/CRUD/ekspor dashboard absensi atau daftar kode lama. Daftar perangkat/audit belum dipaginasi; skala lokal saja, maksimum 16 tuple permission yang sudah ditetapkan kontrak. Refresh status perangkat manual; server tetap menolak expiry/revocation setiap request. Pemeriksaan sesi periodik dapat menyembunyikan kode sebelum 5 menit. Android fisik/Safari/Firefox belum diuji. Bagian M2B.5A dan milestone lama di bawah adalah catatan tahap sebelumnya; perluasan route/fitur terkini dijelaskan di sini.
+
 ## M2B.5A — login admin aman, Auth Emulator
 
 `npm.cmd run start:admin` membuka **http://127.0.0.1:4177**. Entry point ini terpisah dari demo **4173**, API mentor **4175**, dan mentor secure **4176**. Server admin menyajikan shell dengan desain/tab dashboard yang sama serta hanya tiga route API same-origin: `POST /api/admin/login`, `GET /api/admin/session`, `POST /api/admin/logout`. Tidak memakai `app.js`, seed, database demo/localStorage, service worker atau endpoint profil siswa. Data/pengelolaan dashboard belum dihubungkan ke database server pada M2B.5A; enam tab tetap dapat dinavigasi, dengan status belum tersedia dan kontrol pengelolaan nonaktif. Seluruh fitur demo lama tetap di 4173; migrasi data/admin operations dilanjutkan pada M2B.5B.

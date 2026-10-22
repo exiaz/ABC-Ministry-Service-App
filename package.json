@@ -14,6 +14,7 @@
     "test:emulator": "node tests/emulator/run.mjs test",
     "test:admin-auth": "node tests/emulator/run.mjs auth-test",
     "test:admin-login": "node tests/emulator/run.mjs admin-login-test",
+    "test:admin-devices": "node tests/emulator/run.mjs device-management-test",
     "test:pairing": "node tests/emulator/run.mjs pairing-test",
     "test:pairing-ui": "node tests/emulator/run.mjs mentor-ui-test",
     "test:roster": "node tests/emulator/run.mjs roster-test",

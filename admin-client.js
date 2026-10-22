@@ -15,8 +15,25 @@ export function createAdminClient(onChange,{request=fetch}={}){
     if(typeof result?.uid!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(result.uid)||result.mode!=='emulator-lokal')throw Error();
     return {uid:result.uid,mode:result.mode};
   };
+  async function deviceRequest(path,body){
+    if(!token||logoutToken||state.phase!=='active')throw Error('Sesi admin belum aktif.');
+    const g=generation;
+    const response=await call(path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+    if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
+    if(response.status===401){denied();throw Error('Sesi admin berakhir.');}
+    if(!response.ok){const error=Error(response.status===403?'Izin pengelolaan perangkat tidak mencakup permintaan ini.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan perangkat belum berhasil. Periksa koneksi.');error.status=response.status;throw error;}
+    const value=await response.json();
+    if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
+    return value;
+  }
+  const deviceId=id=>{if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(id))throw Error('ID perangkat tidak valid.');return id;};
   return {
     get state(){return {...state};},
+    readPairingContext(){return deviceRequest('/api/admin/pairing-context');},
+    readDevices(){return deviceRequest('/api/admin/devices');},
+    issuePairingCode(body){return deviceRequest('/api/admin/pairing-codes',body);},
+    revokeDevice(id){return deviceRequest('/api/admin/devices/'+deviceId(id)+'/revoke',{});},
+    revokePairingCode(id){if(typeof id!=='string'||!/^[a-f0-9]{64}$/.test(id))throw Error('ID kode tidak valid.');return deviceRequest('/api/admin/pairing-codes/'+id+'/revoke',{});},
     async login(email,password){
       if(['loading','checking','signing-out'].includes(state.phase)||token||logoutToken)return;
       const g=++generation;token=null;publish({phase:'loading',message:'Memeriksa akun dan izin admin…'});

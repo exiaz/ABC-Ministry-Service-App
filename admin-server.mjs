@@ -5,20 +5,22 @@ import {fileURLToPath} from 'node:url';
 import {createLocalAdminAuthentication} from './backend/admin-auth.mjs';
 import {createRosterServer} from './backend/server.mjs';
 import {requireAdminOrigin} from './backend/admin-session-http.mjs';
+import {createConfiguredRepositories} from './backend/configured-repositories.mjs';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const assets=new Map([['/','admin.html'],['/index.html','admin.html'],['/admin-client.js','admin-client.js'],['/secure-admin.js','secure-admin.js'],['/styles.css','styles.css'],['/assets/abc-movement-logo.png','assets/abc-movement-logo.png'],['/icon.svg','icon.svg']]);
-const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session']);
+assets.set('/admin-devices.js','admin-devices.js');
+const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/devices']);
 // Same-origin admin shell + existing protected API handler/context. No CORS,
-// cookie session, demo assets/database or pairing-management dispatch here.
-export function createAdminServer({adminAuthentication}){
-  const api=createRosterServer({adminAuthentication,adminLoginEnabled:true});
+// cookie session, demo assets/database or public administrative dispatch here.
+export function createAdminServer({adminAuthentication,pairing}){
+  const api=createRosterServer({adminAuthentication,pairing,adminLoginEnabled:true});
   return http.createServer(async(req,res)=>{
     const send=(status,message)=>{res.writeHead(status,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(message);};
     try{
       requireAdminOrigin(req);
       const url=new URL(req.url,'http://127.0.0.1');
-      if(apiPaths.has(url.pathname)){api.emit('request',req,res);return;}
+      if(apiPaths.has(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
       if(!['GET','HEAD'].includes(req.method)){send(405,'Metode tidak diizinkan.');return;}
       const file=assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}
@@ -30,14 +32,15 @@ export function createAdminServer({adminAuthentication}){
   });
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  let adminAuthentication;
+  let adminAuthentication,adapters;
   try{
     const port=Number(process.env.ABC_ADMIN_PORT||4177);
     if(!Number.isSafeInteger(port)||port<1||port>65535||[4173,4175,4176].includes(port))throw Error();
     adminAuthentication=await createLocalAdminAuthentication();
-    const server=createAdminServer({adminAuthentication});
-    const stop=()=>server.close(async()=>{await adminAuthentication.close();process.exit(0);});
+    adapters=await createConfiguredRepositories();
+    const server=createAdminServer({adminAuthentication,pairing:adapters.pairing});
+    const stop=()=>server.close(async()=>{await adapters.close();await adminAuthentication.close();process.exit(0);});
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
     server.listen(port,'127.0.0.1',()=>console.log(`Admin emulator lokal: http://127.0.0.1:${port}`));
-  }catch{await adminAuthentication?.close();console.error('Admin tidak dimulai: konfigurasi atau Auth Emulator tidak tersedia.');process.exitCode=1;}
+  }catch{await adapters?.close();await adminAuthentication?.close();console.error('Admin tidak dimulai: konfigurasi atau emulator tidak tersedia.');process.exitCode=1;}
 }

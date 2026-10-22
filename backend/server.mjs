@@ -41,7 +41,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         if(result.kind!=='ok'){send(403,{error:'Akses admin ditolak.'});return;}
         const stillAuthorized=async()=>{const current=await adminAuthentication.authorize(authorization);return current.kind==='ok'&&current.uid===result.uid;};
         if(url.pathname==='/api/admin/logout'&&adminLoginEnabled){await adminSessions.logout({req,url,authorization,adminAuthentication,send});return;}
-        if(await adminPairingRoute({req,url,uid:result.uid,pairing,stillAuthorized,send}))return;
+        if(await adminPairingRoute({req,url,uid:result.uid,pairing,stillAuthorized,send,adminOrigin:adminLoginEnabled?'http://127.0.0.1:'+req.socket.localPort:undefined}))return;
         if(url.pathname!=='/api/admin/session'){send(404,{error:'Tidak ditemukan.'});return;}
         if(req.method!=='GET'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'GET'});return;}
         if(url.search){send(400,{error:'Parameter sesi admin tidak diizinkan.'});return;}
