@@ -46,7 +46,8 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         await redeemPairingRoute({req,url,pairing,send,mentorOrigin});return;
       }
       const deviceStatus=url.pathname==='/api/device/status';
-      if(url.pathname!=='/api/roster'&&!deviceStatus){send(404,{error:'Tidak ditemukan.'});return;}
+      const rosterContext=url.pathname==='/api/roster-context';
+      if(url.pathname!=='/api/roster'&&!deviceStatus&&!rosterContext){send(404,{error:'Tidak ditemukan.'});return;}
       if(req.method!=='GET'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'GET'});return;}
       const proof=local&&pairing?await pairing.verifyRequest(authorization,requestProof(req)):null;
       const requestCredentials={authenticate:header=>credentials.authenticate(header,proof)};
@@ -58,8 +59,16 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         send(200,status);return;
       }
       const authorized=createAuthorizedRosterRepository({credentials:requestCredentials,repository});
+      if(rosterContext){
+        const result=await authorized.contextAuthorized(authorization);
+        if(result.kind==='unauthenticated'){send(401,{error:'Kredensial perangkat tidak valid atau tidak berlaku.'},{'WWW-Authenticate':'Bearer'});return;}
+        if(result.kind!=='ok'){send(403,{error:'Cakupan roster ditolak.'});return;}
+        if(url.search){send(400,{error:'Parameter metadata roster tidak diizinkan.'});return;}
+        send(200,{contexts:result.contexts});return;
+      }
       // Reject ambiguous credentials; cookies, query tokens and client role/device
-      // flags never supply an identity. No CORS or credential issuance endpoint.
+      // flags never supply an identity. CORS transports only explicitly allowed
+      // mentor requests; it never replaces credential/proof or grant checks.
       const validParameters=[...url.searchParams.keys()].every(key=>SCOPE_KEYS.includes(key))&&SCOPE_KEYS.every(key=>url.searchParams.getAll(key).length===1);
       const scope=validParameters?Object.fromEntries(SCOPE_KEYS.map(key=>[key,url.searchParams.get(key)])):null;
       const result=await authorized.readAuthorized(authorization,scope);

@@ -13,16 +13,18 @@ import {applyMentorConfiguration,defaultMentorAt,effectiveMentor,setTemporaryMen
 import {groupsWithAssignmentsView,mentorSelectionLabel,mentorSelect,assignmentControls,assignmentHistory} from './assignment-ui.js';
 import {createPairingClient} from './pairing-client.js';
 import {mountPairingUI} from './pairing-ui.js';
+import {createSecureMentor} from './secure-mentor.js';
 
 const app=document.querySelector('#app'), modal=document.querySelector('#modal');
 const pairedMode=document.body.dataset.mentorMode==='paired-local';
-let pairingClient;
+let pairingClient,secureMentor;
 const mentorAccess=()=>pairedMode?pairingClient?.state.phase==='active':db.authorized;
 let db,storageOK=true,corrupt=false;
-try {const raw=localStorage.getItem(KEY);db=raw?JSON.parse(raw):seed();if(db.version!==1||!Array.isArray(db.sessions)||!Array.isArray(db.groups)||!Array.isArray(db.students)||!Array.isArray(db.provisionals)||!Array.isArray(db.schools))throw Error('invalid');}
+if(pairedMode)db={version:1,schools:[],groups:[],students:[],sessions:[],provisionals:[],serviceSessions:[]};
+else try {const raw=localStorage.getItem(KEY);db=raw?JSON.parse(raw):seed();if(db.version!==1||!Array.isArray(db.sessions)||!Array.isArray(db.groups)||!Array.isArray(db.students)||!Array.isArray(db.provisionals)||!Array.isArray(db.schools))throw Error('invalid');}
 catch {db=seed();storageOK=false;corrupt=true;}
 let configurationIssues=[];
-if(!corrupt){
+if(!corrupt&&!pairedMode){
   const previous=JSON.stringify(db),migration=applyGroupConfiguration(db);
   configurationIssues=migration.issues;
   if(migration.changed){try{
@@ -31,7 +33,7 @@ if(!corrupt){
     localStorage.setItem(KEY,JSON.stringify(db));
   }catch{storageOK=false;}}
 }
-if(!corrupt){
+if(!corrupt&&!pairedMode){
   const previous=JSON.stringify(db),migration=applyServiceConfiguration(db);
   configurationIssues.push(...migration.issues);
   db.serviceSessions ||= [];
@@ -41,7 +43,7 @@ if(!corrupt){
     localStorage.setItem(KEY,JSON.stringify(db));
   }catch{storageOK=false;}}
 }
-if(!corrupt){
+if(!corrupt&&!pairedMode){
   const previous=JSON.stringify(db),migration=applyMentorConfiguration(db);
   configurationIssues.push(...migration.issues);
   if(migration.changed){try{
@@ -50,7 +52,7 @@ if(!corrupt){
     localStorage.setItem(KEY,JSON.stringify(db));
   }catch{storageOK=false;}}
 }
-if(!corrupt){
+if(!corrupt&&!pairedMode){
   const previous=JSON.stringify(db),migration=applyStudentSchema(db);
   configurationIssues.push(...migration.issues);
   if(migration.changed){try{
@@ -92,9 +94,14 @@ const art=()=>`<svg class="hero-art" viewBox="0 0 320 240" aria-hidden="true"><c
 function render(){
   if(pairedMode&&!mentorAccess()){app.replaceChildren();if(modal.open)modal.close();return;}
   app.innerHTML=`<aside class="sidebar">${brand()}<p class="workspace-label">RUANG PELAYANAN</p><nav aria-label="Navigasi utama"><button class="nav-btn ${view==='mentor'?'active':''}" data-action="mentor">${icon('check')}Absensi mentor</button><button class="nav-btn ${view==='admin'?'active':''}" data-action="admin">${icon('grid')}Dasbor admin ${icon('lock')}</button></nav><div class="sidebar-bottom"><div class="sidebar-note"><strong>${icon('info')} Ruang coba, bebas eksplorasi</strong>Seluruh data siswa fiktif.<br>Tersimpan di browser ini saja.<button class="btn text small" data-action="about">Tentang prototipe ${icon('arrow')}</button></div><div class="profile"><span class="avatar">${view==='admin'?'AD':'M'}</span><div><strong>${view==='admin'?'Admin demo':'Halo, Kak Mentor!'}</strong><small>ABC Movement · Surabaya</small></div></div></div></aside><div class="shell"><header class="topbar"><div class="breadcrumb">ABC Movement <span>/</span><strong>${view==='mentor'?'Absensi mentor':'Dasbor admin'}</strong></div><div class="mobile-brand">${brand()}</div><div class="top-right"><span class="date-top">${dateLabel(CURRENT)}</span><small class="local-label muted"><i class="local-dot"></i>Lokal</small><span class="demo-tag">PROTOTIPE</span></div></header>${!storageOK?`<div class="storage-alert" role="alert">${corrupt?'Data lokal tidak dapat dibaca. Contoh data ditampilkan; gunakan Atur ulang di Tentang demo untuk memulihkan penyimpanan.':'Penyimpanan browser tidak tersedia. Perubahan akan hilang ketika halaman ditutup.'}</div>`:''}<main class="content">${configurationIssues.length?`<div class="storage-alert" role="alert">Pemetaan kelompok perlu ditinjau. Data lama tetap dipertahankan. ${configurationIssues.map(esc).join(' ')}</div>`:''}${view==='mentor'?mentorView():adminView()}<footer class="footer"><span>${icon('heart')} Setiap kehadiran berarti.</span><span>ABC Movement © 2026 · Data fiktif</span></footer></main></div><nav class="mobile-nav" aria-label="Navigasi seluler"><button class="${view==='mentor'?'active':''}" data-action="mentor">${icon('check')}Absensi</button><button class="${view==='admin'?'active':''}" data-action="admin">${icon('grid')}Admin</button><button data-action="about">${icon('info')}Tentang demo</button></nav>`;
+  if(pairedMode){
+    app.querySelector('.sidebar-note').innerHTML='<strong>API lokal · data fiktif</strong>Daftar sesuai izin perangkat.<br>Baca-saja, tanpa penyimpanan roster.<button class="btn text small" data-action="about">Tentang akses lokal</button>';
+    const aboutButton=app.querySelector('.mobile-nav [data-action=about]');if(aboutButton)aboutButton.innerHTML=icon('info')+'Tentang akses';
+  }
 }
 function steps(n){return `<div class="steps" aria-label="Langkah ${n} dari 4">${['Sekolah','Tanggal','Kelompok','Absensi'].map((s,i)=>`${i?'<span class="step-line"></span>':''}<span class="step ${i+1===n?'active':i+1<n?'done':''}"><b>${i+1<n?'✓':i+1}</b>${s}</span>`).join('')}</div>`;}
 function mentorView(){
+  if(pairedMode)return secureMentor?.view()||'<div class="empty" role="status">Memuat izin dari API…</div>';
   if(groupId)return rosterView();
   if(schoolId&&(!serviceId||dateSelectionOpen))return dateSelectionView(db,schoolId,selectedDate,icon,steps,{month:calendarMonth,open:calendarOpen});
   if(schoolId){const school=db.schools.find(s=>s.id===schoolId);return `<button class="back-btn" data-action="back-dates">${icon('back')} Pilih tanggal lain</button><div class="heading"><div><h1>Pilih kelompokmu</h1><p>${esc(school.name)} · ${longDate(db.serviceSessions.find(v=>v.id===serviceId).date)}</p></div></div>${steps(3)}${db.serviceSessions.find(v=>v.id===serviceId).provisional?'<div class="info-box warning-box">Menunggu Verifikasi Admin</div>':''}<div class="section-heading"><div><h2>Siap menemani adik-adik?</h2><p>Pilih kelompok sesuai penugasan mentor.</p></div></div><div class="group-grid">${mentorGroups(db,serviceId).map(g=>{const session=db.sessions.find(s=>s.groupId===g.id&&s.serviceSessionId===serviceId);return `<button class="group-card ${db.mentorPreferences?.groupId===g.id?'remembered':''}" data-action="select-group" data-id="${g.id}"><div class="group-top">${badge(session?.state||'pending')}</div><h3>${esc(g.name)}</h3><p class="mentor-subtitle">${mentorSelectionLabel(db,g.id,serviceId)}</p><div class="bottom"><span class="muted" style="font-size:11px">${icon('users')} ${db.students.filter(s=>s.groupId===g.id&&s.active).length} siswa terdaftar</span>${icon('arrow')}</div></button>`;}).join('')}</div><div class="help-strip"><p>Penugasan di prototipe ini masih simulasi. Semua kelompok dapat dipilih untuk mencoba alur.</p></div>`;}
@@ -288,6 +295,7 @@ async function previewStudentImport(file){
 
 document.addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,id=button.dataset.id;
   if(pairedMode&&(!mentorAccess()||action==='admin'||action==='reset-confirm'))return;
+  if(pairedMode&&!['about','install','close-modal'].includes(action)){secureMentor.action(action,id);return;}
   if(action==='close-modal'){modal.close();return;}
   if(['export','logout','admin-tab','session-detail','student-form','deactivate-student','group-form','review-provisionals','approve-provisional','reject-provisional','schedule-form','assignment-edit','assignment-plan-edit','import-students'].includes(action)&&!adminUnlocked)return;
   switch(action){
@@ -323,13 +331,14 @@ document.addEventListener('click',e=>{const button=e.target.closest('[data-actio
 
     case 'export':exportForm();break;
     case 'import-students':importStudentForm();break;
-    case 'about':if(pairedMode){openModal('Tentang aktivasi lokal','<p class="modal-copy">Aktivasi perangkat diverifikasi oleh API emulator lokal dengan kunci perangkat. Daftar siswa dan absensi tetap simulasi fiktif di browser, belum dibaca dari atau dikirim ke API.</p><div class="info-box">Pilihan sekolah, tanggal dan kelompok tidak memberikan izin API. Menghapus izin lokal tidak mencabut perangkat di server; hubungi admin untuk pencabutan.</div><p class="modal-copy">Khusus localhost dan data fiktif. Verifikasi izin memerlukan server lokal yang aktif. Belum untuk penggunaan produksi.</p>','<button type="button" class="btn primary" data-action="install">Pasang aplikasi</button>');}else about();break;
+    case 'about':if(pairedMode){openModal('Tentang aktivasi lokal','<p class="modal-copy">Aktivasi perangkat diverifikasi oleh API emulator lokal dengan kunci perangkat. Daftar siswa dibaca dari API lokal sesuai izin perangkat. Pencatatan dan pengiriman absensi belum tersedia.</p><div class="info-box">Pilihan sekolah, tanggal dan kelompok tidak memberikan izin API. Menghapus izin lokal tidak mencabut perangkat di server; hubungi admin untuk pencabutan.</div><p class="modal-copy">Khusus localhost dan data fiktif. Verifikasi izin memerlukan server lokal yang aktif. Belum untuk penggunaan produksi.</p>','<button type="button" class="btn primary" data-action="install">Pasang aplikasi</button>');}else about();break;
     case 'guide':openModal('Alur absensi mentor',`<div class="modal-copy"><p><strong>1. Pilih sekolah dan tanggal pelayanan.</strong><br>Buka kalender dan pilih Jumat, lalu kelompok sesuai penugasan. Jumat yang belum dijadwalkan memerlukan konfirmasi.</p><br><p><strong>2. Catat kehadiran.</strong><br>Ketuk Hadir, atau buka ⋯ untuk Izin dan koreksi. Siswa baru dapat ditambahkan sementara.</p><br><p><strong>3. Selesaikan absensi.</strong><br>Periksa ringkasan. Siswa yang belum diabsen akan ditandai Tidak Hadir setelah konfirmasi.</p></div>`,'<button type="button" class="btn primary" data-action="close-modal">Siap, mulai!</button>');break;
     case 'reset-confirm':openModal('Atur ulang data demo?',`<p class="modal-copy">Seluruh perubahan absensi, siswa, kelompok, dan otorisasi lokal akan dihapus dan diganti dengan contoh awal. Tindakan ini tidak dapat dibatalkan.</p>`,`${cancel()}<button class="btn danger" type="submit">Ya, atur ulang</button>`,()=>{db=seed();view='mentor';schoolId='';serviceId='';dateSelectionOpen=false;groupId='';adminUnlocked=false;adminTab='overview';adminSchool='';adminGroup='';adminDate='';adminMonth=CURRENT.slice(0,7);query='';studentQuery='';corrupt=false;save();modal.close();render();toast('Data demo dikembalikan ke kondisi awal.');});break;
     case 'install':if(installPrompt){installPrompt.prompt();installPrompt.userChoice.then(()=>{installPrompt=null;});}else toast('Buka menu browser → Instal aplikasi atau Tambahkan ke layar utama, jika tersedia.');break;
   }
 });
 document.addEventListener('change',e=>{
+  if(pairedMode){secureMentor?.input(e.target);return;}
   if(e.target.id==='groups-school'&&adminUnlocked){groupFilters={schoolId:e.target.value,groupId:''};render();return;}
   if(e.target.id==='groups-group'&&adminUnlocked){groupFilters.groupId=e.target.value;render();return;}
   if(e.target.id==='birthday-school'&&adminUnlocked){birthdayFilters.schoolId=e.target.value;birthdayFilters.groupId='';render();return;}
@@ -359,9 +368,9 @@ document.addEventListener('change',e=>{
   if(e.target.id==='filter-group'){adminGroup=e.target.value;render();}
 });
 
-document.addEventListener('input',e=>{if(e.target.id==='student-search'){query=e.target.value;document.querySelector('#roster-rows').innerHTML=rosterRows(getSession(db,groupId,serviceId));}if(e.target.id==='admin-search'){studentQuery=e.target.value;const rows=db.students.filter(s=>s.active&&s.name.toLowerCase().includes(studentQuery.toLowerCase())&&(!adminSchool||db.groups.find(g=>g.id===s.groupId)?.schoolId===adminSchool));document.querySelector('tbody').innerHTML=studentTableRows(rows);}});
+document.addEventListener('input',e=>{if(pairedMode){if(e.target.id==='secure-student-search')secureMentor?.input(e.target);return;}if(e.target.id==='student-search'){query=e.target.value;document.querySelector('#roster-rows').innerHTML=rosterRows(getSession(db,groupId,serviceId));}if(e.target.id==='admin-search'){studentQuery=e.target.value;const rows=db.students.filter(s=>s.active&&s.name.toLowerCase().includes(studentQuery.toLowerCase())&&(!adminSchool||db.groups.find(g=>g.id===s.groupId)?.schoolId===adminSchool));document.querySelector('tbody').innerHTML=studentTableRows(rows);}});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;});
-window.addEventListener('offline',()=>toast('Sedang offline. Perubahan tetap di browser ini, tanpa sinkronisasi.'));
+window.addEventListener('offline',()=>toast(pairedMode?'Koneksi API terputus. Daftar ditutup sampai izin dapat diperiksa kembali.':'Sedang offline. Perubahan tetap di browser ini, tanpa sinkronisasi.'));
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>toast('Cache offline belum tersedia. Prototipe tetap dapat dicoba selama terhubung.'));
 render();
 if(pairedMode){
@@ -370,10 +379,13 @@ if(pairedMode){
     let previousPhase='checking',update;
     pairingClient=createPairingClient(document.querySelector('meta[name=abc-api-origin]').content,state=>{
       update(state);
-      if(previousPhase!==state.phase){if(state.phase!=='active'){groupId='';serviceId='';}render();}
+      if(state.phase!=='active')secureMentor?.reset();
+      if(previousPhase!==state.phase)render();
       previousPhase=state.phase;
+      if(state.phase==='active')void secureMentor.refresh();
     });
-    update=mountPairingUI(root,pairingClient);void pairingClient.restore();
+    update=mountPairingUI(root,pairingClient);
+    secureMentor=createSecureMentor({client:pairingClient,render,icon,steps,art});void pairingClient.restore();
     window.addEventListener('focus',()=>void pairingClient.restore());
     window.addEventListener('online',()=>void pairingClient.restore());
     window.addEventListener('offline',()=>void pairingClient.restore());
@@ -387,8 +399,10 @@ if(pairedMode){
 
 
 document.addEventListener('keydown',e=>{
+  if(pairedMode&&e.key==='Escape'&&document.querySelector('#service-calendar')){secureMentor.action('calendar-close');document.querySelector('#service-date-trigger')?.focus();return;}
   if(e.key==='Escape'&&calendarOpen){calendarOpen=false;render();document.querySelector('#service-date-trigger')?.focus();}
 });
 document.addEventListener('click',e=>{
+  if(pairedMode&&document.querySelector('#service-calendar')&&!e.target.closest('.calendar-anchor')&&!e.target.closest('[data-action^="calendar-"]')){secureMentor.action('calendar-close');return;}
   if(calendarOpen&&!e.target.closest('.calendar-anchor')&&!e.target.closest('[data-action^="calendar-"]')){calendarOpen=false;render();}
 });

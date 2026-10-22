@@ -11,7 +11,7 @@ export async function emulatorFixture({now,source}={}){
   finally{if(previous===undefined)delete process.env.ABC_FIRESTORE_NAMESPACE;else process.env.ABC_FIRESTORE_NAMESPACE=previous;}
   if(source){
     const batch=context.db.batch();
-    for(const name of ['schools','groups','students','serviceSessions','sessions']){
+    for(const name of ['schools','groups','students','serviceSessions','sessions','mentors','defaultMentorAssignments','sessionMentorOverrides','mentorAssignmentSnapshots']){
       for(const record of source[name]??[])batch.create(context.root.collection(name).doc(record.id),structuredClone(record));
     }
     for(const [id,profile] of Object.entries(source.studentPrivateProfiles??{}))batch.create(context.root.collection('studentPrivateProfiles').doc(id),profile);

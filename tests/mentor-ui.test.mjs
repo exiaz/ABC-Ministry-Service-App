@@ -5,7 +5,7 @@ import {createRosterServer} from '../backend/server.mjs';
 import {createPrototypeServer} from '../server.mjs';
 
 async function start(t,server){server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));return 'http://127.0.0.1:'+server.address().port;}
-test('Mentor CORS is explicit, loopback-only, scoped to redeem/status, and grants no administrative access',async t=>{
+test('Mentor CORS is explicit, loopback-only, scoped to pairing/status/roster reads, and grants no administrative access',async t=>{
   for(const mentorOrigin of ['https://example.invalid','http://localhost:4176','http://127.0.0.1:4173','http://127.0.0.1:65536'])assert.throws(()=>createRosterServer({mentorOrigin}));
   const origin='http://127.0.0.1:4176',base=await start(t,createRosterServer({mentorOrigin:origin}));
   const response=await fetch(base+'/api/pairing/redeem',{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type,x-device-nonce,x-device-signature,x-device-timestamp'}});
@@ -14,6 +14,9 @@ test('Mentor CORS is explicit, loopback-only, scoped to redeem/status, and grant
   const arbitrary=await fetch(base+'/api/device/status',{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'DELETE'}});assert.equal(arbitrary.status,403);
   const admin=await fetch(base+'/api/admin/pairing-codes',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'});assert.equal(admin.status,503);assert.equal(admin.headers.get('access-control-allow-origin'),null);
   const status=await fetch(base+'/api/device/status',{headers:{Origin:origin}});assert.equal(status.status,401);assert.equal(status.headers.get('access-control-allow-origin'),origin);
+  for(const route of ['/api/roster','/api/roster-context']){
+    const response=await fetch(base+route,{headers:{Origin:origin}});assert.equal(response.status,401);assert.equal(response.headers.get('access-control-allow-origin'),origin);
+  }
 });
 test('Paired mentor shell and legacy demo remain separate; neither frontend serves the API or backend',async t=>{
   const paired=await start(t,createPrototypeServer({mentorMode:true})),legacy=await start(t,createPrototypeServer());

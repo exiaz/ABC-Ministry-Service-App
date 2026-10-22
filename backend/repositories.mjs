@@ -1,5 +1,5 @@
 import {createTestCredentialStore,canReadRoster,validRosterScope,SCOPE_KEYS} from './access-control.mjs';
-import {createRosterRepository,toRosterResponse} from './roster.mjs';
+import {createRosterRepository,toRosterResponse,toRosterContext} from './roster.mjs';
 
 // Default development adapters retain Milestone 1 semantics and in-memory data.
 // The synchronous factories remain available to existing trusted callers/tests.
@@ -16,7 +16,7 @@ export function createInMemoryCredentialRepository(options){
 /** @returns {import('./repository-contracts.mjs').RosterRepository} */
 export function createInMemoryRosterRepository(source){
   const repository=createRosterRepository(source);
-  return {async read(scope){return repository.read(scope);}};
+  return {async read(scope){return repository.read(scope);},async describe(scope){return repository.describe(scope);}};
 }
 
 /**
@@ -25,6 +25,22 @@ export function createInMemoryRosterRepository(source){
  */
 export function createAuthorizedRosterRepository({credentials,repository}){
   return {
+    async contextAuthorized(authorization){
+      const principal=await credentials.authenticate(authorization);
+      if(!principal)return {kind:'unauthenticated'};
+      if(!Array.isArray(principal.grants)||!principal.grants.length||principal.grants.length>64||!principal.grants.every(validRosterScope)||typeof repository.describe!=='function')return {kind:'forbidden'};
+      const scopes=[...new Map(principal.grants.map(scope=>{const s=Object.fromEntries(SCOPE_KEYS.map(key=>[key,scope[key]]));return [JSON.stringify(s),s];})).values()];
+      const contexts=[];
+      for(const scope of scopes){
+        const value=await repository.describe({...scope});
+        if(!value)return {kind:'forbidden'};
+        contexts.push(toRosterContext(scope,value));
+      }
+      const current=await credentials.authenticate(authorization);
+      if(!current)return {kind:'unauthenticated'};
+      if(!scopes.every(scope=>canReadRoster(current,scope)))return {kind:'forbidden'};
+      return {kind:'ok',contexts};
+    },
     async readAuthorized(authorization,requestedScope){
       // Capture the request before any asynchronous adapter call.
       const scope=validRosterScope(requestedScope)?Object.fromEntries(SCOPE_KEYS.map(key=>[key,requestedScope[key]])):null;

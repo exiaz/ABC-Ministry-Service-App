@@ -4,7 +4,7 @@ export function localOrigin(value){
 }
 const headers=new Set(['authorization','content-type','x-device-timestamp','x-device-nonce','x-device-signature']);
 export function mentorCors(req,url,origin){
-  if(!origin||!['/api/pairing/redeem','/api/device/status'].includes(url.pathname))return null;
+  if(!origin||!['/api/pairing/redeem','/api/device/status','/api/roster','/api/roster-context'].includes(url.pathname))return null;
   if(!req.headers.origin)return null;
   if(req.headers.origin!==origin)return {denied:true};
   const method=url.pathname==='/api/pairing/redeem'?'POST':'GET';

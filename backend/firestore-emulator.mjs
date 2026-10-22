@@ -2,7 +2,7 @@ import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import net from 'node:net';
 import {emulatorConfig} from './emulator-config.mjs';
 import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
-import {toRosterResponse} from './roster.mjs';
+import {toRosterResponse,describeRosterScope} from './roster.mjs';
 import {createEmulatorDevicePairing} from './device-pairing.mjs';
 
 const digest=token=>createHash('sha256').update(token).digest('hex');
@@ -93,6 +93,23 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
   };
 
   const repository={
+    async describe(scope){
+      if(!validRosterScope(scope))return null;
+      const {schoolId,groupId,serviceSessionId}=scope;
+      const [school,group,visit]=(await db.getAll(collection('schools').doc(schoolId),collection('groups').doc(groupId),collection('serviceSessions').doc(serviceSessionId))).map(d=>d.data());
+      if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))return null;
+      const names=['defaultMentorAssignments','sessionMentorOverrides','mentorAssignmentSnapshots'];
+      const snapshots=await Promise.all(names.map(name=>{
+        let query=collection(name).where('groupId','==',groupId);
+        if(name!=='defaultMentorAssignments')query=query.where('serviceSessionId','==',serviceSessionId);
+        return query.get();
+      }));
+      const model={schools:[school],groups:[group],serviceSessions:[visit],...Object.fromEntries(names.map((name,i)=>[name,snapshots[i].docs.map(d=>d.data())]))};
+      model.mentorAssignmentSnapshots.sort((a,b)=>(a.capturedAt??'').localeCompare(b.capturedAt??''));
+      const mentorIds=[...new Set(names.flatMap(name=>model[name].map(r=>r.mentorId)).filter(validDevice))];
+      model.mentors=mentorIds.length?(await db.getAll(...mentorIds.map(id=>collection('mentors').doc(id)))).filter(d=>d.exists).map(d=>d.data()):[];
+      return describeRosterScope(model,scope);
+    },
     async read(scope){
       if(!validRosterScope(scope))return null;
       const {schoolId,groupId,serviceSessionId}=scope;

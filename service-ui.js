@@ -6,12 +6,12 @@ import {availableGroups,serviceProgress,longDate,monthLabel,reportEntries} from 
 
 const stateLabel={completed:'Selesai',draft:'Berlangsung',pending:'Belum dimulai'};
 export const serviceBadge=(state,label)=>`<span class="badge ${state}">${esc(label||stateLabel[state])}</span>`;
-export function calendarGrid(month,selected,icon){
+export function calendarGrid(month,selected,icon,allowedDates=null){
   const first=new Date(month+'-01T12:00:00Z'),offset=(first.getUTCDay()+6)%7;
   const last=new Date(first);last.setUTCMonth(last.getUTCMonth()+1,0);const days=last.getUTCDate();
   const cells=Array.from({length:Math.ceil((offset+days)/7)*7},(_,i)=>{
     const day=i-offset+1;if(day<1||day>days)return '<span role="gridcell"></span>';
-    const date=month+'-'+String(day).padStart(2,'0'),enabled=isFriday(date);
+    const date=month+'-'+String(day).padStart(2,'0'),enabled=isFriday(date)&&(!allowedDates||allowedDates.includes(date));
     return `<span role="gridcell"><button type="button" class="calendar-day ${selected===date?'selected':''}" data-action="calendar-date" data-id="${date}" aria-label="${longDate(date)}" aria-pressed="${selected===date}" ${date===jakartaToday()?'aria-current="date"':''} ${enabled?'':'disabled'}>${day}</button></span>`;
   });
   return `<div class="calendar-controls"><button type="button" class="btn small" data-action="calendar-prev" aria-label="Bulan sebelumnya">‹</button><select id="calendar-month" aria-label="Bulan kalender">${Array.from({length:12},(_,i)=>{const value=String(i+1).padStart(2,'0');return `<option value="${value}" ${month.slice(5)===value?'selected':''}>${monthLabel('2026-'+value).replace(' 2026','')}</option>`;}).join('')}</select><input id="calendar-year" type="number" min="1" max="9999" inputmode="numeric" aria-label="Tahun kalender" value="${month.slice(0,4)}"><button type="button" class="btn small" data-action="calendar-next" aria-label="Bulan berikutnya">›</button></div><div class="calendar-grid" role="grid" aria-label="${monthLabel(month)}"><div class="calendar-week" role="row">${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<span role="columnheader">${d}</span>`).join('')}</div>${Array.from({length:Math.ceil((offset+days)/7)},(_,i)=>`<div class="calendar-week" role="row">${cells.slice(i*7,i*7+7).join('')}</div>`).join('')}</div>`;

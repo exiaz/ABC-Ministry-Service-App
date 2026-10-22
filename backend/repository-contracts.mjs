@@ -23,6 +23,9 @@
  *
  * @typedef {object} RosterRepository
  * @property {(scope:RosterScope)=>Promise<RosterResponse|null>} read
+ * @property {(scope:RosterScope)=>Promise<object|null>} [describe]
+ * Optional navigation metadata: only server school/group names, service date,
+ * effective mentor name and scope IDs. Never include student/profile data.
  * Internal data adapter only: validate school/group/session relations, preserve
  * snapshots and IDs, and never create a batch or change attendance during reads.
  * Only the authorized repository may expose these reads to the API.
@@ -30,6 +33,7 @@
  * @typedef {{kind:'ok', roster:RosterResponse}|{kind:'unauthenticated'|'invalid-scope'|'forbidden'}} AuthorizedRosterResult
  * @typedef {object} AuthorizedRosterRepository
  * @property {(authorization:string|undefined, scope:RosterScope|null)=>Promise<AuthorizedRosterResult>} readAuthorized
+ * @property {(authorization:string|undefined)=>Promise<object>} contextAuthorized
  * Deny by default; authenticate before scope validation, enforce the exact tuple,
  * revalidate credentials after I/O, and project only the public roster fields.
  *
