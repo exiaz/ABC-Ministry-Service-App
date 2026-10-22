@@ -31,7 +31,7 @@ env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8080';env.FIREBASE_AUTH_EMULATOR_HOST='12
 env.ABC_ADMIN_AUTH_MODE='firebase-auth-emulator';env.ABC_ADMIN_UIDS='[]';
 if(env.JAVA_HOME)env.PATH=path.join(env.JAVA_HOME,'bin')+path.delimiter+env.PATH;
 const command=process.argv[2]??'test';
-if(!['test','auth-test','pairing-test','mentor-ui-test','roster-test','attendance-test','start','recovery'].includes(command))throw Error('Perintah emulator tidak valid.');
+if(!['test','auth-test','pairing-test','mentor-ui-test','roster-test','attendance-test','attendance-ui-test','start','recovery'].includes(command))throw Error('Perintah emulator tidak valid.');
 const stateRoot=path.join(root,'.emulator-data');
 const newSnapshot=()=>path.join(stateRoot,'snapshot-'+Date.now()+'-'+randomUUID());
 function localSnapshot(value){
@@ -49,7 +49,7 @@ async function run(kind,script,options=[]){
   });
 }
 try{
-  if(['test','auth-test','pairing-test','mentor-ui-test','roster-test','attendance-test'].includes(command))await run('emulators:exec',command==='attendance-test'?'node --test tests/emulator/attendance.test.mjs':command==='roster-test'?'node --test tests/emulator/roster-context.test.mjs tests/emulator/mentor-pairing-ui.mjs':command==='mentor-ui-test'?'node --test tests/emulator/mentor-pairing-ui.mjs':command==='auth-test'?'node --test tests/emulator/admin-auth.test.mjs':command==='pairing-test'?'node --test tests/emulator/device-pairing.test.mjs':'node --test tests/emulator/*.test.mjs');
+  if(['test','auth-test','pairing-test','mentor-ui-test','roster-test','attendance-test','attendance-ui-test'].includes(command))await run('emulators:exec',command==='attendance-ui-test'?'node --test tests/emulator/mentor-attendance-ui.mjs':command==='attendance-test'?'node --test tests/emulator/attendance.test.mjs':command==='roster-test'?'node --test tests/emulator/roster-context.test.mjs tests/emulator/mentor-pairing-ui.mjs':command==='mentor-ui-test'?'node --test tests/emulator/mentor-pairing-ui.mjs':command==='auth-test'?'node --test tests/emulator/admin-auth.test.mjs':command==='pairing-test'?'node --test tests/emulator/device-pairing.test.mjs':'node --test tests/emulator/*.test.mjs');
   else if(command==='start'){
     const options=['--export-on-exit='+newSnapshot()];
     if(env.ABC_EMULATOR_IMPORT_DIR)options.push('--import='+localSnapshot(env.ABC_EMULATOR_IMPORT_DIR));

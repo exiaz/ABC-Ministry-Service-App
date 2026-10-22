@@ -1,8 +1,36 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.4B — absensi mentor secure melalui API lokal
+
+Mode mentor **4176** kini memuat roster dan status absensi dari API M2B.4A **4175** untuk tuple sekolah/Jumat/kelompok yang dipilih. Pairing, key storage, proof, nonce dan grant memakai M2B.2–3B yang sama. Demo **4173** tetap terpisah dengan perilaku sebelumnya. Tidak ada integrasi dasbor admin atau produksi.
+
+- Hadir sekali ketuk, serta menu ⋯ untuk Izin, Tidak Hadir dan Belum Diabsen, menyimpan patch dengan revisi dan UUID idempotensi. Baris/status tetap menunjukkan data server terakhir selama menyimpan; kontrol perubahan dikunci sampai respons selesai. Tampilan membedakan memuat, menyimpan, tersimpan, error dan konflik. **Tersimpan hanya muncul sesudah respons mutasi valid dan pembacaan ulang data terbaru berhasil.** Perubahan tidak disimpan ke localStorage/IndexedDB/service worker dan tidak dikirim otomatis saat online kembali.
+- **Tinjau & selesaikan** membuka dialog ringkasan empat status. Batal tidak menulis. Konfirmasi tidak tersedia bila ada siswa Belum Diabsen, roster kosong atau tanggal mendatang. Tidak pernah menandai siswa otomatis menjadi Tidak Hadir. API tetap memeriksa konfirmasi, revisi dan tanggal server. Batch selesai terkunci; **Koreksi absensi** memilih siswa, status eksplisit dan alasan, membuka draf lewat endpoint koreksi yang sama, lalu perlu ditinjau/difinalisasi ulang. Tidak mengubah ID atau versi historis.
+- Error setelah respons hilang dapat berarti commit sudah terjadi. **Coba simpan lagi** hanya mengirim command/key yang sama dengan proof/nonce baru, lalu membaca ulang versi terkini; receipt lama tidak menggantikan versi server yang lebih baru. Tidak ada retry otomatis atau antrean offline. **Muat ulang data server** membuang command tertunda dan mengambil kondisi aktual. Konflik 409 mengunci perubahan dan mewajibkan muat ulang; perubahan lama tidak diterapkan ulang otomatis. Command retry hanya ada di memori halaman; setelah reload/pergantian pilihan, baca kembali server dan tinjau statusnya.
+- Setiap load/save mengikat scope yang ditangkap sebelum request. Respons terlambat diabaikan setelah pilihan/izin berubah, termasuk ketika request pada kelompok lama selesai setelah pindah kelompok. Reload kembali ke pemilihan sekolah; pilih Jumat/kelompok yang sama untuk mengambil catatan tersimpan. Tidak ada data demo atau fallback lokal saat API gagal. Revoked/expired menutup alur dan membersihkan data yang tampil. Status API/roster tidak di-cache; service worker v11 tetap shell same-origin saja.
+- CORS opt-in hanya diperluas untuk `GET, PUT /api/attendance` dan `POST /api/attendance/finalize`, `/api/attendance/corrections`, pada origin loopback persis `ABC_MENTOR_ORIGIN` dengan header proof/Authorization/JSON yang sama. Preflight metode/header/origin lain ditolak, admin tetap tanpa CORS, tanpa wildcard/cookie credentials. Kontrak/perilaku transaksi API M2B.4A tidak diubah.
+
+Uji otomatis terarah, memakai Chrome terisolasi dan namespace/akun/roster fiktif sementara:
+
+```powershell
+$env:ABC_JAVA_TCP_FALLBACK='1'
+npm.cmd run test:attendance-ui
+```
+
+JDK/runtime/dependency yang ada dipakai kembali; runner menyalakan/mematikan emulator dan menghapus namespace tes. Jangan jalankan bersamaan dengan emulator manual pada port yang sama. Tes controller/CORS: `node --test tests/mentor-attendance.test.mjs tests/mentor-ui.test.mjs`.
+
+Uji manual:
+
+1. Ikuti konfigurasi emulator dan operator terotorisasi M2B.2–3A di bawah: project `demo-abc-attendance`, namespace fiktif yang sama, sekolah/kelompok/Jumat/roster server valid, dan grant tuple yang sesuai. Jalankan `npm.cmd run emulators:start`; jalankan API `node backend/server.mjs` pada 4175 dengan `ABC_ROSTER_ADAPTER=firestore-emulator`, konfigurasi Auth/Firestore lokal dan `ABC_MENTOR_ORIGIN=http://127.0.0.1:4176`.
+2. Jalankan `npm.cmd run start:mentor`, buka **http://127.0.0.1:4176**, lalu aktivasi dengan kode sekali pakai dari operator admin M2B.2 yang sah. Prasyarat admission/allowlist/permission operator tetap berlaku; tidak ada login demo atau provisioning otomatis/bypass baru.
+3. Pilih sekolah → Jumat → kelompok. Tandai Hadir/menu status, tunggu **Tersimpan di server**, lalu reload dan pilih scope yang sama. Pastikan Belum Diabsen tetap terpisah, termasuk pada Jumat/kelompok lain.
+4. Buka **Tinjau & selesaikan** saat masih ada Belum Diabsen untuk memeriksa penolakan; lengkapi status, tinjau dan konfirmasi. Coba **Koreksi absensi**, pilih status/alasan, lalu selesaikan ulang. Uji dua tab: perubahan dari revisi lama harus konflik dan perlu **Muat ulang data server**. Matikan API/cabut perangkat untuk memeriksa error/penutupan akses tanpa sukses palsu.
+
+Batas: emulator/data fiktif saja; belum ada offline sync, tambah siswa sementara secure, dasbor/ekspor admin API, credential refresh, produksi atau deployment. Perubahan per siswa diserialkan, bukan antrean bulk/offline. Android fisik, Safari/Firefox dan instalasi PWA belum diverifikasi pada tahap ini. Screenshot baru: `screenshots/mentor-attendance-{draft-mobile,mobile,desktop}.png`; artefak tahap sebelumnya dipertahankan.
+
 ## M2B.4A — API persistensi absensi, Firestore Emulator
 
-Backend lokal menyediakan `attendance` dari adapter Firestore yang ada. Gunakan konfigurasi emulator/pairing M2B.2–3B yang sama; tidak ada token, akun mentor, dependency atau jalur provisioning baru. Hanya data fiktif. Frontend secure tetap baca-saja; integrasi tulis dan CORS attendance belum ditambahkan (M2B.4B).
+Backend lokal menyediakan `attendance` dari adapter Firestore yang ada. Gunakan konfigurasi emulator/pairing M2B.2–3B yang sama; tidak ada token, akun mentor, dependency atau jalur provisioning baru. Hanya data fiktif. Pada M2B.4A frontend masih baca-saja; integrasi tulis/CORS berikutnya dijelaskan pada bagian M2B.4B di atas.
 
 Semua endpoint berikut menerima tepat tiga query `schoolId`, `groupId`, `serviceSessionId` (masing-masing sekali), `Authorization: Bearer ...`, dan proof ECDSA M2B.2 dengan nonce baru. Tanda tangan mencakup method, URL path/query dan **body JSON mentah persis**. Tidak ada fallback legacy, flag perangkat, role klien, cookie atau kode demo.
 

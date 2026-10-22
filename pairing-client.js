@@ -16,7 +16,12 @@ export function createPairingClient(apiOrigin,onChange){
   if(channel)channel.onmessage=()=>{generation++;publish({phase:'inactive',message:'Izin lokal berubah pada tab lain. Periksa kembali sebelum melanjutkan.'});};
   const request=(target,options)=>fetch(apiOrigin+target,{...options,mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(8000)});
   const validSession=s=>s&&typeof s.deviceId==='string'&&/^[a-f0-9-]{36}$/.test(s.deviceId)&&typeof s.credential==='string'&&/^[A-Za-z0-9_-]{43}$/.test(s.credential)&&Number.isSafeInteger(s.expiresAt);
-  async function protectedRead(target){
+  const scopedTarget=(path,scope)=>{
+    const keys=['schoolId','groupId','serviceSessionId'];
+    if(!scope||!keys.every(k=>typeof scope[k]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(scope[k])))throw Error('Pilihan pelayanan tidak valid.');
+    return path+'?'+new URLSearchParams(Object.fromEntries(keys.map(k=>[k,scope[k]])));
+  };
+  async function protectedRead(target,method='GET',values){
     const current=generation;
     try{
       if(state.phase!=='active')throw Error();
@@ -25,16 +30,17 @@ export function createPairingClient(apiOrigin,onChange){
       if(record.session.expiresAt<=Date.now()){
         deny('Masa akses perangkat telah berakhir. Minta kode aktivasi baru kepada admin.');throw Error();
       }
-      const response=await request(target,{headers:{Authorization:'Bearer '+record.session.credential,...await deviceHeaders(record.keys,record.session.credential,'GET',target)}});
+      const body=values===undefined?'':JSON.stringify(values);
+      const response=await request(target,{method,...(method==='GET'?{}:{body}),headers:{Authorization:'Bearer '+record.session.credential,...(method==='GET'?{}:{'Content-Type':'application/json'}),...await deviceHeaders(record.keys,record.session.credential,method,target,body)}});
       if(current!==generation||state.phase!=='active')throw Error();
       if(response.status===401){deny('Akses perangkat dicabut, tidak valid, atau telah berakhir. Hubungi admin.');throw Error();}
-      if(!response.ok){const error=Error(response.status===403?'Cakupan sekolah, kelompok, atau pelayanan tidak diizinkan.':'Daftar dari API belum dapat dimuat. Coba lagi setelah koneksi tersedia.');error.status=response.status;throw error;}
+      if(!response.ok){const error=Error(response.status===403?'Cakupan sekolah, kelompok, atau pelayanan tidak diizinkan.':response.status===409?'Data atau ketentuan absensi berubah. Muat ulang data server sebelum melanjutkan.':'Permintaan API belum berhasil. Periksa koneksi lalu coba lagi.');error.status=response.status;throw error;}
       const value=await response.json();
       if(current!==generation||state.phase!=='active')throw Error();
       return value;
     }catch(error){
-      if(error.status===403)throw error;
-      throw Error('Daftar dari API belum dapat dimuat. Tidak menggunakan data demo atau penyimpanan lokal.');
+      if(error.status)throw error;
+      throw Error('Respons API belum dapat dipastikan. Tidak menggunakan data demo atau penyimpanan lokal.');
     }
   }
   async function verify(record,current){
@@ -55,10 +61,12 @@ export function createPairingClient(apiOrigin,onChange){
     get state(){return {...state};},
     readContexts(){return protectedRead('/api/roster-context');},
     readRoster(scope){
-      const keys=['schoolId','groupId','serviceSessionId'];
-      if(!scope||!keys.every(k=>typeof scope[k]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(scope[k])))return Promise.reject(Error('Pilihan roster tidak valid.'));
-      return protectedRead('/api/roster?'+new URLSearchParams(Object.fromEntries(keys.map(k=>[k,scope[k]]))));
+      return protectedRead(scopedTarget('/api/roster',scope));
     },
+    readAttendance(scope){return protectedRead(scopedTarget('/api/attendance',scope));},
+    saveAttendance(scope,body){return protectedRead(scopedTarget('/api/attendance',scope),'PUT',body);},
+    finalizeAttendance(scope,body){return protectedRead(scopedTarget('/api/attendance/finalize',scope),'POST',body);},
+    correctAttendance(scope,body){return protectedRead(scopedTarget('/api/attendance/corrections',scope),'POST',body);},
     async restore(){
       if(busy)return;busy=true;const current=generation;
       try{

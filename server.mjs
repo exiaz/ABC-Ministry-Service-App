@@ -10,7 +10,7 @@ const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthd
 // Legacy fictional prototype only. The protected roster API runs separately.
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175'}={}){
   if(mentorMode)localOrigin(apiOrigin);
-  const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js']);
+  const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
   return http.createServer(async(req,res)=>{try{
     const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
     if(!assets.has(name)){res.writeHead(404);res.end('Tidak ditemukan');return;}
