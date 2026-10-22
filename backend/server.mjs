@@ -10,11 +10,13 @@ import {requestProof,adminPairingRoute,redeemPairingRoute} from './pairing-http.
 import {localOrigin,mentorCors} from './mentor-origin.mjs';
 import {attendanceRoute} from './attendance-http.mjs';
 import {AttendanceError} from './attendance.mjs';
+import {AdminSessionError,createAdminSessionRoutes} from './admin-session-http.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
-export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,attendance,mentorOrigin}={}){
+export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,attendance,mentorOrigin,adminLoginEnabled=false}={}){
   if(mentorOrigin!==undefined)localOrigin(mentorOrigin);
+  const adminSessions=createAdminSessionRoutes();
   return http.createServer(async(req,res)=>{
     let corsHeaders={};
     const send=(status,body,headers={})=>{
@@ -33,14 +35,17 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       // Unknown routes/methods never dispatch an administrative action.
       if(url.pathname==='/api/admin'||url.pathname.startsWith('/api/admin/')){
         if(!local||!adminAuthentication){send(503,{error:'Autentikasi admin lokal tidak tersedia.'});return;}
+        if(url.pathname==='/api/admin/login'&&adminLoginEnabled){await adminSessions.login({req,url,adminAuthentication,send});return;}
         const result=await adminAuthentication.authorize(authorization);
         if(result.kind==='unauthenticated'){send(401,{error:'Token admin tidak valid atau tidak berlaku.'},{'WWW-Authenticate':'Bearer'});return;}
         if(result.kind!=='ok'){send(403,{error:'Akses admin ditolak.'});return;}
         const stillAuthorized=async()=>{const current=await adminAuthentication.authorize(authorization);return current.kind==='ok'&&current.uid===result.uid;};
+        if(url.pathname==='/api/admin/logout'&&adminLoginEnabled){await adminSessions.logout({req,url,authorization,adminAuthentication,send});return;}
         if(await adminPairingRoute({req,url,uid:result.uid,pairing,stillAuthorized,send}))return;
         if(url.pathname!=='/api/admin/session'){send(404,{error:'Tidak ditemukan.'});return;}
         if(req.method!=='GET'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'GET'});return;}
         if(url.search){send(400,{error:'Parameter sesi admin tidak diizinkan.'});return;}
+        if(!await stillAuthorized()){send(401,{error:'Sesi admin tidak berlaku. Masuk kembali.'});return;}
         send(200,{uid:result.uid,mode:'emulator-lokal'});return;
       }
       if(url.pathname==='/api/pairing/redeem'){
@@ -80,8 +85,8 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       if(result.kind!=='ok'){send(403,{error:'Akses roster ditolak.'});return;}
       send(200,result.roster);
     }catch(error){
-      if(error instanceof PairingError||error instanceof AttendanceError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
-      send(500,{error:req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
+      if(error instanceof PairingError||error instanceof AttendanceError||error instanceof AdminSessionError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
+      send(500,{error:req.url.startsWith('/api/admin')?'Permintaan admin tidak dapat diproses.':req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
     }
   });
 }

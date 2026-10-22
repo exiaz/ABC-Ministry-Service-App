@@ -26,8 +26,9 @@ export async function createConfiguredAdminAuthentication(){
 
 // Emulator tokens are unsigned. Only exact tokens obtained by this trusted
 // server process through emulator password sign-in are admitted (hashes only).
-// Neither login nor admission is exposed over HTTP. UID claims alone cannot
-// establish provenance, even after Admin SDK verification in emulator mode.
+// This core helper exposes no HTTP route. The opt-in M2B.5A same-origin login
+// calls this exact signIn path. UID claims alone cannot establish provenance,
+// even after Admin SDK verification in emulator mode.
 export async function createLocalAdminAuthentication(){
   const config=adminAuthConfig(),allowed=new Set(config.uids),admitted=new Map();
   const {initializeApp,deleteApp}=await import('firebase-admin/app');
@@ -61,12 +62,16 @@ export async function createLocalAdminAuthentication(){
         const response=await fetch('http://'+config.host+'/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator',{
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true}),redirect:'error',signal:AbortSignal.timeout(5000)
         });
-        if(!response.ok)throw Error();
+        if(!response.ok){const error=Error();if(response.status>=500||response.status===429)error.status=503;throw error;}
         const {idToken}=await response.json(),principal=await verify(idToken);
         if(!allowed.has(principal.uid))throw Error();
         prune();admitted.set(digest(idToken),{uid:principal.uid,exp:principal.exp});
         return idToken;
-      }catch{throw Error('Login admin emulator ditolak.');}
+      }catch(error){
+        const failure=Error('Login admin emulator ditolak.');
+        if(error.status===503||error instanceof TypeError||['TimeoutError','AbortError'].includes(error.name))failure.status=503;
+        throw failure;
+      }
     },
     async authorize(header){
       try{

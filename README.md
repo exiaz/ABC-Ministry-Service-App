@@ -1,5 +1,37 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.5A — login admin aman, Auth Emulator
+
+`npm.cmd run start:admin` membuka **http://127.0.0.1:4177**. Entry point ini terpisah dari demo **4173**, API mentor **4175**, dan mentor secure **4176**. Server admin menyajikan shell dengan desain/tab dashboard yang sama serta hanya tiga route API same-origin: `POST /api/admin/login`, `GET /api/admin/session`, `POST /api/admin/logout`. Tidak memakai `app.js`, seed, database demo/localStorage, service worker atau endpoint profil siswa. Data/pengelolaan dashboard belum dihubungkan ke database server pada M2B.5A; enam tab tetap dapat dinavigasi, dengan status belum tersedia dan kontrol pengelolaan nonaktif. Seluruh fitur demo lama tetap di 4173; migrasi data/admin operations dilanjutkan pada M2B.5B.
+
+Login menerima JSON `{email,password}` dan memanggil **helper M2B.1 `signIn` yang sama pada context server yang sama**. Token yang diterima baru dapat digunakan setelah verifikasi/admission server, UID allowlist dan status akun Auth Emulator lolos. Client memverifikasi lagi melalui protected session sebelum menampilkan dashboard; tidak mengandalkan flag/claim/kode demo. Respons login `{token,uid,mode}` no-store, tanpa cookie/CORS. Bearer hanya di closure memori client; tidak disimpan di localStorage, sessionStorage, IndexedDB, URL atau cache. Password input dibersihkan saat submit dan tidak dipertahankan untuk refresh. Reload memerlukan login ulang. Login langsung ke Auth Emulator saja tetap tidak meng-admit token ke context API ini.
+
+Logout mencabut admission token server memakai `revoke` M2B.1, segera membersihkan akses client, dan mencegah respons lama membuka dashboard kembali. Jika jaringan gagal, tampil **Keluar lokal; pencabutan belum terkonfirmasi**; login/protected requests ditutup sampai retry logout berhasil. Hilangnya halaman sebelum konfirmasi dapat meninggalkan admission server sampai token expiry, tetapi bearer tidak dipersistenkan. Tidak mengklaim revocation server saat API tidak tersedia. Setiap protected request tetap diperiksa server; UI memeriksa ulang pada focus/online/offline/visibility, pergantian tab dan interval 45 detik. Invalid/expired/revoked atau kegagalan verifikasi menutup dashboard tanpa fallback demo.
+
+Login/logout opt-in hanya pada entry admin, dengan loopback socket, Host literal dan Origin same-origin, body JSON maksimal 4 KiB, batas 10 percobaan login/menit per proses, validasi field dan pesan gagal aman. Tidak menerima UID/role/flag dari body. Tidak membuka CORS admin, pairing-management UI atau bypass allowlist. Tidak memakai sesi cookie, sehingga tidak menambahkan mekanisme CSRF cookie; pemeriksaan Origin/Host dan JSON tetap diberlakukan. Backend mengembalikan 401 untuk kredensial/izin tidak valid, 503 untuk gangguan koneksi Auth Emulator yang dikenali, dan menolak tanpa fallback cloud. Pemeriksaan sesi admin lama juga diverifikasi ulang sebelum respons.
+
+Uji manual Windows PowerShell (jalankan dari root proyek):
+
+1. Jalankan emulator demo yang sudah ada: `$env:ABC_JAVA_TCP_FALLBACK='1'`, lalu `npm.cmd run emulators:start`. Gunakan emulator yang sudah berjalan bila port 8080/9099 aktif; tidak perlu menyalakan instance kedua.
+2. Operator tepercaya menyiapkan **akun fiktif yang sudah ada di Auth Emulator**, berikut UID/email/password-nya. Akun tidak dibuat atau diberi izin otomatis oleh UI. UID harus masuk allowlist server; claim `admin` atau kode demo tidak cukup. Gunakan prosedur internal Admin SDK M2B.1 untuk penyediaan akun; tidak ada akun/password bawaan dan jangan menulis rahasia ke source/log/history.
+3. Pada terminal admin, atur environment berikut dan mulai server. Ganti placeholder UID dengan UID akun fiktif tersebut (UID bukan token):
+
+```powershell
+$env:ABC_ADMIN_AUTH_MODE='firebase-auth-emulator'
+$env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
+$env:FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'
+$env:ABC_ADMIN_UIDS='["UID_ADMIN_FIKTIF_YANG_SUDAH_ADA"]'
+npm.cmd run start:admin
+```
+
+4. Buka Chrome pada **http://127.0.0.1:4177**, masukkan akun fiktif. Verifikasi keenam tab, Periksa sesi dan Keluar; reload harus kembali ke login. Coba password salah/UID di luar allowlist. Nonaktifkan/cabut akun melalui operator Auth Emulator, lalu Periksa sesi untuk membuktikan akses ditutup. Putuskan koneksi API untuk menguji error tanpa dashboard/demo fallback. Data sekolah/siswa belum ditampilkan pada tahap ini.
+
+`start:admin` memakai context backend sendiri pada 4177; bearer tidak dibagikan ke API 4175. API 4175 dan CORS mentor tetap seperti M2B.4B. Tidak memerlukan Firestore untuk login admin saja, dependency baru, SDK Firebase browser, produksi atau deployment.
+
+Tes terarah otomatis (port emulator harus bebas): `npm.cmd run test:admin-login`, memakai akun sementara fiktif dan Chrome terisolasi, lalu membersihkan akun/server/browser tes. Bila emulator manual sedang aktif, gunakan environment demo/Auth di atas lalu `node --test tests/emulator/admin-login.test.mjs tests/emulator/admin-login-ui.mjs` untuk memakai instance yang ada. Tes client/HTTP: `node --test tests/admin-client.test.mjs tests/admin-login.test.mjs`. Screenshot baru: `screenshots/admin-auth-mobile.png`, `screenshots/admin-auth-desktop.png`.
+
+Batas: khusus emulator/owner proses lokal tepercaya, bukan produksi. Belum ada full admin database migration, data/CRUD/ekspor admin server, pairing management UI, credential refresh, sesi persisten antar-reload, global logout seluruh akun/perangkat, audit login terpusat atau offline sync. Limiter hanya memori proses dan reset saat restart. Android fisik/Safari/Firefox belum diverifikasi. Siap untuk fondasi M2B.5B; fitur data demo tidak disalin ke mode secure.
+
 ## M2B.4B — absensi mentor secure melalui API lokal
 
 Mode mentor **4176** kini memuat roster dan status absensi dari API M2B.4A **4175** untuk tuple sekolah/Jumat/kelompok yang dipilih. Pairing, key storage, proof, nonce dan grant memakai M2B.2–3B yang sama. Demo **4173** tetap terpisah dengan perilaku sebelumnya. Tidak ada integrasi dasbor admin atau produksi.
