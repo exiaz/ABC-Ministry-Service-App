@@ -37,7 +37,8 @@ export async function createLocalAdminAuthentication(){
   const auth=getAuth(app);
   let closed=false;
   const assertLocal=()=>{
-    if(closed||JSON.stringify(adminAuthConfig())!==JSON.stringify(config))throw Error('Konfigurasi autentikasi admin berubah; akses ditolak.');
+    try{if(closed||JSON.stringify(adminAuthConfig())!==JSON.stringify(config))throw Error();}
+    catch{throw Object.assign(Error('Konfigurasi autentikasi admin berubah; akses ditolak.'),{status:503});}
   };
   const verify=async token=>{
     assertLocal();
@@ -69,7 +70,7 @@ export async function createLocalAdminAuthentication(){
         return idToken;
       }catch(error){
         const failure=Error('Login admin emulator ditolak.');
-        if(error.status===503||error instanceof TypeError||['TimeoutError','AbortError'].includes(error.name))failure.status=503;
+        if(error.status===503||error instanceof TypeError||['TimeoutError','AbortError'].includes(error.name)||['app/network-error','auth/internal-error'].includes(error.code))failure.status=503;
         throw failure;
       }
     },

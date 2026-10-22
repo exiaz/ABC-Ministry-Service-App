@@ -2,6 +2,7 @@
 setlocal
 cd /d "%~dp0"
 title Hentikan ABC Attendance
+echo Menunggu demo menyimpan data dan berhenti. Jangan tutup paksa.
 where node >nul 2>nul
 if errorlevel 1 (
   echo Node.js belum ditemukan. Gunakan Enter pada jendela demo untuk berhenti.

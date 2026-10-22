@@ -21,6 +21,14 @@ test('Invalid credentials, unauthorized UID, expired/revoked session and API fai
   for(const status of [401,403]){const f=fixture();await f.client.login('fictional@example.invalid','fictional-password');f.setHandler(async()=>response(status));await f.client.verify();assert.equal(f.client.state.phase,'expired');assert.equal(f.client.state.uid,undefined);}
   const f=fixture();await f.client.login('fictional@example.invalid','fictional-password');f.setHandler(async()=>{throw Error('API gagal');});await f.client.verify();assert.equal(f.client.state.phase,'error');assert.equal(f.client.state.uid,undefined);
 });
+test('Login distinguishes credentials from setup/network failures without exposing raw backend errors',async()=>{
+  for(const status of [401,403,503,500,429]){
+    const f=fixture();f.setHandler(async()=>response(status,{error:'UPSTREAM_PRIVATE'}));await f.client.login('fictional@example.invalid','fictional-password');
+    assert.equal(f.client.state.message.includes('UPSTREAM_PRIVATE'),false);
+    assert.match(f.client.state.message,[401,403].includes(status)?/Email atau kata sandi/:status===429?/Tunggu satu menit/:/Server Admin belum siap/);
+  }
+  const f=fixture();f.setHandler(async()=>{throw Error('UPSTREAM_PRIVATE');});await f.client.login('fictional@example.invalid','fictional-password');assert.match(f.client.state.message,/Server Admin tidak dapat dihubungi/);assert.equal(f.client.state.canVerify,false);
+});
 test('Logout errors block login and protected reads until server revocation is confirmed',async()=>{
   const f=fixture();await f.client.login('fictional@example.invalid','fictional-password');f.setHandler(async()=>{throw Error();});await f.client.logout();assert.equal(f.client.state.phase,'logout-error');
   const length=f.calls.length;await f.client.verify();await f.client.login('fictional@example.invalid','fictional-password');assert.equal(f.calls.length,length);

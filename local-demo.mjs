@@ -12,7 +12,7 @@ import {createLocalAdminAuthentication} from './backend/admin-auth.mjs';
 import {createRosterServer} from './backend/server.mjs';
 import {createAdminServer} from './admin-server.mjs';
 import {createPrototypeServer} from './server.mjs';
-import {provisioningConfig,provisionDemo,demoProvisioningRecords,askDemoPassword,DEMO_ADMIN,DEMO_NAMESPACE} from './provision-demo.mjs';
+import {provisioningConfig,provisionDemo,demoProvisioningRecords,askDemoPassword,recoverDemoPassword,DEMO_ADMIN,DEMO_NAMESPACE} from './provision-demo.mjs';
 
 const ROOT=path.dirname(fileURLToPath(import.meta.url));
 export const PAGES=['http://127.0.0.1:4177','http://127.0.0.1:4176'];
@@ -110,8 +110,18 @@ export async function prepareDemo(context,auth,{identity=DEMO_ADMIN,assertLocal,
   const refs=demoProvisioningRecords(identity).map(r=>context.root.collection(r.collection).doc(r.id));
   let user;try{user=await auth.getUser(identity.uid);}catch(e){if(e.code!=='auth/user-not-found')throw e;}
   if(user&&(user.email!==identity.email||user.disabled))throw fail('Akun admin demo berbeda atau dinonaktifkan. Akun tidak direset; hubungi operator.');
-  if(user&&(await context.db.getAll(...refs)).every(s=>s.exists)){assertLocal();return {reused:true};}
-  await provisionDemo({...context,auth,identity,assertLocal,askPassword});return {reused:false};
+  const reused=!!user&&(await context.db.getAll(...refs)).every(s=>s.exists);
+  if(!reused)await provisionDemo({...context,auth,identity,assertLocal,askPassword});
+  assertLocal();let pairingReady=true;
+  try{await context.pairing.adminContext(identity.uid);assertLocal();}catch(error){if(error.status!==403)throw error;pairingReady=false;}
+  return {reused,pairingReady};
+}
+export async function appsReady({servers}){
+  const [api,admin,mentor]=servers.map(s=>'http://127.0.0.1:'+s.address().port);
+  for(const [url,status,mode] of [[api+'/api/admin/session',401,'test-foundation'],[admin+'/',200,'authenticated-admin-emulator'],[mentor+'/',200,'paired-local-fictional-roster']]){
+    const response=await fetch(url,{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(3000)});await response.body?.cancel();
+    if(response.status!==status||response.headers.get('x-abc-mode')!==mode)throw fail('Aplikasi belum siap. Periksa jendela demo lalu coba Start kembali.');
+  }
 }
 export async function listen(server,port){
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});return server;
@@ -144,7 +154,7 @@ export async function openPages(){
   for(const url of PAGES)await new Promise((resolve,reject)=>{const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});child.once('spawn',resolve);child.once('error',reject);});
 }
 
-export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot}={}){
+export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot,recover=false,askPassword=askDemoPassword,emulatorPorts=EMULATOR_PORTS,checkHub=verifyHub}={}){
   const previous=await controlRequest(address,'status');
   if(previous){if(previous.phase==='ready')await open();log(previous.phase==='ready'?'Demo sudah berjalan. Halaman Admin dan Mentor dibuka.':'Demo sedang dimulai/dihentikan. Gunakan jendela ABC Attendance yang pertama.');return;}
   Object.assign(process.env,environment());
@@ -169,10 +179,11 @@ export async function runDemo({open=openPages,log=console.log,address=controller
   catch{const owner=await controlRequest(address,'status');if(owner){if(owner.phase==='ready')await open();log('Peluncur lain sudah berjalan. Gunakan jendela pertama.');return;}throw fail('Peluncur lokal tidak dapat dibuka. Periksa jendela demo yang masih aktif.');}
   process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
   bootstrap=(async()=>{
+    log('1/4 · Memeriksa layanan lokal. Tunggu hingga muncul "Demo siap".');
     for(const port of ports)if(port&&await portOccupied(port))throw fail('Port '+port+' sudah digunakan. Tutup server ABC manual pada port tersebut (Ctrl+C), lalu klik Start lagi. Layanan itu tidak dimatikan otomatis.');
-    const occupied=await Promise.all(EMULATOR_PORTS.map(portOccupied));check();
+    const occupied=await Promise.all(emulatorPorts.map(portOccupied));check();
     if(occupied.some(Boolean)){
-      try{await verifyHub();}catch{throw fail('Port emulator (8080/9099/4400/4500/9150) sedang dipakai layanan yang belum lengkap atau tidak cocok. Tutup instance manual tersebut lalu klik Start lagi. Peluncur tidak mematikannya otomatis.');}
+      try{await checkHub();}catch{throw fail('Port emulator (8080/9099/4400/4500/9150) sedang dipakai layanan yang belum lengkap atau tidak cocok. Tutup instance manual tersebut lalu klik Start lagi. Peluncur tidak mematikannya otomatis.');}
       log('Menggunakan Auth/Firestore Emulator demo yang sudah aktif.');
     }
     else{
@@ -180,22 +191,47 @@ export async function runDemo({open=openPages,log=console.log,address=controller
       const snapshot=await previousSnapshot(state),env={...process.env};if(snapshot)env.ABC_EMULATOR_IMPORT_DIR=snapshot;
       log(snapshot?'Memulihkan data demo lokal…':'Menyalakan Auth/Firestore Emulator lokal…');
       emulator=spawn(process.execPath,[path.join(ROOT,'tests/emulator/run.mjs'),'start'],{cwd:ROOT,env,windowsHide:true,stdio:'ignore'});emulator.on('error',()=>{});
-      await waitFor(()=>verifyHub(),{alive:()=>!abort.signal.aborted&&emulator.exitCode===null&&emulator.signalCode===null});
+      await waitFor(()=>checkHub(),{alive:()=>!abort.signal.aborted&&emulator.exitCode===null&&emulator.signalCode===null});
     }
-    canSave=true;check();context=await createFirestoreEmulatorRepositories();check();
+    canSave=true;check();context=await createFirestoreEmulatorRepositories();check();log('2/4 · Memeriksa akun Admin dan izin pairing.');
     const {initializeApp,deleteApp}=await import('firebase-admin/app'),{getAuth}=await import('firebase-admin/auth');
     const app=initializeApp({projectId:DEMO_PROJECT_ID},'demo-launcher-'+randomUUID());
-    try{const result=await prepare(context,getAuth(app),{assertLocal:check,askPassword:()=>askDemoPassword({signal:abort.signal})});log(result.reused?'Akun dan data demo digunakan kembali; password tetap.':'Akun dan fixture demo siap.');}finally{await deleteApp(app);}
-    check();apps=await startDemoServers(context,{ports,check});check();
-    phase='ready';log('Demo siap. Login admin: '+DEMO_ADMIN.email+'\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik Stop ABC Attendance.cmd.');
+    try{
+      if(recover){
+        log('Buat password Admin yang baru. Input tidak terlihat; ketik lalu tekan Enter.');
+        await recoverDemoPassword({auth:getAuth(app),confirmed:true,assertLocal:check,askPassword:()=>askPassword({signal:abort.signal})});
+        await persist(state);check();log('Password baru telah tersimpan. Gunakan password baru untuk login; sesi lama telah ditutup.');
+      }
+      const result=await prepare(context,getAuth(app),{assertLocal:check,askPassword:()=>{log('Akun pertama: buat password 12–128 karakter. Input tidak terlihat; ketik lalu Enter, kemudian ulangi.');return askPassword({signal:abort.signal});}});
+      if(!result.reused){await persist(state);check();}
+      log(result.reused?'Akun dan data digunakan kembali. Password Anda tetap berlaku.':'Akun dan fixture tersimpan. Ingat password yang baru Anda buat.');
+      if(!result.pairingReady)log('Perhatian: izin pairing dicabut atau tidak lengkap. Izin tersebut tetap dipertahankan; hubungi operator bila perlu.');
+    }finally{await deleteApp(app);}
+    check();log('3/4 · Menyiapkan halaman Admin dan Mentor…');apps=await startDemoServers(context,{ports,check});check();await appsReady(apps);check();
+    phase='ready';log('4/4 · Demo siap. Login Admin: '+DEMO_ADMIN.email+'\nGunakan password Anda. Lupa password? Klik Reset Admin Password.cmd.\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik Stop ABC Attendance.cmd.');
     try{await open();}catch{log('Browser belum terbuka. Buka http://127.0.0.1:4177 dan http://127.0.0.1:4176 secara manual.');}
   })();
-  try{await bootstrap;}catch(error){log(error.demoSafe?error.message:'Demo belum siap. Periksa koneksi emulator, input password dan fixture lokal. Tidak ada reset data atau akses cloud.');process.exitCode=1;await stop();}
+  try{await bootstrap;}catch(error){log(error.demoSafe?error.message:recover?'Pemulihan belum terkonfirmasi. Password mungkin sudah berubah. Periksa koneksi lalu ulangi Reset Admin Password.cmd; absensi dan izin tetap.':'Demo belum siap. Periksa koneksi emulator, konfirmasi password dan akun demo. Password baru harus sama pada kedua isian dan minimal 12 karakter. Data tidak direset otomatis.');process.exitCode=1;await stop();}
   if(phase!=='stopped'){
     terminal=createInterface({input,output});terminal.on('line',()=>void stop());
-    if(phase==='ready')setInterval(()=>{if(phase==='ready')verifyHub().catch(()=>{log('Koneksi emulator terputus. Jangan menyimpan absensi sampai layanan pulih.');});},15000).unref();
+    if(phase==='ready')setInterval(()=>{if(phase==='ready')checkHub().catch(()=>{log('Koneksi emulator terputus. Jangan menyimpan absensi sampai layanan pulih.');});},15000).unref();
   }
   await finished;
+}
+export function confirmRecovery({input=process.stdin,output=process.stdout}={}){
+  output.write('\nPEMULIHAN PASSWORD ADMIN DEMO LOKAL\nAkun: '+DEMO_ADMIN.email+'\nPassword lama akan diganti dan sesi Admin ditutup. Absensi serta izin perangkat tetap.\n');
+  return new Promise(resolve=>{
+    const terminal=createInterface({input,output});let answered=false;
+    terminal.once('close',()=>{if(!answered)resolve(false);});
+    terminal.question('Ketik GANTI lalu Enter untuk melanjutkan. Enter saja untuk batal: ',answer=>{answered=true;terminal.close();resolve(answer.trim().toUpperCase()==='GANTI');});
+  });
+}
+export async function recoverAndRun({confirm=confirmRecovery,log=console.log,...options}={}){
+  // No changes, not even stopping an active launcher, before confirmation.
+  if(!await confirm()){log('Pemulihan dibatalkan. Password dan layanan tidak diubah.');return;}
+  (options.environment??demoEnvironment)();
+  await stopDemo({address:options.address,log});
+  return runDemo({...options,log,recover:true});
 }
 export async function stopDemo({address=controllerPath(),log=console.log}={}){
   const status=await controlRequest(address,'stop');if(!status){log('Demo dari peluncur ini tidak sedang berjalan. Layanan manual tidak diubah.');return;}
@@ -206,6 +242,6 @@ export async function stopDemo({address=controllerPath(),log=console.log}={}){
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const command=process.argv[2];
-  const work=process.platform!=='win32'?Promise.reject(fail('Peluncur ini khusus Windows.')):command==='start'?runDemo():command==='stop'?stopDemo():Promise.reject(fail('Gunakan Start ABC Attendance.cmd atau Stop ABC Attendance.cmd.'));
+  const work=process.platform!=='win32'?Promise.reject(fail('Peluncur ini khusus Windows.')):command==='start'?runDemo():command==='stop'?stopDemo():command==='recover'?recoverAndRun():Promise.reject(fail('Gunakan Start ABC Attendance.cmd, Stop ABC Attendance.cmd atau Reset Admin Password.cmd.'));
   work.catch(error=>{console.error(error.demoSafe?error.message:'Peluncur gagal. Periksa Node.js, Java JDK 21+, dependensi proyek dan layanan lokal. Tidak ada password/token yang dicetak.');process.exitCode=1;});
 }

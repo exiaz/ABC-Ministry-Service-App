@@ -1,7 +1,7 @@
 // Bearer lives only in this closure. No storage, cookie, refresh token, demo flag
 // or decoded client claim supplies authority; every operation verifies backend.
 export function createAdminClient(onChange,{request=fetch}={}){
-  let token=null,logoutToken=null,generation=0,state={phase:'signed-out',message:'Masuk dengan akun admin fiktif yang diizinkan server.'};
+  let token=null,logoutToken=null,generation=0,state={phase:'signed-out',message:'Gunakan email demo dan password yang Anda buat di jendela Start ABC Attendance.'};
   const publish=next=>{state=next;onChange({...state});};
   const call=(path,options={})=>request(path,{...options,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(8000)});
   const denied=()=>{generation++;token=null;publish({phase:'expired',message:'Sesi berakhir atau izin dicabut. Masuk kembali.'});};
@@ -41,7 +41,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
         const response=await call('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
         password='';
         if(g!==generation)return;
-        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?'Email, kata sandi, atau izin admin tidak valid.':response.status===429?'Terlalu banyak percobaan. Tunggu satu menit.':'Login belum berhasil. Periksa server lokal lalu coba lagi.'});return;}
+        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.':response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start ABC Attendance.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
         const result=await response.json();
         if(g!==generation)return;
         if(typeof result?.token!=='string'||result.token.length>16384||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.$/.test(result.token))throw Error();
@@ -50,7 +50,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
         if(g!==generation||!identity)return;
         if(identity.uid!==result.uid)throw Error();
         publish({phase:'active',message:'Identitas dan izin admin diverifikasi server.',...identity});
-      }catch{if(g===generation)publish({phase:'error',canVerify:!!token,message:'Sesi belum dapat diverifikasi. Periksa koneksi lalu coba lagi.'});}
+      }catch{if(g===generation)publish({phase:'error',canVerify:!!token,message:token?'Sesi belum dapat diverifikasi. Periksa kembali sesi setelah server pulih.':'Server Admin tidak dapat dihubungi. Buka Start ABC Attendance.cmd dan tunggu "Demo siap", lalu coba masuk lagi.'});}
       finally{password='';}
     },
     async verify(){

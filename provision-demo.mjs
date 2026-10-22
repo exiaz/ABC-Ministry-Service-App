@@ -45,6 +45,29 @@ export async function askDemoPassword(options={}){
     return password;
   }finally{password='';}
 }
+// Trusted local operator recovery only. No HTTP route; fixed fictional identity,
+// explicit confirmation and the same strict emulator guards as provisioning.
+export async function recoverDemoPassword({auth,confirmed=false,assertLocal=()=>{},askPassword=askDemoPassword}){
+  if(confirmed!==true)return {changed:false};
+  const initial=JSON.stringify(provisioningConfig());
+  const check=()=>{if(JSON.stringify(provisioningConfig())!==initial||!adminAuthConfig().uids.includes(DEMO_ADMIN.uid))throw Error('Konfigurasi emulator berubah atau UID demo belum diizinkan; pemulihan dibatalkan.');assertLocal();};
+  const checkUser=user=>{if(user.uid!==DEMO_ADMIN.uid||user.email!==DEMO_ADMIN.email||user.disabled)throw Error('Akun demo tidak cocok atau dinonaktifkan. Pemulihan tidak mengaktifkan akun atau mengubah izin.');};
+  check();checkUser(await auth.getUser(DEMO_ADMIN.uid));
+  let password=await askPassword();
+  try{
+    if(typeof password!=='string'||password.length<12||password.length>128)throw Error('Password memerlukan 12–128 karakter.');
+    check();
+    // Emulator tokens/revocation have second precision. Cross the boundary
+    // after closing old server contexts so a fresh login cannot share the old
+    // token's timestamp/hash and revocation also rejects the old auth_time.
+    const nextSecond=(Math.floor(Date.now()/1000)+1)*1000;
+    await new Promise(resolve=>setTimeout(resolve,Math.max(0,nextSecond-Date.now())+10));
+    check();checkUser(await auth.getUser(DEMO_ADMIN.uid));check();await auth.updateUser(DEMO_ADMIN.uid,{password});
+    // Launcher closes the old admission contexts before recovery. Also revoke
+    // Firebase sessions; no grants, devices or Firestore records are written.
+    await auth.revokeRefreshTokens(DEMO_ADMIN.uid);check();return {changed:true};
+  }finally{password='';}
+}
 const userOrNull=async read=>{try{return await read();}catch(e){if(e.code==='auth/user-not-found')return null;throw e;}};
 
 // Create-only provisioning. Existing differences fail closed; never reset a

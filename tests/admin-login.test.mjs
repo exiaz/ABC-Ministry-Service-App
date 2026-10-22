@@ -8,7 +8,7 @@ async function start(t,server){server.listen(0,'127.0.0.1');await once(server,'l
 test('Admin shell exposes only its own assets and protected API, without demo or service worker',async t=>{
   const base=await start(t,createAdminServer({adminAuthentication:{async authorize(){return {kind:'unauthenticated'};}}}));
   const response=await fetch(base);assert.equal(response.status,200);assert.match(await response.text(),/data-admin-mode="authenticated-local"/);assert.equal(response.headers.get('cache-control'),'no-store');
-  for(const path of ['/app.js','/data.js','/sw.js','/mentor.html','/backend/admin-auth.mjs','/api/admin/students','/api/attendance'])assert.equal((await fetch(base+path)).status,404);
+  for(const path of ['/app.js','/data.js','/sw.js','/mentor.html','/backend/admin-auth.mjs','/api/admin/students','/api/attendance','/local-demo.mjs','/provision-demo.mjs','/Reset%20Admin%20Password.cmd','/api/admin/recover-password'])assert.equal((await fetch(base+path)).status,404);
   for(const path of ['/api/admin/pairing-codes','/api/admin/devices','/api/admin/pairing-context'])assert.equal((await fetch(base+path)).status,401);
   assert.equal((await fetch(base+'/api/admin/session')).status,401);
   const cross=await fetch(base+'/api/admin/login',{method:'POST',headers:{Origin:'http://127.0.0.1:4173','Content-Type':'application/json'},body:'{}'});assert.equal(cross.status,403);assert.equal(cross.headers.get('access-control-allow-origin'),null);
