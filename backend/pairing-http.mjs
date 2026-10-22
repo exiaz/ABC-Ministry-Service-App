@@ -5,8 +5,8 @@ export function requestProof(req,body=''){
   if(names.some(name=>req.rawHeaders.filter((v,i)=>i%2===0&&v.toLowerCase()===name).length!==1))return {};
   return {method:req.method,target:req.url,body,timestamp:req.headers[names[0]],nonce:req.headers[names[1]],signature:req.headers[names[2]]};
 }
-async function jsonBody(req,keys){
-  if(req.headers.origin||!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??''))throw new PairingError(400,'Permintaan pairing tidak valid.');
+async function jsonBody(req,keys,mentorOrigin){
+  if((req.headers.origin&&req.headers.origin!==mentorOrigin)||!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??''))throw new PairingError(400,'Permintaan pairing tidak valid.');
   if(Number(req.headers['content-length'])>8192){req.resume();throw new PairingError(413,'Permintaan pairing terlalu besar.');}
   let size=0;const chunks=[];
   req.setTimeout(5000,()=>req.destroy());
@@ -39,12 +39,12 @@ export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,sen
   }
   return true;
 }
-export async function redeemPairingRoute({req,url,pairing,send}){
+export async function redeemPairingRoute({req,url,pairing,send,mentorOrigin}){
   if(!pairing)throw new PairingError(503,'Pairing emulator lokal tidak tersedia.');
   if(req.method!=='POST'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'POST'});return;}
   // Use the actual socket address, never X-Forwarded-For or a client device ID.
   await pairing.limit('redeem',req.socket.remoteAddress,10);
   if(url.search)throw new PairingError(400,'Kode pairing tidak valid atau tidak berlaku.');
-  const {body,raw}=await jsonBody(req,['code','publicKey']);
+  const {body,raw}=await jsonBody(req,['code','publicKey'],mentorOrigin);
   send(201,await pairing.redeem(body,requestProof(req,raw)));
 }

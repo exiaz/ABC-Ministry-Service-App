@@ -7,13 +7,16 @@ import {createConfiguredRepositories} from './configured-repositories.mjs';
 import {createConfiguredAdminAuthentication} from './admin-auth.mjs';
 import {PairingError} from './device-pairing.mjs';
 import {requestProof,adminPairingRoute,redeemPairingRoute} from './pairing-http.mjs';
+import {localOrigin,mentorCors} from './mentor-origin.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
-export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing}={}){
+export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,mentorOrigin}={}){
+  if(mentorOrigin!==undefined)localOrigin(mentorOrigin);
   return http.createServer(async(req,res)=>{
+    let corsHeaders={};
     const send=(status,body,headers={})=>{
-      res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-ABC-Mode':'test-foundation','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",...headers});
+      res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-ABC-Mode':'test-foundation','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",...corsHeaders,...headers});
       res.end(JSON.stringify(body));
     };
     try{
@@ -21,6 +24,9 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       const authCount=req.rawHeaders.filter((_,i)=>i%2===0&&req.rawHeaders[i].toLowerCase()==='authorization').length;
       const authorization=authCount===1?req.headers.authorization:undefined;
       const local=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+      const cors=mentorCors(req,url,mentorOrigin);
+      if(cors?.denied||cors&&!local){send(403,{error:'Origin mentor tidak diizinkan.'});return;}
+      if(cors){corsHeaders=cors.headers;if(req.method==='OPTIONS'){send(204,{});return;}}
       // Every administrative operation must remain inside this guarded branch.
       // Unknown routes/methods never dispatch an administrative action.
       if(url.pathname==='/api/admin'||url.pathname.startsWith('/api/admin/')){
@@ -37,7 +43,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       }
       if(url.pathname==='/api/pairing/redeem'){
         if(!local){send(503,{error:'Pairing emulator lokal tidak tersedia.'});return;}
-        await redeemPairingRoute({req,url,pairing,send});return;
+        await redeemPairingRoute({req,url,pairing,send,mentorOrigin});return;
       }
       const deviceStatus=url.pathname==='/api/device/status';
       if(url.pathname!=='/api/roster'&&!deviceStatus){send(404,{error:'Tidak ditemukan.'});return;}
@@ -74,7 +80,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   try{
     adminAuthentication=await createConfiguredAdminAuthentication();
     adapters=await createConfiguredRepositories();
-    const server=createRosterServer({...adapters,adminAuthentication});
+    const server=createRosterServer({...adapters,adminAuthentication,mentorOrigin:process.env.ABC_MENTOR_ORIGIN});
     const stop=()=>server.close(async()=>{await adminAuthentication?.close();await adapters.close();process.exit(0);});
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
     server.listen(port,'127.0.0.1',()=>console.log(`API roster uji: http://127.0.0.1:${port} (${process.env.ABC_ROSTER_ADAPTER??'in-memory'})`));

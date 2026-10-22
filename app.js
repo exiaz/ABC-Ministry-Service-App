@@ -11,8 +11,13 @@ import {dateSelectionView,attendanceReportView,scheduleAdminView,scheduleGroupFi
 import {attendanceExportData,studentExportData} from './reports.js';
 import {applyMentorConfiguration,defaultMentorAt,effectiveMentor,setTemporaryMentor,setPermanentMentor,addInitialDefault,selectableMentors} from './assignments.js';
 import {groupsWithAssignmentsView,mentorSelectionLabel,mentorSelect,assignmentControls,assignmentHistory} from './assignment-ui.js';
+import {createPairingClient} from './pairing-client.js';
+import {mountPairingUI} from './pairing-ui.js';
 
 const app=document.querySelector('#app'), modal=document.querySelector('#modal');
+const pairedMode=document.body.dataset.mentorMode==='paired-local';
+let pairingClient;
+const mentorAccess=()=>pairedMode?pairingClient?.state.phase==='active':db.authorized;
 let db,storageOK=true,corrupt=false;
 try {const raw=localStorage.getItem(KEY);db=raw?JSON.parse(raw):seed();if(db.version!==1||!Array.isArray(db.sessions)||!Array.isArray(db.groups)||!Array.isArray(db.students)||!Array.isArray(db.provisionals)||!Array.isArray(db.schools))throw Error('invalid');}
 catch {db=seed();storageOK=false;corrupt=true;}
@@ -60,7 +65,7 @@ let assignmentGroupId='';
 let selectedDate=recentFriday(),calendarMonth=selectedDate.slice(0,7),calendarOpen=false;
 let serviceId='',dateSelectionOpen=false,adminMonth=CURRENT.slice(0,7);
 let view='mentor',schoolId='',groupId='',adminTab='overview',adminUnlocked=false,adminDate='',adminSchool='',adminGroup='',query='',studentQuery='',toastTimer,installPrompt;
-if(db.authorized&&db.mentorPreferences&&db.schools.some(s=>s.id===db.mentorPreferences.schoolId)){schoolId=db.mentorPreferences.schoolId;dateSelectionOpen=true;}
+if((pairedMode||db.authorized)&&db.mentorPreferences&&db.schools.some(s=>s.id===db.mentorPreferences.schoolId)){schoolId=db.mentorPreferences.schoolId;dateSelectionOpen=true;}
 const uid=()=>globalThis.crypto?.randomUUID?.()||`id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${({
  home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
@@ -85,6 +90,7 @@ const field=(label,name,value='',placeholder='',type='text')=>`<div class="form-
 const art=()=>`<svg class="hero-art" viewBox="0 0 320 240" aria-hidden="true"><circle cx="198" cy="138" r="100" fill="#d4e6ff"/><circle cx="277" cy="44" r="14" fill="#f6cb55"/><path d="m73 51 5-12 5 12 13 5-13 5-5 12-5-12-13-5Z" fill="#7facf0"/><path d="m280 182 5-10 5 10 10 5-10 5-5 10-5-10-10-5Z" fill="#80adee"/><g transform="rotate(-10 165 130)"><rect x="100" y="44" width="121" height="163" rx="15" fill="#8db6f3"/><rect x="91" y="36" width="121" height="163" rx="13" fill="white"/><rect x="124" y="29" width="55" height="18" rx="6" fill="#337adf"/><rect x="108" y="65" width="68" height="7" rx="3" fill="#cee0f9"/><g fill="none" stroke="#72ae96" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m109 91 4 4 8-9m-12 30 4 4 8-9m-12 30 4 4 8-9"/></g><g fill="#e7edf6"><rect x="132" y="87" width="57" height="6" rx="3"/><rect x="132" y="112" width="45" height="6" rx="3"/><rect x="132" y="137" width="53" height="6" rx="3"/></g><rect x="109" y="163" width="78" height="17" rx="5" fill="#e8f2ff"/></g><circle cx="232" cy="152" r="32" fill="#f6c953"/><path d="m217 152 10 10 21-23" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g transform="rotate(22 80 180)"><rect x="66" y="139" width="17" height="68" rx="5" fill="#ed7770"/><path d="m66 201 9 20 8-20" fill="#eabf94"/><path d="m72 215 3 6 3-6" fill="#52637f"/><path d="M66 150h17" stroke="#ffd9d0" stroke-width="6"/></g></svg>`;
 
 function render(){
+  if(pairedMode&&!mentorAccess()){app.replaceChildren();if(modal.open)modal.close();return;}
   app.innerHTML=`<aside class="sidebar">${brand()}<p class="workspace-label">RUANG PELAYANAN</p><nav aria-label="Navigasi utama"><button class="nav-btn ${view==='mentor'?'active':''}" data-action="mentor">${icon('check')}Absensi mentor</button><button class="nav-btn ${view==='admin'?'active':''}" data-action="admin">${icon('grid')}Dasbor admin ${icon('lock')}</button></nav><div class="sidebar-bottom"><div class="sidebar-note"><strong>${icon('info')} Ruang coba, bebas eksplorasi</strong>Seluruh data siswa fiktif.<br>Tersimpan di browser ini saja.<button class="btn text small" data-action="about">Tentang prototipe ${icon('arrow')}</button></div><div class="profile"><span class="avatar">${view==='admin'?'AD':'M'}</span><div><strong>${view==='admin'?'Admin demo':'Halo, Kak Mentor!'}</strong><small>ABC Movement · Surabaya</small></div></div></div></aside><div class="shell"><header class="topbar"><div class="breadcrumb">ABC Movement <span>/</span><strong>${view==='mentor'?'Absensi mentor':'Dasbor admin'}</strong></div><div class="mobile-brand">${brand()}</div><div class="top-right"><span class="date-top">${dateLabel(CURRENT)}</span><small class="local-label muted"><i class="local-dot"></i>Lokal</small><span class="demo-tag">PROTOTIPE</span></div></header>${!storageOK?`<div class="storage-alert" role="alert">${corrupt?'Data lokal tidak dapat dibaca. Contoh data ditampilkan; gunakan Atur ulang di Tentang demo untuk memulihkan penyimpanan.':'Penyimpanan browser tidak tersedia. Perubahan akan hilang ketika halaman ditutup.'}</div>`:''}<main class="content">${configurationIssues.length?`<div class="storage-alert" role="alert">Pemetaan kelompok perlu ditinjau. Data lama tetap dipertahankan. ${configurationIssues.map(esc).join(' ')}</div>`:''}${view==='mentor'?mentorView():adminView()}<footer class="footer"><span>${icon('heart')} Setiap kehadiran berarti.</span><span>ABC Movement © 2026 · Data fiktif</span></footer></main></div><nav class="mobile-nav" aria-label="Navigasi seluler"><button class="${view==='mentor'?'active':''}" data-action="mentor">${icon('check')}Absensi</button><button class="${view==='admin'?'active':''}" data-action="admin">${icon('grid')}Admin</button><button data-action="about">${icon('info')}Tentang demo</button></nav>`;
 }
 function steps(n){return `<div class="steps" aria-label="Langkah ${n} dari 4">${['Sekolah','Tanggal','Kelompok','Absensi'].map((s,i)=>`${i?'<span class="step-line"></span>':''}<span class="step ${i+1===n?'active':i+1<n?'done':''}"><b>${i+1<n?'✓':i+1}</b>${s}</span>`).join('')}</div>`;}
@@ -151,7 +157,7 @@ function refreshAssignmentControls(target){
 }
 
 
-function rememberSelection(){if(db.authorized){db.mentorPreferences={schoolId,groupId:groupId||((db.mentorPreferences?.schoolId===schoolId&&db.mentorPreferences?.groupId)||'')};save();}}
+function rememberSelection(){if(mentorAccess()){db.mentorPreferences={schoolId,groupId:groupId||((db.mentorPreferences?.schoolId===schoolId&&db.mentorPreferences?.groupId)||'')};save();}}
 function chooseSchool(school){schoolId=school;serviceId='';groupId='';selectedDate=recentFriday();calendarMonth=selectedDate.slice(0,7);calendarOpen=false;dateSelectionOpen=true;query='';rememberSelection();render();window.scrollTo(0,0);}
 function continueDate(){
   const chosen=selectedDate,school=schoolId;
@@ -164,21 +170,21 @@ function continueDate(){
   openModal('Buat pelayanan sementara?',`<p class="modal-copy">${esc(db.schools.find(s=>s.id===school).name)}<br>${longDate(chosen)} belum dijadwalkan admin.</p><div class="info-box warning-box">Pelayanan ini akan diberi label <strong>Menunggu Verifikasi Admin</strong>. Simulasi lokal; belum ada notifikasi atau sinkronisasi ke admin.</div>`,`${cancel()}<button class="btn primary" type="submit">Ya, buat pelayanan sementara</button>`,()=>{proceed(true);modal.close();});
 }
 
-function authorize(school){if(db.authorized){chooseSchool(school);return;}openModal('Selamat datang, Kak!',`<p class="modal-copy">Pada versi final, perangkat mentor perlu mendapat izin admin. Untuk mencoba prototipe, aktifkan perangkat demo ini.</p><div class="info-box">${icon('lock')} <strong>Simulasi otorisasi perangkat</strong><br>Tidak memverifikasi identitas dan tidak memberikan perlindungan akses. Tanpa email atau kata sandi.</div>`,`${cancel()}<button class="btn primary" type="submit">Aktifkan perangkat demo</button>`,()=>{db.authorized=true;save();modal.close();chooseSchool(school);});}
+function authorize(school){if(mentorAccess()){chooseSchool(school);return;}if(pairedMode)return;openModal('Selamat datang, Kak!',`<p class="modal-copy">Pada versi final, perangkat mentor perlu mendapat izin admin. Untuk mencoba prototipe, aktifkan perangkat demo ini.</p><div class="info-box">${icon('lock')} <strong>Simulasi otorisasi perangkat</strong><br>Tidak memverifikasi identitas dan tidak memberikan perlindungan akses. Tanpa email atau kata sandi.</div>`,`${cancel()}<button class="btn primary" type="submit">Aktifkan perangkat demo</button>`,()=>{db.authorized=true;save();modal.close();chooseSchool(school);});}
 function adminEntry(){if(adminUnlocked){view='admin';query='';render();window.scrollTo(0,0);return;}openModal('Masuk ke dasbor admin',`<p class="modal-copy">Akses ini hanya <strong>simulasi</strong>, belum melindungi data. Gunakan kode demo <strong>ABC2026</strong>.</p>${field('Kode admin demo','code','','Masukkan ABC2026')}<p class="form-error" id="login-error" role="alert"></p><div class="info-box">Gunakan data fiktif saja. Kode terlihat di prototipe dan bukan sistem keamanan.</div>`,`${cancel()}<button class="btn primary" type="submit">Buka dasbor ${icon('arrow')}</button>`,data=>{if(data.get('code').trim()!=='ABC2026'){document.querySelector('#login-error').textContent='Kode belum sesuai. Gunakan ABC2026.';return;}adminUnlocked=true;view='admin';modal.close();render();window.scrollTo(0,0);});}
 function setAttendance(id,status){const s=getSession(db,groupId,serviceId);if(s.state==='completed'||!Object.hasOwn(statuses,status))return;const r=s.records.find(r=>r.studentId===id);if(!r)return;r.status=status;s.updatedAt=new Date().toISOString();save();const focus=document.activeElement?.dataset?.statusId;const focusPresent=document.activeElement?.dataset?.action==='present';const y=window.scrollY;render();window.scrollTo(0,y);if(focus)document.querySelector(`[data-status-id="${focus}"]`)?.focus({preventScroll:true});else if(focusPresent)document.querySelector(`[data-action="present"][data-id="${id}"]`)?.focus({preventScroll:true});}
 function finalize(){const s=getSession(db,groupId,serviceId);if(s.state==='completed'||!s.records.length)return;if(!canSubmitAttendance(db,s)){toast('Absensi dapat dikirim mulai tanggal pelayanan (WIB).');return;}const c=count(s.records);openModal('Selesaikan absensi?',`<p class="modal-copy">${esc(groupDisplayName(db,s))} · ${esc(schoolDisplayName(db,s))}<br>${longDate(s.date)}</p><div class="confirmation-counts">${badge('present',`${c.present} Hadir`)}${badge('excused',`${c.excused} Izin`)}${badge('absent',`${c.absent} Tidak Hadir`)}</div>${c.unmarked?`<div class="info-box warning-box"><strong>${c.unmarked} siswa belum diabsen.</strong><br>Dengan menyelesaikan absensi, seluruh siswa tersebut akan ditandai <strong>Tidak Hadir</strong>.</div>`:'<div class="info-box">Semua siswa sudah dicatat. Hasil akan tersimpan di browser ini dan dapat dikoreksi kembali.</div>'}`,`${cancel()}<button class="btn primary" type="submit">${c.unmarked?'Ya, tandai & selesaikan':'Ya, selesaikan absensi'}</button>`,()=>{if(!canSubmitAttendance(db,s)){modal.close();render();toast('Absensi dapat dikirim mulai tanggal pelayanan (WIB).');return;}submitAttendance(db,s);save();modal.close();render();window.scrollTo(0,0);toast(storageOK?'Absensi selesai dan tersimpan di browser ini.':'Absensi selesai sementara. Penyimpanan lokal tidak tersedia.');});}
 const genderFields=(value=null)=>`<fieldset class="gender-fields"><legend>Jenis Kelamin (*)</legend>${Object.entries(GENDERS).map(([id,label])=>`<label><input type="radio" name="gender" value="${id}" required ${value===id?'checked':''}> ${label}</label>`).join('')}</fieldset>`;
 const studentField=(label,name,value='',{required=false,type='text',limit=70}={})=>`<div class="form-row"><label for="field-${name}">${label}${required?' *':' (opsional)'}</label><input id="field-${name}" name="${name}" value="${esc(value??'')}" type="${type}" ${required?'required':''} ${type==='date'?`max="${jakartaToday()}"`:`maxlength="${limit}"`} autocomplete="off"></div>`;
 function addProvisional(){
-  if(!db.authorized||view!=='mentor'||!schoolId||!groupId||!serviceId)return;
+  if(!mentorAccess()||view!=='mentor'||!schoolId||!groupId||!serviceId)return;
   const s=getSession(db,groupId,serviceId);
   const context={schoolId,groupId,serviceSessionId:serviceId,sessionId:s.id,serviceDate:s.date};
   const {school,group,visit,defaultMentor,mentor}=attendanceStudentContext(db,context);
   if(s.state==='completed')return;
   openModal('Tambahkan siswa sementara',`<div class="info-box student-context"><strong>${esc(school.name)}</strong><br>${esc(group.name)} · ${esc(defaultMentor.name)}<br>${longDate(visit.date)}${mentor.source==='temporary'?`<br>Pengganti sesi: ${esc(mentor.name)}`:''}</div><p class="modal-copy">Sekolah, kelompok dan pelayanan mengikuti absensi ini. Siswa tetap sementara sampai ditinjau admin. Gunakan data fiktif.</p>${studentField('Nama Lengkap','name','',{required:true})}${studentField('Kelas Sekolah','schoolClass','',{required:true,limit:20})}${genderFields()}<p class="form-error" id="form-error" role="alert"></p>`,`${cancel()}<button class="btn primary" type="submit">Tambahkan siswa</button>`,form=>{
     try{
-      if(!db.authorized||view!=='mentor'||schoolId!==context.schoolId||groupId!==context.groupId||serviceId!==context.serviceSessionId)throw Error('Pilihan absensi sudah berubah. Buka kembali formulir siswa.');
+      if(!mentorAccess()||view!=='mentor'||schoolId!==context.schoolId||groupId!==context.groupId||serviceId!==context.serviceSessionId)throw Error('Pilihan absensi sudah berubah. Buka kembali formulir siswa.');
       addTemporaryStudent(db,context,{name:form.get('name'),schoolClass:form.get('schoolClass'),gender:form.get('gender')});
       save();query='';modal.close();render();toast('Siswa sementara ditambahkan ke pelayanan ini dan menunggu tinjauan admin.');
     }catch(error){document.querySelector('#form-error').textContent=error.message;}
@@ -281,6 +287,7 @@ async function previewStudentImport(file){
 
 
 document.addEventListener('click',e=>{const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,id=button.dataset.id;
+  if(pairedMode&&(!mentorAccess()||action==='admin'||action==='reset-confirm'))return;
   if(action==='close-modal'){modal.close();return;}
   if(['export','logout','admin-tab','session-detail','student-form','deactivate-student','group-form','review-provisionals','approve-provisional','reject-provisional','schedule-form','assignment-edit','assignment-plan-edit','import-students'].includes(action)&&!adminUnlocked)return;
   switch(action){
@@ -297,7 +304,7 @@ document.addEventListener('click',e=>{const button=e.target.closest('[data-actio
     case 'continue-date':continueDate();break;
     case 'select-date':{const visit=db.serviceSessions.find(v=>v.id===id&&v.schoolId===schoolId&&!v.legacy);if(!visit)break;serviceId=id;groupId='';dateSelectionOpen=false;query='';render();window.scrollTo(0,0);break;}
     case 'back-groups':groupId='';query='';render();break;
-    case 'select-group':if(!db.authorized||!mentorGroups(db,serviceId).some(g=>g.id===id))break;groupId=id;query='';getSession(db,groupId,serviceId);rememberSelection();save();render();window.scrollTo(0,0);break;
+    case 'select-group':if(!mentorAccess()||!mentorGroups(db,serviceId).some(g=>g.id===id))break;groupId=id;query='';getSession(db,groupId,serviceId);rememberSelection();save();render();window.scrollTo(0,0);break;
     case 'present':setAttendance(id,'present');break;
     case 'finalize':finalize();break;
     case 'correct':openModal('Koreksi absensi',`<p class="modal-copy">Absensi akan dibuka sebagai draf agar status siswa bisa diperbaiki. Selesaikan kembali setelah perubahan agar masuk ke ringkasan admin.</p>`,`${cancel()}<button class="btn primary" type="submit">Buka koreksi</button>`,()=>{getSession(db,groupId,serviceId).state='draft';save();modal.close();render();toast('Mode koreksi dibuka. Selesaikan kembali setelah mengubah data.');});break;
@@ -316,7 +323,7 @@ document.addEventListener('click',e=>{const button=e.target.closest('[data-actio
 
     case 'export':exportForm();break;
     case 'import-students':importStudentForm();break;
-    case 'about':about();break;
+    case 'about':if(pairedMode){openModal('Tentang aktivasi lokal','<p class="modal-copy">Aktivasi perangkat diverifikasi oleh API emulator lokal dengan kunci perangkat. Daftar siswa dan absensi tetap simulasi fiktif di browser, belum dibaca dari atau dikirim ke API.</p><div class="info-box">Pilihan sekolah, tanggal dan kelompok tidak memberikan izin API. Menghapus izin lokal tidak mencabut perangkat di server; hubungi admin untuk pencabutan.</div><p class="modal-copy">Khusus localhost dan data fiktif. Verifikasi izin memerlukan server lokal yang aktif. Belum untuk penggunaan produksi.</p>','<button type="button" class="btn primary" data-action="install">Pasang aplikasi</button>');}else about();break;
     case 'guide':openModal('Alur absensi mentor',`<div class="modal-copy"><p><strong>1. Pilih sekolah dan tanggal pelayanan.</strong><br>Buka kalender dan pilih Jumat, lalu kelompok sesuai penugasan. Jumat yang belum dijadwalkan memerlukan konfirmasi.</p><br><p><strong>2. Catat kehadiran.</strong><br>Ketuk Hadir, atau buka ⋯ untuk Izin dan koreksi. Siswa baru dapat ditambahkan sementara.</p><br><p><strong>3. Selesaikan absensi.</strong><br>Periksa ringkasan. Siswa yang belum diabsen akan ditandai Tidak Hadir setelah konfirmasi.</p></div>`,'<button type="button" class="btn primary" data-action="close-modal">Siap, mulai!</button>');break;
     case 'reset-confirm':openModal('Atur ulang data demo?',`<p class="modal-copy">Seluruh perubahan absensi, siswa, kelompok, dan otorisasi lokal akan dihapus dan diganti dengan contoh awal. Tindakan ini tidak dapat dibatalkan.</p>`,`${cancel()}<button class="btn danger" type="submit">Ya, atur ulang</button>`,()=>{db=seed();view='mentor';schoolId='';serviceId='';dateSelectionOpen=false;groupId='';adminUnlocked=false;adminTab='overview';adminSchool='';adminGroup='';adminDate='';adminMonth=CURRENT.slice(0,7);query='';studentQuery='';corrupt=false;save();modal.close();render();toast('Data demo dikembalikan ke kondisi awal.');});break;
     case 'install':if(installPrompt){installPrompt.prompt();installPrompt.userChoice.then(()=>{installPrompt=null;});}else toast('Buka menu browser → Instal aplikasi atau Tambahkan ke layar utama, jika tersedia.');break;
@@ -357,6 +364,23 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installProm
 window.addEventListener('offline',()=>toast('Sedang offline. Perubahan tetap di browser ini, tanpa sinkronisasi.'));
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>toast('Cache offline belum tersedia. Prototipe tetap dapat dicoba selama terhubung.'));
 render();
+if(pairedMode){
+  const root=document.querySelector('#pairing-root');
+  try{
+    let previousPhase='checking',update;
+    pairingClient=createPairingClient(document.querySelector('meta[name=abc-api-origin]').content,state=>{
+      update(state);
+      if(previousPhase!==state.phase){if(state.phase!=='active'){groupId='';serviceId='';}render();}
+      previousPhase=state.phase;
+    });
+    update=mountPairingUI(root,pairingClient);void pairingClient.restore();
+    window.addEventListener('focus',()=>void pairingClient.restore());
+    window.addEventListener('online',()=>void pairingClient.restore());
+    window.addEventListener('offline',()=>void pairingClient.restore());
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)void pairingClient.restore();});
+    setInterval(()=>{if(!document.hidden&&pairingClient.state.phase==='active')void pairingClient.restore();},45000);
+  }catch{root.textContent='Aktivasi lokal belum tersedia. Pastikan konfigurasi server dan dukungan browser sesuai.';}
+}
 
 
 

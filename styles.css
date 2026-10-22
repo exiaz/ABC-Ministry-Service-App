@@ -28,3 +28,17 @@
 #field-address{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font:inherit;resize:vertical}.student-context{margin:0 0 16px;line-height:1.8}
 
 .gender-fields{border:0;margin:0 0 18px;padding:0;display:flex;gap:20px;flex-wrap:wrap}.gender-fields legend{font-size:11px;font-weight:650;color:#657793;margin-bottom:8px}.gender-fields label{display:flex;gap:8px;align-items:center;min-height:44px;font-size:13px}.gender-fields input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--blue)}.birthday-upcoming{margin-top:20px}.student-actions{display:flex;gap:8px;flex-wrap:wrap}#import-preview{max-height:35dvh;overflow:auto;overflow-wrap:anywhere}#import-preview>div{padding:5px 0} [hidden]{display:none!important}
+/* Local pairing reuses existing controls; the legacy demo keeps its layout. */
+.pairing-panel{max-width:520px;margin:8vh auto;padding:28px;line-height:1.6}
+.pairing-panel h1{font-size:25px;margin:16px 0}
+.pairing-panel form{margin:22px 0}
+.pairing-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.pairing-status{margin:16px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pairing-status div{flex:1;min-width:220px}
+.pairing-status p{margin:6px 0 0}
+#pairing-root[data-phase=active]{margin-left:236px}
+body[data-mentor-mode=paired-local] [data-action=admin],body[data-mentor-mode=paired-local] [data-action=reset-confirm]{display:none}
+body[data-mentor-mode=paired-local] #toast:not(.show){visibility:hidden}
+@media(max-width:940px){#pairing-root[data-phase=active]{margin-left:190px}}
+@media(max-width:700px){#pairing-root[data-phase=active]{margin-left:0}}
+@media(max-width:600px){.pairing-panel{margin:24px 12px;padding:22px}.pairing-status{margin:12px}}

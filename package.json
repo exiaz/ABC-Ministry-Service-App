@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
+    "start:mentor": "node mentor-server.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node tests/check.mjs",
     "test:browser": "node tests/browser.mjs",
@@ -12,6 +13,7 @@
     "test:emulator": "node tests/emulator/run.mjs test",
     "test:admin-auth": "node tests/emulator/run.mjs auth-test",
     "test:pairing": "node tests/emulator/run.mjs pairing-test",
+    "test:pairing-ui": "node tests/emulator/run.mjs mentor-ui-test",
     "test:emulator:recovery": "node tests/emulator/run.mjs recovery"
   },
   "dependencies": {
