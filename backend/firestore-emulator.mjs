@@ -4,6 +4,7 @@ import {emulatorConfig} from './emulator-config.mjs';
 import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
 import {toRosterResponse,describeRosterScope} from './roster.mjs';
 import {createEmulatorDevicePairing} from './device-pairing.mjs';
+import {createEmulatorAttendance} from './attendance.mjs';
 
 const digest=token=>createHash('sha256').update(token).digest('hex');
 const tokenValid=token=>typeof token==='string'&&/^[A-Za-z0-9_-]{43}$/.test(token);
@@ -79,12 +80,15 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
         return true;
       });
     },
-    async authenticate(authorization,requestProof){
+    async authenticate(authorization,requestProof,transaction){
+      // Internal transaction context lets attendance share these exact checks
+      // and conflict atomically with credential/device revocation.
+      const read=ref=>transaction?transaction.get(ref):ref.get();
       const match=typeof authorization==='string'&&/^Bearer ([A-Za-z0-9_-]{43})$/.exec(authorization);
       if(!match)return null;
-      const snapshot=await collection('credentials').doc(digest(match[1])).get(),entry=snapshot.data();
+      const snapshot=await read(collection('credentials').doc(digest(match[1]))),entry=snapshot.data();
       if(!entry||!validDevice(entry.deviceId)||entry.revokedAt!==null||!Number.isSafeInteger(entry.expiresAt)||entry.expiresAt<=now()||!Array.isArray(entry.grants)||!entry.grants.length||!entry.grants.every(validRosterScope))return null;
-      const device=(await collection('devices').doc(entry.deviceId).get()).data();
+      const device=(await read(collection('devices').doc(entry.deviceId))).data();
       if(device?.id!==entry.deviceId||device.state!=='active'||device.revokedAt!==null||entry.expiresAt<=now())return null;
       const bound=entry.binding!==undefined||device.binding!==undefined||device.publicKey!==undefined;
       if(bound&&(entry.binding!=='p256-v1'||device.binding!=='p256-v1'||typeof device.publicKey!=='string'||requestProof?.deviceId!==entry.deviceId))return null;
@@ -147,5 +151,6 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
   };
   // db/root are trusted test-fixture hooks only; never exposed by the API.
   const pairing=createEmulatorDevicePairing({db,root,config,repository,now,prepareCredential,stageCredential,stageDeviceRevoke});
-  return {credentials,repository,deviceAuthorization,pairing,close,db,root,config};
+  const attendance=createEmulatorAttendance({db,root,credentials,now});
+  return {credentials,repository,deviceAuthorization,pairing,attendance,close,db,root,config};
 }

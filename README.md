@@ -1,5 +1,28 @@
 # ABC Goes to School — Prototipe lokal
 
+## M2B.4A — API persistensi absensi, Firestore Emulator
+
+Backend lokal menyediakan `attendance` dari adapter Firestore yang ada. Gunakan konfigurasi emulator/pairing M2B.2–3B yang sama; tidak ada token, akun mentor, dependency atau jalur provisioning baru. Hanya data fiktif. Frontend secure tetap baca-saja; integrasi tulis dan CORS attendance belum ditambahkan (M2B.4B).
+
+Semua endpoint berikut menerima tepat tiga query `schoolId`, `groupId`, `serviceSessionId` (masing-masing sekali), `Authorization: Bearer ...`, dan proof ECDSA M2B.2 dengan nonce baru. Tanda tangan mencakup method, URL path/query dan **body JSON mentah persis**. Tidak ada fallback legacy, flag perangkat, role klien, cookie atau kode demo.
+
+| Endpoint | Body JSON / perilaku |
+|---|---|
+| `GET /api/attendance` | Baca absensi atau roster aktif berstatus `unmarked` bila belum dimulai; tidak membuat batch. |
+| `PUT /api/attendance` | `{expectedRevision,idempotencyKey,records:[{studentId,status}]}`; patch status draf, membuat satu batch/snapshot pada penyimpanan pertama. Siswa lain tetap pada status sebelumnya. |
+| `POST /api/attendance/finalize` | `{expectedRevision,idempotencyKey,confirm:true}`; hanya draf tidak kosong, semua siswa sudah ditandai eksplisit dan tanggal pelayanan sudah tiba menurut jam server WIB. |
+| `POST /api/attendance/corrections` | `{expectedRevision,idempotencyKey,records:[{studentId,status}],reason}`; hanya batch selesai, alasan wajib, membuka draf revisi baru yang harus difinalisasi lagi. |
+
+Status API mempertahankan kode yang ada: `present` = Hadir, `excused` = Izin, `absent` = Tidak Hadir, `unmarked` = Belum Diabsen. **Tidak pernah mengubah `unmarked` menjadi `absent` otomatis**, termasuk saat finalisasi. Ini aturan API M2B.4A yang menggantikan konversi otomatis prototipe untuk jalur backend; perilaku demo/frontend lama tetap. `records` adalah patch 1–300 siswa unik, bukan pengganti roster; ID siswa harus menjadi anggota snapshot sesi atau pendaftaran aktif server saat snapshot pertama dibuat. Pindah/nonaktif sesudah snapshot tidak menulis ulang roster historis. Satu siswa hanya dapat berada pada satu batch per Service Session ID, dan dapat dicatat terpisah pada Jumat lain. Reschedule tetap memakai ID pelayanan/batch yang sama.
+
+Respons sukses 200 hanya `{schoolId,groupId,serviceSessionId,batchId,revision,state,updatedAt,finalizedAt,records:[{studentId,status,updatedAt}]}`. `state`: `not-started`/`draft`/`completed`; belum ada batch berarti `batchId:null`, revisi 0. Timestamp ISO server (nilai lama tetap dipertahankan). Respons tidak memuat nama, tanggal lahir, wali, alamat, profil privat atau audit internal. Gunakan roster API yang ada untuk nama/kelas. Semua respons no-store. Kesalahan: 400 format/konfirmasi, 401 credential/proof invalid/expired/revoked, 403 scope/enrollment/origin, 409 revisi usang/finalisasi belum sah/duplikat data/key berbeda payload, 413 body >32 KiB, 503 adapter emulator tidak tersedia. Metode lain ditolak 405, kegagalan penyimpanan 500 dengan pesan aman.
+
+`expectedRevision` wajib bilangan bulat mulai 0. Setiap mutasi berhasil menaikkan revisi sekali. Pada 409, muat ulang sebelum menyusun perubahan baru. `idempotencyKey` wajib 16–128 karakter huruf/angka/`_`/`-` (misalnya UUID baru per aksi). Kunci berlaku per perangkat untuk seluruh scope/action, disimpan persisten dan tidak kedaluwarsa otomatis. Retry request yang sama harus memakai key/body yang sama dengan **proof/nonce baru**; respons awal dikembalikan tanpa menulis versi lain, walau revisi kini lebih baru. Key sama dengan payload/scope/action lain ditolak 409. Retry respons revisi lama tidak boleh menggantikan state klien yang lebih baru; baca ulang setelah retry bila perlu.
+
+Transaksi Firestore mencakup pemeriksaan credential/device/grant yang sama, relasi sekolah/kelompok/pelayanan, enrollment, revisi, batch, riwayat dan receipt. `attendanceSessionLocks` menserialkan penulisan lintas kelompok per pelayanan untuk mencegah klaim siswa ganda. `sessions` mempertahankan ID batch lama; batch baru memakai ID deterministik. `attendanceHistory` menyimpan setiap versi secara append-only beserta waktu, perangkat, hash credential, action dan alasan koreksi. Mutasi pertama pada batch legacy menyimpan baseline utuh sebelum menulis revisi baru. `attendanceSubmissions` menyimpan fingerprint/hasil minimal untuk idempotensi. Ketiganya hanya internal server; tidak ada endpoint mentor untuk membaca profil/audit mentah. Tidak ada penghapusan riwayat/migrasi data demo.
+
+Tes API terarah: `npm.cmd run test:attendance` (runner Firestore/Auth Emulator yang sama; opsi TCP Java Windows di bawah tetap berlaku). Batas lokal: owner/Admin SDK tepercaya dapat mengubah database; API ini belum untuk produksi, data anak nyata, offline sync, tambah siswa sementara, API admin absensi, pagination/arsip audit atau integrasi UI. Maksimum roster 300 siswa/batch dan body 32 KiB; roster lebih besar gagal tertutup. Receipt/riwayat belum mempunyai kebijakan retensi. Recovery snapshot lama tetap memerlukan revoke/reissue sesuai M2A.3.
+
 ## M2B.3B — roster mentor aman, baca-saja
 
 Mode mentor **127.0.0.1:4176** sekarang memakai roster dari API, bukan seed/localStorage. Alur tetap sekolah → kalender Jumat → kelompok → daftar siswa, menggunakan kartu kelompok, subtitle mentor, logo, kalender dan gaya responsif yang ada. Hanya sekolah, tanggal Jumat dan kelompok dalam grant yang ditawarkan. Semua pilihan tetap diperiksa ulang pada server; memodifikasi ID request tidak memberi izin. Demo **4173** tetap menggunakan perilaku/data lokal sebelumnya dan terpisah origin.

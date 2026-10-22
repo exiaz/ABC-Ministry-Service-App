@@ -15,6 +15,7 @@
     "test:pairing": "node tests/emulator/run.mjs pairing-test",
     "test:pairing-ui": "node tests/emulator/run.mjs mentor-ui-test",
     "test:roster": "node tests/emulator/run.mjs roster-test",
+    "test:attendance": "node tests/emulator/run.mjs attendance-test",
     "test:emulator:recovery": "node tests/emulator/run.mjs recovery"
   },
   "dependencies": {

@@ -8,10 +8,12 @@ import {createConfiguredAdminAuthentication} from './admin-auth.mjs';
 import {PairingError} from './device-pairing.mjs';
 import {requestProof,adminPairingRoute,redeemPairingRoute} from './pairing-http.mjs';
 import {localOrigin,mentorCors} from './mentor-origin.mjs';
+import {attendanceRoute} from './attendance-http.mjs';
+import {AttendanceError} from './attendance.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
-export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,mentorOrigin}={}){
+export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,attendance,mentorOrigin}={}){
   if(mentorOrigin!==undefined)localOrigin(mentorOrigin);
   return http.createServer(async(req,res)=>{
     let corsHeaders={};
@@ -45,6 +47,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         if(!local){send(503,{error:'Pairing emulator lokal tidak tersedia.'});return;}
         await redeemPairingRoute({req,url,pairing,send,mentorOrigin});return;
       }
+      if(await attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send}))return;
       const deviceStatus=url.pathname==='/api/device/status';
       const rosterContext=url.pathname==='/api/roster-context';
       if(url.pathname!=='/api/roster'&&!deviceStatus&&!rosterContext){send(404,{error:'Tidak ditemukan.'});return;}
@@ -77,8 +80,8 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       if(result.kind!=='ok'){send(403,{error:'Akses roster ditolak.'});return;}
       send(200,result.roster);
     }catch(error){
-      if(error instanceof PairingError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
-      send(500,{error:'Roster tidak dapat dibaca.'});
+      if(error instanceof PairingError||error instanceof AttendanceError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
+      send(500,{error:req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
     }
   });
 }

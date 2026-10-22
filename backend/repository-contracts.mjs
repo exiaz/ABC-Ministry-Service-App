@@ -44,3 +44,20 @@
  * before issuance; revoke all credentials for a device. Never a public endpoint.
  */
 export {};
+
+/**
+ * M2B.4A AttendanceRepository (Firestore Emulator only):
+ * executeAuthorized({authorization,proof,scope,action,body}) -> minimal current
+ * batch {schoolId,groupId,serviceSessionId,batchId,revision,state,updatedAt,
+ * finalizedAt,records:[{studentId,status,updatedAt}]}. proof is an internal
+ * capability from the existing paired-device verifier, never client input.
+ * Actions: read/save/finalize/correct. Mutations require expectedRevision and
+ * idempotencyKey; save/correct accept explicit record patches, finalize requires
+ * confirm:true. A completed batch requires correction with a reason, then an
+ * explicit finalization again. unmarked is never converted to absent.
+ * Server snapshot determines historical enrollment; new batches capture active
+ * enrollment once. Transactions include auth, relations, roster, service guard,
+ * revision, immutable history and receipts. Failures never fall back to memory.
+ * Internal credentials.authenticate may receive a transaction as its third
+ * argument to share existing device/grant checks atomically with writes.
+ */
