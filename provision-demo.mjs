@@ -18,12 +18,12 @@ export function provisioningConfig(env=process.env){
 }
 
 // Terminal only: no argv/env password, pipe fallback, echo, masking or logging.
-export function hiddenInput(prompt,{input=process.stdin,output=process.stdout}={}){
+export function hiddenInput(prompt,{input=process.stdin,output=process.stdout,signal}={}){
   if(!input.isTTY||!output.isTTY||typeof input.setRawMode!=='function')throw Error('Jalankan langsung di terminal PowerShell interaktif; input password lewat pipe ditolak.');
   return new Promise((resolve,reject)=>{
     let value='',done=false;const raw=input.isRaw??false,flowing=input.readableFlowing===true;
     const finish=(error)=>{
-      if(done)return;done=true;input.removeListener('keypress',press);input.removeListener('end',end);input.removeListener('error',failure);
+      if(done)return;done=true;input.removeListener('keypress',press);input.removeListener('end',end);input.removeListener('error',failure);signal?.removeEventListener('abort',end);
       input.setRawMode(raw);if(!flowing)input.pause();output.write('\n');const result=value;value='';if(error)reject(error);else resolve(result);
     };
     const end=()=>finish(Error('Input password dibatalkan.')),failure=()=>end();
@@ -34,13 +34,14 @@ export function hiddenInput(prompt,{input=process.stdin,output=process.stdout}={
       if(!key.ctrl&&!key.meta&&text&&!/[\u0000-\u001f\u007f]/.test(text))value+=text;
     };
     emitKeypressEvents(input);input.on('keypress',press);input.once('end',end);input.once('error',failure);input.setRawMode(true);input.resume();output.write(prompt);
+    signal?.addEventListener('abort',end,{once:true});if(signal?.aborted)end();
   });
 }
-export async function askDemoPassword(){
-  let password=await hiddenInput('Password admin fiktif (12–128 karakter, tidak tampil): ');
+export async function askDemoPassword(options={}){
+  let password=await hiddenInput('Password admin fiktif (12–128 karakter, tidak tampil): ',options);
   try{
     if(password.length<12||password.length>128)throw Error('Password memerlukan 12–128 karakter. Jalankan ulang.');
-    if(password!==await hiddenInput('Ulangi password (tidak tampil): '))throw Error('Konfirmasi password berbeda. Jalankan ulang.');
+    if(password!==await hiddenInput('Ulangi password (tidak tampil): ',options))throw Error('Konfirmasi password berbeda. Jalankan ulang.');
     return password;
   }finally{password='';}
 }
@@ -48,9 +49,12 @@ const userOrNull=async read=>{try{return await read();}catch(e){if(e.code==='aut
 
 // Create-only provisioning. Existing differences fail closed; never reset a
 // password, re-enable an account, replace permission or overwrite attendance.
-export async function provisionDemo({auth,db,root,assertLocal,askPassword=askDemoPassword,identity=DEMO_ADMIN}){
+export function demoProvisioningRecords(identity=DEMO_ADMIN){
   const {source,grants}=deviceManagementSource();delete source.studentPrivateProfiles;
-  const records=[...fixtureRecords(source),{collection:'adminPairingPermissions',id:identity.uid,data:{active:true,grants}}];
+  return [...fixtureRecords(source),{collection:'adminPairingPermissions',id:identity.uid,data:{active:true,grants}}];
+}
+export async function provisionDemo({auth,db,root,assertLocal,askPassword=askDemoPassword,identity=DEMO_ADMIN}){
+  const records=demoProvisioningRecords(identity);
   const refs=records.map(r=>root.collection(r.collection).doc(r.id));
   const missing=snapshots=>snapshots.flatMap((snapshot,i)=>{
     if(snapshot.exists&&!isDeepStrictEqual(snapshot.data(),records[i].data))throw Error('Record demo berbeda: '+records[i].collection+'/'+records[i].id+'. Tidak ditimpa; gunakan namespace demo kosong atau tinjau lewat operator.');

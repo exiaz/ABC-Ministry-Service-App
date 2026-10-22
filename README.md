@@ -1,5 +1,18 @@
 # ABC Goes to School — Prototipe lokal
 
+## Mulai demo dengan satu klik — Windows
+
+1. Klik dua kali **`Start ABC Attendance.cmd`** di folder proyek. Biarkan jendela **ABC Attendance – Demo Lokal** terbuka. Peluncur menyalakan emulator dan server yang diperlukan, lalu membuka **Admin 4177** dan **Mentor 4176** di browser bawaan. Tidak perlu menyalin konfigurasi PowerShell. Klik Start lagi hanya membuka halaman demo yang sudah berjalan.
+2. Saat pertama kali akun belum tersedia, ketik password uji pilihan sendiri **12–128 karakter**, Enter, lalu ulangi. Tulisan/tanda bintang memang tidak muncul. Login Admin memakai **`admin.demo@abc-attendance.test`** dan password tersebut. Peluncur tidak melewati login atau mengganti password yang sudah ada.
+3. Di Admin pilih **Perangkat Mentor → SDN Pacarkeling V → 2026-10-09 → Hagai / Kak Louis**, lalu terbitkan kode. Masukkan kode secara privat ke halaman Mentor dalam 5 menit. Pilih scope yang sama untuk melihat **Siswa Hagai Fiktif** dan mencoba absensi.
+4. Untuk selesai, **tekan Enter di jendela demo**, atau klik dua kali **`Stop ABC Attendance.cmd`**. Tunggu tulisan **Demo berhenti / Data lokal tersimpan** sebelum menutup jendela. Jika penyimpanan gagal, emulator tetap hidup; periksa pesan dan tekan Enter/Stop lagi. Hindari menutup paksa jendela dengan tombol X/Task Manager agar snapshot sempat disimpan.
+
+Akun, izin dan data demo dipakai kembali melalui namespace **`local-demo-m2b5b`**. Snapshot Auth/Firestore disimpan hanya di **`.emulator-data/local-demo-launcher/`** (diabaikan Git), lalu dipulihkan ketika peluncur menyalakan emulator berikutnya. Jangan hapus folder ini jika ingin menyimpan demo, dan jangan bagikan/commit snapshot. Data yang telah diedit dan izin yang telah dicabut tidak direset. Password terlupa memerlukan bantuan operator; tidak ada reset otomatis.
+
+Jika muncul **port sudah digunakan**, tutup server API/Admin/Mentor manual lama dengan Ctrl+C pada jendelanya, lalu klik Start lagi. Peluncur tidak mematikan proses yang tidak dikenalnya. Auth/Firestore Emulator manual yang identitas project dan listener loopback-nya cocok dapat digunakan kembali dan **tetap berjalan** setelah Stop; peluncur hanya menghentikan emulator yang ia jalankan sendiri. Saat emulator masih aktif, data aktifnya menjadi acuan; snapshot lama tidak diimpor menimpa data aktif.
+
+Prasyarat disiapkan operator sekali: **Windows, Node.js, Java JDK 21+, dependensi proyek dan cache emulator yang sudah tersedia**. Peluncur tidak memasang dependensi atau meminta login Firebase cloud. Kesalahan Node/Java/port/data ditampilkan dalam bahasa Indonesia. Hanya Firebase Emulator **demo-abc-attendance**, listener loopback dan data fiktif; tanpa billing/deploy atau endpoint provisioning publik. Panduan PowerShell/operator tetap tersedia di bawah.
+
 ## Setup demo lokal M2B.5B — akun admin dan data pairing
 
 Helper **CLI tepercaya**, bukan endpoint web: `npm.cmd run demo:provision`. Menggunakan validasi konfigurasi Auth/Firestore Emulator yang sudah ada serta data dan pemetaan dokumen fixture M2B.5B. Hanya project **demo-abc-attendance**, host literal **127.0.0.1**, namespace eksplisit dan data fiktif; konfigurasi produksi/cloud ditolak sebelum akses SDK. Tidak mengubah autentikasi, admission, device proof, atau lifecycle pairing.

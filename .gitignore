@@ -138,6 +138,7 @@ dist
 # Local Firebase emulator state, logs, and scratch data (never student data).
 .firebase/
 .emulator-data/
+/firebase-export-*/
 firestore-debug.log
 ui-debug.log
 firebase-debug.log*
