@@ -17,7 +17,10 @@ Acuan aturan bisnis: [MASTER_BRIEF.md](MASTER_BRIEF.md). Baca revisi terbaru [PR
 
 ## Penyuntingan teks dengan No AI Slop
 
-- Gunakan [No AI Slop](.agents/skills/no-ai-slop/SKILL.md) saat menulis atau merevisi teks UI Indonesia, instruksi/pesan kesalahan launcher, panduan README, dokumentasi pengguna, ringkasan akhir implementasi, atau meninjau kejelasan dan ungkapan yang terasa tidak alami. Operasi coding saja, tes, dan inspeksi repositori tidak perlu memuat skill lengkap; gunakan hanya untuk bagian teks yang relevan.
-- **Edit** (default): pertahankan makna dan suara penulis, ubah seperlunya, periksa hasil sendiri dengan [eval.md](.agents/skills/no-ai-slop/eval.md), lalu jelaskan yang diubah. **Detect**: tunjukkan masalah spesifik dengan kutipan dan usulan perbaikan; jangan otomatis menyunting atau menulis ulang, memberi skor, atau menebak penulisnya AI.
+- Aktifkan [No AI Slop](.agents/skills/no-ai-slop/SKILL.md) hanya jika pengguna meminta penyuntingan, pemolesan, atau audit konten tertulis, atau tugas utama berupa penulisan ulang substansial teks UI Indonesia atau petunjuk penggunaan nonteknis.
+- Jangan aktifkan otomatis untuk coding/refaktor, backend/Firebase, autentikasi/keamanan, tes/debugging, pembaruan `PROJECT_STATUS.md`, ringkasan commit/laporan rutin, typo kecil, atau pembaruan dokumentasi teknis biasa.
 - Pembagian acuan tetap: `MASTER_BRIEF.md` untuk kebutuhan aplikasi/aturan domain; `PROJECT_STATUS.md` untuk status terverifikasi/bukti tes; `README.md` untuk petunjuk operasional pemula; `AGENTS.md` untuk alur kerja Codex; skill untuk mutu bahasa. Penyuntingan wajib menjaga akurasi teknis, sintaks, keamanan, privasi, integritas data dan hasil tes. Jangan menghilangkan istilah teknis/pesan kesalahan yang perlu persis atau mengarang capaian, jumlah tes, benchmark maupun detail implementasi.
-- Laporan akhir implementasi memakai bahasa Indonesia yang alami dan ringkas: perubahan, tes lulus/gagal atau belum dijalankan, tindakan pengguna berikutnya, batas penting, serta usulan **Summary** dan **Description** siap salin untuk GitHub Desktop. Pertahankan detail teknis bila diperlukan untuk verifikasi. Usulan commit tidak memberi izin menjalankan commit, push atau deploy.
+
+## Pelaporan pengembangan rutin
+
+Laporkan secara ringkas dalam bahasa Indonesia: perubahan, tes yang benar-benar dijalankan beserta hasilnya (atau belum dijalankan), masalah penting yang tersisa, langkah berikutnya, serta usulan **Summary** dan **Description** siap salin untuk commit di GitHub Desktop. Laporan ini tidak otomatis mengaktifkan skill editorial; usulan commit tidak memberi izin commit, push, atau deploy.

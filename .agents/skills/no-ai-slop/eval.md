@@ -1,8 +1,6 @@
 # No AI slop eval
 
-Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
-
-For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
+Load only for a substantive editorial Edit. Perform one focused review of applicable checks yourself; do not create separate evaluator agents for ordinary editing. Fix failures and repeat only failed checks. Do not generate verbose internal checklists or report passing items. Detect follows `SKILL.md` without loading this file.
 
 ## Editing principles
 
@@ -38,5 +36,5 @@ For detect requests, make sure the response names each pattern found with a quot
 2. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
 3. Would the writer recognize the edited draft as their own voice?
 4. Would the edited draft sound natural if read to a sharp colleague?
-5. Does the final output include the full edited draft and a short **What changed** section?
+5. Is the full edited draft returned or saved in the destination file, with a brief explanation of changes?
 6. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?

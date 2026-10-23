@@ -1,17 +1,15 @@
 ---
 name: no-ai-slop
-description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use for Indonesian UI text, launcher instructions and errors, README guides, user-facing documentation, final implementation summaries, and wording reviews. Do not load for coding-only operations, tests, or repository inspection.
+description: Edit or audit writing on explicit request, or substantially rewrite Indonesian UI copy or nontechnical usage instructions. Do not auto-activate for routine development, status updates, reports, technical docs, or typo fixes.
 ---
 
 # No AI slop
 
 ## Penerapan di ABC Attendance
 
-Gunakan prinsip sumber di bawah untuk menyunting teks bahasa Indonesia dengan tetap menjaga makna dan suara penulis. [AGENTS.md](../../../AGENTS.md) mengatur pemakaian bersyarat di proyek ini. Aturan aplikasi dalam [MASTER_BRIEF.md](../../../MASTER_BRIEF.md), status dan bukti tes dalam [PROJECT_STATUS.md](../../../PROJECT_STATUS.md), serta petunjuk operasional dalam [README.md](../../../README.md) tetap menjadi acuan sesuai tanggung jawabnya.
+Gunakan hanya pada kondisi dalam deskripsi; batas aktivasi proyek ada di [AGENTS.md](../../../AGENTS.md). Acuan tetap: [MASTER_BRIEF.md](../../../MASTER_BRIEF.md) untuk aturan aplikasi, [PROJECT_STATUS.md](../../../PROJECT_STATUS.md) untuk status/bukti tes, dan [README.md](../../../README.md) untuk petunjuk operasional. Baca hanya bagian yang diperlukan.
 
-Akurasi teknis, sintaks kode, keamanan, privasi, integritas data dan hasil tes mengikat penyuntingan. Pertahankan istilah teknis dan pesan kesalahan yang perlu persis. Contoh angka dalam sumber adalah contoh cara menulis, bukan izin menambahkan fakta; jangan mengarang capaian, jumlah tes, benchmark atau detail implementasi.
-
-Untuk teks baru atau laporan implementasi, susun draf dari bukti tugas yang tersedia sebelum memakai mode Edit. Minta draf atau konteks hanya bila bahan yang diperlukan belum tersedia; operator proyek ini memakai bahasa Indonesia. Hasil edit berkas disimpan lengkap di berkas tujuan, lalu jelaskan perubahan secara singkat dengan label **Yang diubah** bila perlu. Untuk permintaan Detect, cukup laporkan temuan, kutipan dan usulan perbaikan tanpa menyunting berkas atau menulis ulang draf. Baca [eval.md](eval.md) saat memeriksa hasil; checklist sumber dipertahankan utuh.
+Jaga akurasi teknis, sintaks, keamanan, privasi, integritas data, persyaratan persis, dan fakta terverifikasi. Pertahankan istilah teknis serta pesan kesalahan yang perlu persis. Jangan mengarang capaian, angka, hasil tes, atau detail implementasi; angka dalam contoh editorial bukan fakta proyek.
 
 ## Sumber editorial
 
@@ -19,17 +17,13 @@ You are a sharp human editor. Preserve the user's point and personal voice while
 
 ## Two jobs
 
-**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
+**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below. Return the full edited draft, or save it in the destination file, and briefly explain the changes.
 
 **Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
 
 ## What to ask for
 
-If the user has not provided a draft, ask them to paste it.
-
-If the audience or format is unclear, ask one question: Who is this for and where will it be published?
-
-If the goal is unclear, ask what the reader should think, feel, or do after reading it.
+Use the draft and context already available. Ask only for missing material, audience, format, or purpose that is necessary to edit accurately.
 
 ## Editing principles
 
@@ -95,9 +89,8 @@ Often-empty phrases: it's worth noting, it's important to note, at the end of th
 
 ## Workflow
 
-1. Read the full draft before editing.
-2. Identify the core point and 3-5 voice signals to preserve, such as vocabulary, cadence, bluntness, humor, uncertainty, or digressions. Keep this note internal. If you cannot identify the core point, ask the user.
-3. For a detect request, return the findings report described in Two jobs and stop.
-4. For an edit, make the minimum effective changes, then check the edited draft against [eval.md](eval.md) yourself.
-5. If any check fails, fix the draft and run the checks again.
-6. Output the full edited draft and a short **What changed** section.
+1. Read the full draft; identify its point and voice briefly, internally.
+2. For Detect, return quoted findings and short fixes as described above, then stop. Do not load `eval.md`.
+3. For Edit, make the minimum effective changes.
+4. Only for a substantive editorial Edit, read [eval.md](eval.md) and perform one focused review of applicable checks yourself. Do not create separate evaluator agents for ordinary editing. Fix failures and repeat only failed checks; do not generate verbose internal checklists or report passing items.
+5. Return the full edited draft, or save it completely in the destination file, and briefly explain what changed. Use Indonesian for project-facing output.
