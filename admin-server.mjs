@@ -11,8 +11,9 @@ import {createConfiguredRepositories} from './backend/configured-repositories.mj
 const root=path.dirname(fileURLToPath(import.meta.url));
 const assets=new Map([['/','admin.html'],['/index.html','admin.html'],['/admin-client.js','admin-client.js'],['/secure-admin.js','secure-admin.js'],['/styles.css','styles.css'],['/assets/abc-movement-logo.png','assets/abc-movement-logo.png'],['/icon.svg','icon.svg']]);
 assets.set('/admin-devices.js','admin-devices.js');
+assets.set('/admin-activation.js','admin-activation.js');
 assets.set('/admin-accounts.js','admin-accounts.js');
-const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/devices']);
+const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices']);
 // Same-origin admin shell + existing protected API handler/context. No CORS,
 // cookie session, demo assets/database or public administrative dispatch here.
 export function createAdminServer({adminAuthentication,pairing}){

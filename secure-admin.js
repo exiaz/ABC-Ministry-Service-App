@@ -38,14 +38,24 @@ function confirmDevice(kind,id){
   dialog.querySelector('form').onsubmit=e=>{e.preventDefault();dialog.close();if(client.state.phase!=='active')return;if(kind==='revoke')void devicePanel.revoke(id,true);else if(devicePanel.state.issued?.pairingId===pairingId)void devicePanel.cancelCode(true);};
   dialog.showModal();
 }
+function confirmActivation(pairingId){
+  const row=devicePanel.activation.rows.find(row=>row.pairingId===pairingId);if(!row||devicePanel.activation.busy||!['pending','invalid','service-ended'].includes(row.state))return;
+  dialog.innerHTML=`<div class="modal-top"><h2>Cabut kode aktivasi?</h2></div><form><p class="modal-copy">Kode untuk ${esc(row.assignment.groupName)} · ${esc(row.assignment.mentorName)} akan dicabut. Akses perangkat yang sudah aktif dan riwayat absensi tetap; cabut perangkat melalui daftar bila diperlukan.</p><div class="modal-actions"><button class="btn" type="button">Batal</button><button class="btn danger" type="submit">Ya, cabut kode</button></div></form>`;
+  dialog.querySelector('button[type=button]').onclick=()=>dialog.close();dialog.querySelector('form').onsubmit=event=>{event.preventDefault();dialog.close();if(client.state.phase==='active')void devicePanel.activation.revoke(pairingId,true);};dialog.showModal();
+}
 root.addEventListener('submit',e=>{
   if(e.target.id==='account-form'){e.preventDefault();void accountPanel.submit(e.target);return;}
-  if(e.target.id==='device-issue-form'){e.preventDefault();void devicePanel.issue();return;}
+  if(e.target.id==='device-issue-form'){e.preventDefault();void (['superadmin','pic'].includes(client.state.role)?devicePanel.issueActivation():devicePanel.issue());return;}
   if(e.target.id!=='admin-login')return;e.preventDefault();
   const email=root.querySelector('#admin-email').value.trim(),password=root.querySelector('#admin-password').value;
   root.querySelector('#admin-password').value='';void client.login(email,password);
 });
 root.addEventListener('click',e=>{
+  const activationAction=e.target.closest('[data-activation]');
+  if(activationAction&&client.state.phase==='active'){
+    const action=activationAction.dataset.activation;
+    if(action==='issue')void devicePanel.issueActivation();if(action==='retry')void devicePanel.activation.retry();if(action==='hide')devicePanel.activation.hide();if(action==='revoke')confirmActivation(activationAction.dataset.pairingId);return;
+  }
   const accountAction=e.target.closest('[data-account]');if(accountAction&&client.state.phase==='active'&&client.state.role==='superadmin'){void accountPanel.click(accountAction);return;}
   const deviceAction=e.target.closest('[data-device]');
   if(deviceAction&&client.state.phase==='active'){

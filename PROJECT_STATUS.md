@@ -1,6 +1,29 @@
 # ABC Attendance — status revisi
 
-**23 Oktober 2026 · Stage 3 startup/pengujian/login Windows · Auth/Firestore Emulator lokal · tidak dipublikasikan**
+**23 Oktober 2026 · Stage 4 aktivasi Mentor/kode 48 jam · Auth/Firestore Emulator lokal · tidak dipublikasikan**
+
+## Stage 4 — Aktivasi Mentor dan kode 48 jam
+
+- Superadmin/PIC menggunakan `POST /api/admin/activation-codes` untuk individual/bulk atomik sampai 16 kelompok. Satu kode acak 128-bit per tuple sekolah/ID pelayanan/kelompok serta tanggal/mentor efektif dari resolver server. Kode disimpan sebagai SHA-256, masa penebusan tepat 48 jam dari jam server; TTL dari klien ditolak. Izin tindakan, seluruh scope dan status penerbit diperiksa server, termasuk dalam transaksi. Batch tidak menulis sebagian bila satu cakupan ditolak; budget rate limit bulk dihitung per kode.
+- Receipt idempotensi menyimpan metadata tanpa plaintext. Respons pertama saja membawa kode; retry kunci sama mengembalikan 409 beserta metadata terkini tanpa membuat/menampilkan kode kedua. UI menyimpan intent retry hanya dalam memori, menolak klik berulang saat penerbitan/kode masih tampil, dan menyembunyikan kode saat pindah pilihan/tab, pemeriksaan sesi, logout atau reload. Daftar kode hanya memuat scope/penugasan, waktu dan status; revoke memerlukan konfirmasi serta pembacaan ulang.
+- Penebusan memakai proof P-256 yang sama, sekali pakai dalam transaksi pembuatan perangkat/kredensial dan audit. Nama mentor, sekolah, tanggal dan kelompok ditentukan server; Mentor langsung membuka roster tanpa memilih ulang identitas atau kelompok. Kode berbeda mendukung beberapa perangkat pada scope sama; kode yang sudah dipakai tidak pernah membuka perangkat tambahan. Kode invalid/kedaluwarsa/sudah dipakai/dicabut dan tanggal pelayanan berakhir dibedakan dengan pesan Indonesia.
+- Sesuai jawaban pengguna, akses Stage 4 maksimal 1 jam sejak penebusan dan tidak melewati akhir tanggal pelayanan WIB (tengah malam berikutnya eksklusif). Penebusan setelah tanggal pelayanan ditolak meskipun kode belum 48 jam. Kredensial tetap diperiksa pada setiap permintaan dan di transaksi absensi; perubahan mentor/tanggal menolak kode serta akses Stage 4 lama tanpa menulis ulang absensi. Kode terpakai ditangani lewat pencabutan perangkat; perangkat lain tetap independen.
+- Arsitektur, login/RBAC Stage 1, nonce/replay protection, riwayat/receipt/concurrency Stage 2 dan lifecycle/snapshot Stage 3 dipertahankan. Endpoint dan perangkat pairing lama tetap kompatibel dengan TTL sebelumnya; alur utama Superadmin/PIC memakai Stage 4. Tidak memigrasikan atau mereset data/izin lama. Tidak mengubah konfigurasi Firebase, `AGENTS.md`, skill No AI Slop, atau aturan/domain absensi. Tidak menambah dependensi, Stage 5–6, deploy, commit atau push.
+
+Validasi yang benar-benar dijalankan pada source akhir:
+
+- `npm.cmd run test:stage4`: **PASS, exit 0** dalam satu putaran lengkap. Sintaks/import **120 modul**, unit **158/158**, integrasi emulator **77/77**, empat suite Chrome **20/20** (termasuk parent), cold recovery/startup **2/2**. Delapan tes integrasi Stage 4 meliputi batas 48 jam/1 jam/tengah malam WIB, bulk/rate limit, PIC/RBAC, status receipt setelah revoke, single-use/concurrent redemption, replay, beberapa perangkat, persistence dan perubahan tanggal tanpa penulisan ulang absensi. Empat tes unit baru memeriksa proyeksi, kode sekali tampil, retry ambigu dan penugasan otomatis.
+- Chrome nyata memverifikasi tombol utama PIC mengirim kode 48 jam, bulk mobile tanpa overflow, sembunyikan/reload tanpa plaintext, konfirmasi/batal revoke, pesan kode dicabut, Mentor langsung ke roster dan reload izin tersimpan. Seluruh regresi login, pengelolaan perangkat lama dan absensi lulus. Screenshot desktop/ponsel diperiksa setelah kode disembunyikan.
+- Startup/shutdown dan cold export/import mempertahankan password pilihan sendiri, data/riwayat/izin serta snapshot, tanpa menutup layanan manual. Runner memakai emulator/port/TEMP dan namespace fiktif terpisah; snapshot operasional tidak diimpor. Emulator uji berhenti dengan sukses. Log: `.emulator-data/stage4-validation.log`; artefak: `.emulator-data/stage3-tests/run-E9QfR9/` (diabaikan Git).
+- `git diff --check` lulus. Pemeriksaan Markdown empat dokumen, tautan lokal baru dan metadata skill yang tidak berubah lulus. `AGENTS.md`, kedua berkas No AI Slop, `firebase.json`, rules/indexes Firestore tetap identik. Percobaan awal menemukan kesalahan endpoint fixture serta pemilihan kelompok setelah reload; keduanya diperbaiki sebelum putaran final, tanpa melonggarkan assertion keamanan.
+
+**Penerimaan Stage 4: PASS untuk lingkup lokal/emulator yang diuji.** Tidak ada blocker prasyarat lokal. Langkah operator berikutnya: jalankan Start, login PIC berizin, pilih pelayanan yang belum berakhir, bagikan kode sesuai penugasannya, lalu Stop dan tunggu snapshot tersimpan.
+
+Batas tetap: khusus emulator/data fiktif; Android fisik/Safari/Firefox dan produksi belum diuji. Riwayat kode/receipt belum memiliki pagination atau pembersihan otomatis. Daftar kode/perangkat dimuat ulang secara eksplisit; server tetap memeriksa akses setiap request. Snapshot lama dapat memulihkan izin lama, sehingga operator perlu meninjau/cabut ulang setelah recovery. Fixture operasional bertanggal lama tidak diubah otomatis; pilih pelayanan yang belum berakhir. Penjadwalan aman lewat API tetap di luar tahap ini.
+
+Berkas diubah: `backend/device-pairing.mjs`, `backend/firestore-emulator.mjs`, `backend/pairing-http.mjs`, `backend/server.mjs`, `admin-server.mjs`, `admin-client.js`, `admin-devices.js`, `secure-admin.js`, `pairing-client.js`, `secure-mentor.js`, `sw.js`, `package.json`, `Test ABC Attendance.cmd`, `tests/stage3.mjs`, `tests/emulator/admin-accounts-ui.mjs`, `tests/emulator/device-management-ui.mjs`, `MASTER_BRIEF.md`, `README.md`, `QA.md`, `PROJECT_STATUS.md`. Baru: `admin-activation.js`, `tests/activation-ui.test.mjs`, `tests/emulator/activation-codes.test.mjs`.
+
+Bagian Stage 3 dan berikutnya merupakan riwayat, bukan status terkini.
 
 ## Stage 3 — Startup Windows, pengujian dan login
 

@@ -1,5 +1,26 @@
 # Pemeriksaan prototipe
 
+## Stage 4 — Aktivasi Mentor dan kode 48 jam · 23 Oktober 2026
+
+Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage4`. Perintah ini memakai runner Stage 3 yang sama dan menjalankan seluruh regresi Stage 1–4; PASS/exit 0 hanya jika semua tahap lulus. Prasyarat dan isolasi emulator mengikuti Stage 3. Hasil eksekusi terkini dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+Putaran final: **PASS/exit 0**; sintaks/import 120 modul, unit 158/158, integrasi emulator 77/77, Chrome 20/20 (termasuk parent) dan cold lifecycle 2/2. Emulator uji berhenti sukses; log dan screenshot berada di `.emulator-data/stage3-tests/run-E9QfR9/`, ringkasan log `.emulator-data/stage4-validation.log`.
+
+| Cakupan | Pemeriksaan |
+|---|---|
+| Penerbitan | Individual/bulk atomik, satu kode per kelompok/mentor efektif, tepat 48 jam, retry kunci sama tanpa kode kedua, status receipt terkini, tidak ada plaintext pada dokumen/audit |
+| PIC/RBAC | Izin tindakan dan tuple lengkap, penolakan batch bercakupan campuran tanpa penulisan parsial, daftar hanya scope PIC, revoke di luar scope ditolak, izin penerbit berubah menolak penebusan, TTL klien ditolak |
+| Waktu server | 48 jam minus 1 ms diterima, tepat 48 jam ditolak; akses maksimum 1 jam; penebusan 1 ms sebelum akhir tanggal WIB diterima dengan sisa 1 ms; tepat tengah malam ditolak meskipun kode belum 48 jam |
+| Perangkat | Satu pemenang penebusan serentak, replay kode/proof ditolak, kunci perangkat lain ditolak, scope kelompok lain ditolak, kode berbeda mengizinkan perangkat lain, revoke satu perangkat tidak memutus perangkat lain |
+| Data | Penugasan diselesaikan server, perubahan mentor/tanggal menolak izin lama, absensi dan receipt tetap setelah repository dibuka ulang, penolakan akses tidak menulis ulang absensi |
+| Browser | PIC memakai tombol utama 48 jam, bulk sekali tampil, sembunyikan/reload tanpa raw code, konfirmasi/batal revoke, pesan kode dicabut, Mentor langsung ke roster dan pulih setelah reload, tanpa kebocoran kode ke log/storage |
+
+Pemeriksaan operator: pilih Jumat pelayanan yang belum berakhir, bagikan setiap kode sesuai baris mentor, aktifkan dua browser/profil menggunakan **dua kode berbeda**, lalu cabut salah satu perangkat. Izin perangkat lain dan absensi harus tetap. Untuk pesan invalid/kedaluwarsa/sudah dipakai/dicabut, gunakan kode fiktif terpisah; jangan mengubah jam sistem atau data operasional untuk mencoba batas waktu. Tes otomatis menyuntikkan jam server fixture. Periksa status lewat **Muat ulang perangkat** karena daftar bukan pembaruan realtime.
+
+Tangkapan layar uji disimpan setelah kode disembunyikan di folder run yang diabaikan Git. Android fisik, Safari/Firefox, deployment dan penggunaan data anak nyata belum diuji. API/perangkat pairing lama tetap kompatibel dengan masa berlaku sebelumnya; alur baru Superadmin/PIC dijelaskan pada Stage 4 README. Snapshot lama dapat memulihkan izin yang sudah dicabut; tinjau kembali setelah recovery seperti pada Stage 3.
+
+Bagian Stage 3 dan berikutnya adalah bukti historis; angka terkini berada pada status Stage 4.
+
 ## Stage 3 — Windows, login dan penyimpanan lokal · 23 Oktober 2026
 
 Jalankan `npm.cmd run test:stage3` atau **Test ABC Attendance.cmd**. Prasyarat: Node.js 22+, Java JDK 21+, dependensi/cache emulator serta Chrome/Playwright yang telah disiapkan operator. Runner menggunakan emulator baru, lima port loopback sementara dan data fiktif; tidak mengimpor snapshot operasional. Exit **0/PASS** berarti seluruh tahap lulus; **1/FAIL** berarti ada prasyarat/pemeriksaan yang gagal. Runner lengkap telah lulus (69 tes emulator, 19 tes browser dan 2 cold lifecycle); regresi unit akhir 154/154 dan sintaks/import 117 modul lulus. Hasil rinci serta batas terbaru dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).

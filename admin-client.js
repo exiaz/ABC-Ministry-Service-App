@@ -22,7 +22,10 @@ export function createAdminClient(onChange,{request=fetch}={}){
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
     if(response.status===401){denied();throw Error('Sesi admin berakhir.');}
     if(!response.ok){const error=Error(response.status===403?'Izin Anda tidak mencakup permintaan ini.':response.status===409?'Data sudah berubah. Muat ulang sebelum mencoba lagi.':response.status===400?'Periksa email fiktif, kata sandi, tindakan dan cakupan yang dipilih.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan belum berhasil. Periksa koneksi dan kemungkinan email sudah dipakai.');error.status=response.status;
-      if(response.status===409){try{const value=await response.json();if(g===generation&&value.duplicateSubmission===true&&/^[a-f0-9]{64}$/.test(value.pairingId)&&Number.isSafeInteger(value.expiresAt))Object.assign(error,{duplicateSubmission:true,pairingId:value.pairingId,expiresAt:value.expiresAt});}catch{}}
+      if(response.status===409){try{const value=await response.json();if(g===generation&&value.duplicateSubmission===true){
+        if(/^[a-f0-9]{64}$/.test(value.pairingId)&&Number.isSafeInteger(value.expiresAt))Object.assign(error,{duplicateSubmission:true,pairingId:value.pairingId,expiresAt:value.expiresAt});
+        else if(path==='/api/admin/activation-codes'&&Array.isArray(value.codes)&&value.codes.length>0&&value.codes.length<=16&&value.codes.every(row=>/^[a-f0-9]{64}$/.test(row.pairingId)&&Number.isSafeInteger(row.expiresAt)))Object.assign(error,{duplicateSubmission:true,codes:value.codes.map(row=>({pairingId:row.pairingId,createdAt:row.createdAt,expiresAt:row.expiresAt,state:row.state,assignment:row.assignment}))});
+      }}catch{}}
       throw error;}
     const value=await response.json();
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
@@ -37,6 +40,8 @@ export function createAdminClient(onChange,{request=fetch}={}){
     readPairingContext(){return deviceRequest('/api/admin/pairing-context');},
     readDevices(){return deviceRequest('/api/admin/devices');},
     issuePairingCode(body){return deviceRequest('/api/admin/pairing-codes',body);},
+    issueActivationCodes(body){return deviceRequest('/api/admin/activation-codes',body);},
+    readActivationCodes(){return deviceRequest('/api/admin/activation-codes');},
     revokeDevice(id){return deviceRequest('/api/admin/devices/'+deviceId(id)+'/revoke',{});},
     revokePairingCode(id){if(typeof id!=='string'||!/^[a-f0-9]{64}$/.test(id))throw Error('ID kode tidak valid.');return deviceRequest('/api/admin/pairing-codes/'+id+'/revoke',{});},
     async login(email,password){

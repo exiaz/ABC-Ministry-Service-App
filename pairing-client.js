@@ -16,6 +16,11 @@ export function createPairingClient(apiOrigin,onChange){
   if(channel)channel.onmessage=()=>{generation++;publish({phase:'inactive',message:'Izin lokal berubah pada tab lain. Periksa kembali sebelum melanjutkan.'});};
   const request=(target,options)=>fetch(apiOrigin+target,{...options,mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(8000)});
   const validSession=s=>s&&typeof s.deviceId==='string'&&/^[a-f0-9-]{36}$/.test(s.deviceId)&&typeof s.credential==='string'&&/^[A-Za-z0-9_-]{43}$/.test(s.credential)&&Number.isSafeInteger(s.expiresAt);
+  const assignmentFrom=value=>{
+    const ids=['schoolId','groupId','serviceSessionId','mentorId'],names=['schoolName','groupName','mentorName'];
+    if(!value||!ids.every(id=>typeof value[id]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value[id]))||!names.every(id=>typeof value[id]==='string'&&value[id].trim())||!/^\d{4}-\d{2}-\d{2}$/.test(value.serviceDate))throw Error('Status perangkat tidak sesuai. Hubungi admin.');
+    return Object.fromEntries([...ids,...names,'serviceDate'].map(id=>[id,value[id]]));
+  };
   const scopedTarget=(path,scope)=>{
     const keys=['schoolId','groupId','serviceSessionId'];
     if(!scope||!keys.every(k=>typeof scope[k]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(scope[k])))throw Error('Pilihan pelayanan tidak valid.');
@@ -55,7 +60,7 @@ export function createPairingClient(apiOrigin,onChange){
     const status=await response.json();
     if(current!==generation)return;
     if(status.deviceId!==session.deviceId||status.state!=='active'||status.expiresAt!==session.expiresAt)throw Error('Status perangkat tidak sesuai. Hubungi admin.');
-    publish({phase:'active',message:'Perangkat aktif · API emulator lokal',expiresAt:status.expiresAt});
+    publish({phase:'active',message:'Perangkat aktif · API emulator lokal',expiresAt:status.expiresAt,...(status.assignment?{assignment:assignmentFrom(status.assignment)}:{})});
   }
   return {
     get state(){return {...state};},
@@ -79,14 +84,18 @@ export function createPairingClient(apiOrigin,onChange){
       finally{busy=false;}
     },
     async activate(code){
-      if(busy)return;busy=true;const current=generation;
+      if(busy||state.phase==='active')return;busy=true;const current=generation;
       publish({phase:'pairing',message:'Mengaktifkan perangkat…'});
       try{
-        if(!/^[A-Za-z0-9_-]{22}$/.test(code))throw Error('Kode tidak valid, sudah dipakai, atau kedaluwarsa. Minta kode baru kepada admin.');
+        if(!/^[A-Za-z0-9_-]{22}$/.test(code))throw Error('Kode tidak valid. Periksa kode atau minta kode baru kepada PIC.');
         const keys=await prepareDevice(),target='/api/pairing/redeem',body=JSON.stringify({code,publicKey:keys.publicKey});
         const response=await request(target,{method:'POST',body,headers:{'Content-Type':'application/json',...await deviceHeaders(keys,code,'POST',target,body)}});
         if(current!==generation)return;
-        if(response.status===400)throw Error('Kode tidak valid, sudah dipakai, atau kedaluwarsa. Minta kode baru kepada admin.');
+        if(response.status===400){
+          let reason;try{reason=(await response.json()).codeState;}catch{}
+          throw Error({invalid:'Kode tidak valid. Periksa kode atau minta kode baru kepada PIC.',expired:'Kode kedaluwarsa. Minta kode baru kepada PIC.',used:'Kode sudah dipakai. Periksa izin perangkat ini atau minta kode baru untuk perangkat lain.',revoked:'Kode telah dicabut. Hubungi PIC.','service-ended':'Tanggal pelayanan sudah berakhir. Hubungi PIC.'}[reason]??'Kode tidak valid. Periksa kode atau minta kode baru kepada PIC.');
+        }
+        if(response.status===503)throw Error('Aktivasi belum tersedia. Hubungi PIC untuk memeriksa kesiapan server.');
         if(response.status===429)throw Error('Terlalu banyak percobaan. Tunggu satu menit lalu coba lagi.');
         if(!response.ok)throw Error('Aktivasi belum berhasil. Pastikan API lokal dan emulator aktif. Jika kode sudah terpakai, minta kode baru.');
         const session=await response.json();
@@ -107,6 +116,6 @@ export function createPairingClient(apiOrigin,onChange){
 }
 function safeMessage(error){
   // Errors from browser/crypto/storage must never disclose requests or secrets.
-  const allowed=['Kode tidak valid','Terlalu banyak percobaan','Aktivasi belum berhasil','Respons aktivasi tidak sesuai','Browser ini belum mendukung','Kunci perangkat tidak dapat'];
+  const allowed=['Kode tidak valid','Kode kedaluwarsa','Kode sudah dipakai','Kode telah dicabut','Tanggal pelayanan sudah berakhir','Terlalu banyak percobaan','Aktivasi belum tersedia','Aktivasi belum berhasil','Respons aktivasi tidak sesuai','Browser ini belum mendukung','Kunci perangkat tidak dapat'];
   return allowed.some(prefix=>error?.message?.startsWith(prefix))?error.message:'Penyimpanan atau aktivasi gagal. Jangan gunakan izin sementara; hubungi admin untuk kode baru.';
 }

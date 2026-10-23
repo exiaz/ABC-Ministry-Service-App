@@ -22,15 +22,22 @@ export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,sen
   const code=/^\/api\/admin\/pairing-codes\/([a-f0-9]{64})\/revoke$/.exec(url.pathname);
   const device=/^\/api\/admin\/devices\/([A-Za-z0-9_-]{1,128})(\/revoke)?$/.exec(url.pathname);
   const issue=url.pathname==='/api/admin/pairing-codes';
+  const activation=url.pathname==='/api/admin/activation-codes';
   const context=url.pathname==='/api/admin/pairing-context',list=url.pathname==='/api/admin/devices';
-  if(!code&&!device&&!issue&&!context&&!list)return false;
-  const method=context||list||device&&!device[2]?'GET':'POST';
+  if(!code&&!device&&!issue&&!context&&!list&&!activation)return false;
+  const method=context||list||device&&!device[2]||activation&&req.method==='GET'?'GET':'POST';
   if(req.method!==method){send(405,{error:'Metode tidak diizinkan.'},{Allow:method});return true;}
   if(!pairing)throw new PairingError(503,'Pairing emulator lokal tidak tersedia.');
   if(url.search)throw new PairingError(400,'Parameter pairing tidak valid.');
-  await pairing.limit(context||list?'admin-read':'admin',uid,context||list?60:20);
+  const reading=context||list||activation&&req.method==='GET';
+  await pairing.limit(reading?'admin-read':'admin',uid,reading?60:20);
   if(context||list){send(200,await pairing[context?'adminContext':'listDevices'](uid,stillAuthorized));return true;}
-  if(issue){
+  if(activation){
+    if(req.method==='GET'){send(200,await pairing.listCodes(uid,stillAuthorized));return true;}
+    const {body}=await jsonBody(req,['grants','idempotencyKey'],adminOrigin);
+    if(Array.isArray(body.grants)&&body.grants.length>1&&body.grants.length<=16)await pairing.limit('admin',uid,20,body.grants.length-1);
+    send(201,await pairing.issueActivation(uid,body,stillAuthorized));
+  }else if(issue){
     const {body}=await jsonBody(req,['grants','codeTtlMs','grantTtlMs','idempotencyKey'],adminOrigin);
     if(typeof body.idempotencyKey!=='string'||!/^[A-Za-z0-9_-]{16,128}$/.test(body.idempotencyKey))throw new PairingError(400,'Kunci idempotensi penerbitan wajib diisi.');
     send(201,await pairing.issue(uid,body,stillAuthorized));

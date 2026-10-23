@@ -1,10 +1,14 @@
 # ABC Goes to School — Master Brief
 
-**Status:** prototipe frontend lokal, 21 Oktober 2026. Bukan sistem operasional. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna. Siswa, jadwal awal, catatan kehadiran, otorisasi, dan proses verifikasi tetap simulasi lokal.
+**Status revisi 23 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–4. Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
 
 **Tambahan Milestone 1:** fondasi API roster baca-saja dan otorisasi kredensial uji tersedia pada server terpisah; belum merupakan backend/autentikasi produksi dan tidak mengganti penyimpanan atau akses demo frontend. Seluruh proyek tetap khusus data fiktif. Kontrak, pemisahan jalur legacy, bukti tes dan batasnya dijelaskan pada `README.md` dan revisi terbaru `PROJECT_STATUS.md`; pernyataan batas backend di bawah tetap berlaku untuk operasi produksi/prototipe frontend.
 
 ## Tujuan dan lingkup
+
+**Tambahan Stage 4 (23 Oktober 2026):** pada jalur Mentor aman/emulator, PIC berizin menerbitkan satu kode unik per sekolah, ID pelayanan, tanggal, kelompok dan mentor efektif. Kode acak disimpan sebagai hash, ditampilkan sekali, dapat diterbitkan serentak secara atomik, berlaku tepat 48 jam sejak waktu penerbitan server dan hanya sekali ditebus. Mentor memasukkan kode saja; server menentukan penugasannya. Perangkat tambahan memerlukan kode lain, bukan pemakaian ulang kode lama. Kode dicabut/kedaluwarsa/sudah dipakai atau penugasannya berubah ditolak. Izin perangkat lama tetap mengikuti kontraknya.
+
+**Batas akses yang disetujui pengguna:** penebusan kode Stage 4 memberi akses maksimal 1 jam sejak penebusan dan paling lambat akhir tanggal pelayanan menurut WIB; setelah tanggal tersebut, penebusan ditolak meskipun jendela kode 48 jam belum habis. Batas akhir disimpan sebagai tengah malam berikutnya yang eksklusif (mencakup 23.59.59 WIB). Pemeriksaan menggunakan jam server, termasuk pada absensi; masa kode tidak memperpanjang sesi perangkat. Perubahan penugasan/tanggal menolak kode serta akses Stage 4 lama tanpa menulis ulang riwayat absensi. Aturan Jumat, mentor tetap dan otorisasi Stage 1–3 dipertahankan. Ini tidak menambah kalender fleksibel, pengganti/merge Stage 6, atau produksi.
 
 **Tambahan Stage 1 (23 Oktober 2026):** mode Admin Emulator memiliki peran Superadmin/PIC yang diperiksa server. Penetapan pemilik melalui setup lokal memakai UID demo yang sama dengan konfirmasi eksplisit; pengelolaan PIC membatasi tindakan dan cakupan sekolah/sesi/kelompok. Tidak memigrasikan seluruh dasbor legacy atau mengubah aturan Jumat, pairing, absensi, dan koreksi pada tahap ini. Status serta bukti tes terkini ada di PROJECT_STATUS.md; mode legacy di bawah tetap terpisah.
 

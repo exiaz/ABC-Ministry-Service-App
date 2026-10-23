@@ -47,6 +47,6 @@ async function main(){
     await waitFor(async()=>!(await Promise.all(ports.map(portOccupied))).some(Boolean),{timeout:10000});
     console.log('Emulator tes ditutup. Artefak fiktif terisolasi: '+state);
   }
-  console.log('\nPASS · Stage 3. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
+  console.log('\nPASS · Stage 3–4. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
 }
 main().catch(error=>{console.error('\nFAIL · '+(error.demoSafe?error.message:error.message?.startsWith('Pengujian gagal:')?error.message:'Prasyarat, layanan atau penghentian tes belum terkonfirmasi. Periksa keluaran di atas dan README.'));process.exitCode=1;});

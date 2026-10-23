@@ -88,7 +88,8 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       if(result.kind!=='ok'){send(403,{error:'Akses roster ditolak.'});return;}
       send(200,result.roster);
     }catch(error){
-      if(error instanceof PairingError&&error.duplicateSubmission){send(409,{error:error.message,duplicateSubmission:true,pairingId:error.pairingId,expiresAt:error.expiresAt});return;}
+      if(error instanceof PairingError&&error.duplicateSubmission){send(409,{error:error.message,duplicateSubmission:true,...(error.codes?{codes:error.codes}:{pairingId:error.pairingId,expiresAt:error.expiresAt})});return;}
+      if(error instanceof PairingError&&error.codeState){send(error.status,{error:error.message,codeState:error.codeState});return;}
       if(error.adminAccountError){send(error.status,{error:error.message});return;}
       if(error instanceof PairingError||error instanceof AttendanceError||error instanceof AdminSessionError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
       send(500,{error:req.url.startsWith('/api/admin')?'Permintaan admin tidak dapat diproses.':req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
