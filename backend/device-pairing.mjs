@@ -5,6 +5,7 @@ import {adminAuthConfig} from './admin-auth.mjs';
 import {hash,devicePublicKey,validDeviceProof} from './device-proof.mjs';
 import {SCHOOL_CONFIG,GROUP_CONFIG} from '../group-config.js';
 import {toRosterContext} from './roster.mjs';
+import {adminPolicy} from './admin-accounts.mjs';
 
 export class PairingError extends Error{
   constructor(status,message){super(message);this.status=status;}
@@ -30,6 +31,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
   const currentAdmin=async check=>{if(!await check())throw new PairingError(401,'Token admin tidak valid atau tidak berlaku.');};
   const event=(tx,event,actor,fields)=>tx.create(col('authorizationEvents').doc(randomUUID()),{event,actor,at:now(),...fields});
   const permissionRef=uid=>{if(!validId(uid))throw denied();return col('adminPairingPermissions').doc(uid);};
+  const authorizeOperator=async(uid,action,tx)=>{assertAdminLocal();try{await adminPolicy(root,uid,{tx,action});}catch{throw denied();}};
   const relations=async(tx,grants)=>{
     for(const s of grants){
       const [school,group,visit]=(await tx.getAll(col('schools').doc(s.schoolId),col('groups').doc(s.groupId),col('serviceSessions').doc(s.serviceSessionId))).map(d=>d.data());
@@ -47,7 +49,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
   return {
     limit,
     async adminContext(uid,stillAuthorized=async()=>true){
-      if(!assertAdminLocal().uids.includes(uid))throw denied();
+      await authorizeOperator(uid,'pairing:read');
       const initial=(await permissionRef(uid).get()).data();
       if(!permitted(initial,initial?.grants))throw denied();
       const scopes=copy(initial.grants);
@@ -58,6 +60,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
         return {...metadata,schoolName:school.name,groupName:group.name};
       }));
       return db.runTransaction(async tx=>{
+        await authorizeOperator(uid,'pairing:read',tx);
         const permission=(await tx.get(permissionRef(uid))).data();
         if(!permitted(permission,scopes))throw denied();
         await relations(tx,scopes);assertAdminLocal();await currentAdmin(stillAuthorized);
@@ -65,8 +68,9 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
       });
     },
     async listDevices(uid,stillAuthorized=async()=>true){
-      if(!assertAdminLocal().uids.includes(uid))throw denied();
+      await authorizeOperator(uid,'pairing:read');
       return db.runTransaction(async tx=>{
+        await authorizeOperator(uid,'pairing:read',tx);
         const permission=(await tx.get(permissionRef(uid))).data();
         if(!permitted(permission,permission?.grants))throw denied();
         const snapshots=await tx.get(col('devices').where('binding','==','p256-v1'));
@@ -87,7 +91,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
       });
     },
     async issue(uid,{grants,codeTtlMs=300000,grantTtlMs=3600000},stillAuthorized=async()=>true){
-      if(!assertAdminLocal().uids.includes(uid))throw denied();
+      await authorizeOperator(uid,'pairing:issue');
       if(!validGrants(grants)||!Number.isSafeInteger(codeTtlMs)||codeTtlMs<1000||codeTtlMs>600000||!Number.isSafeInteger(grantTtlMs)||grantTtlMs<1000||grantTtlMs>3600000)throw new PairingError(400,'Parameter pairing tidak valid.');
       const scopes=copy(grants);
       if(!permitted((await permissionRef(uid).get()).data(),scopes))throw denied();
@@ -96,6 +100,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
       for(const scope of scopes)if(!await repository.read(scope))throw denied();
       const code=randomBytes(16).toString('base64url'),pairingId=hash(code),ref=col('pairingCodes').doc(pairingId);
       const result=await db.runTransaction(async tx=>{
+        await authorizeOperator(uid,'pairing:issue',tx);
         if(!permitted((await tx.get(permissionRef(uid))).data(),scopes))throw denied();
         await relations(tx,scopes);assertAdminLocal();await currentAdmin(stillAuthorized);
         const expiresAt=now()+codeTtlMs;
@@ -113,7 +118,8 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
       return db.runTransaction(async tx=>{
         const entry=(await tx.get(ref)).data();
         if(!entry||entry.codeHash!==pairingId||entry.state!=='pending'||!Number.isSafeInteger(entry.expiresAt)||entry.expiresAt<=now()||!validGrants(entry.grants))throw invalid();
-        if(!assertAdminLocal().uids.includes(entry.issuedBy)||!permitted((await tx.get(permissionRef(entry.issuedBy))).data(),entry.grants))throw invalid();
+        try{await authorizeOperator(entry.issuedBy,'pairing:issue',tx);}catch{throw invalid();}
+        if(!permitted((await tx.get(permissionRef(entry.issuedBy))).data(),entry.grants))throw invalid();
         try{await relations(tx,entry.grants);}catch{throw invalid();}
         assertLocal();
         if(!validDeviceProof(publicKey,{...proof,token:code},now())||entry.expiresAt<=now())throw invalid();
@@ -128,6 +134,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
     async revokeCode(uid,pairingId,stillAuthorized=async()=>true){
       assertAdminLocal();if(!/^[a-f0-9]{64}$/.test(pairingId))throw invalid();
       return db.runTransaction(async tx=>{
+        await authorizeOperator(uid,'pairing:revoke',tx);
         const ref=col('pairingCodes').doc(pairingId),entry=(await tx.get(ref)).data();
         const permission=(await tx.get(permissionRef(uid))).data();
         if(!entry||!permitted(permission,entry.grants))throw denied();
@@ -139,6 +146,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
     async adminDevice(uid,deviceId,revoke=false,stillAuthorized=async()=>true){
       assertAdminLocal();if(!validId(deviceId))throw denied();
       return db.runTransaction(async tx=>{
+        await authorizeOperator(uid,revoke?'pairing:revoke':'pairing:read',tx);
         const entry=(await tx.get(col('devices').doc(deviceId))).data(),permission=(await tx.get(permissionRef(uid))).data();
         if(entry?.id!==deviceId||!entry.publicKey||!permitted(permission,entry.grants))throw denied();
         assertAdminLocal();await currentAdmin(stillAuthorized);

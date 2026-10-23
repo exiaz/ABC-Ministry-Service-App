@@ -12,6 +12,7 @@ import {localOrigin,mentorCors} from './mentor-origin.mjs';
 import {attendanceRoute} from './attendance-http.mjs';
 import {AttendanceError} from './attendance.mjs';
 import {AdminSessionError,createAdminSessionRoutes} from './admin-session-http.mjs';
+import {accountRoute} from './admin-accounts-http.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
@@ -42,12 +43,13 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         if(result.kind!=='ok'){send(403,{error:'Akses admin ditolak.'});return;}
         const stillAuthorized=async()=>{const current=await adminAuthentication.authorize(authorization);return current.kind==='ok'&&current.uid===result.uid;};
         if(url.pathname==='/api/admin/logout'&&adminLoginEnabled){await adminSessions.logout({req,url,authorization,adminAuthentication,send});return;}
+        if(await accountRoute({req,url,result,adminAuthentication,stillAuthorized,send}))return;
         if(await adminPairingRoute({req,url,uid:result.uid,pairing,stillAuthorized,send,adminOrigin:adminLoginEnabled?'http://127.0.0.1:'+req.socket.localPort:undefined}))return;
         if(url.pathname!=='/api/admin/session'){send(404,{error:'Tidak ditemukan.'});return;}
         if(req.method!=='GET'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'GET'});return;}
         if(url.search){send(400,{error:'Parameter sesi admin tidak diizinkan.'});return;}
         if(!await stillAuthorized()){send(401,{error:'Sesi admin tidak berlaku. Masuk kembali.'});return;}
-        send(200,{uid:result.uid,mode:'emulator-lokal'});return;
+        send(200,{uid:result.uid,mode:'emulator-lokal',...(['superadmin','pic'].includes(result.role)?{role:result.role,actions:result.actions??[]}: {})});return;
       }
       if(url.pathname==='/api/pairing/redeem'){
         if(!local){send(503,{error:'Pairing emulator lokal tidak tersedia.'});return;}
@@ -86,6 +88,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       if(result.kind!=='ok'){send(403,{error:'Akses roster ditolak.'});return;}
       send(200,result.roster);
     }catch(error){
+      if(error.adminAccountError){send(error.status,{error:error.message});return;}
       if(error instanceof PairingError||error instanceof AttendanceError||error instanceof AdminSessionError){send(error.status,{error:error.message},error.status===429?{'Retry-After':'60'}:error.status===413?{Connection:'close'}:{});return;}
       send(500,{error:req.url.startsWith('/api/admin')?'Permintaan admin tidak dapat diproses.':req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
     }

@@ -6,6 +6,8 @@
 
 ## Tujuan dan lingkup
 
+**Tambahan Stage 1 (23 Oktober 2026):** mode Admin Emulator memiliki peran Superadmin/PIC yang diperiksa server. Penetapan pemilik melalui setup lokal memakai UID demo yang sama dengan konfirmasi eksplisit; pengelolaan PIC membatasi tindakan dan cakupan sekolah/sesi/kelompok. Tidak memigrasikan seluruh dasbor legacy atau mengubah aturan Jumat, pairing, absensi, dan koreksi pada tahap ini. Status serta bukti tes terkini ada di PROJECT_STATUS.md; mode legacy di bawah tetap terpisah.
+
 Menggantikan percobaan alur laporan WhatsApp dengan absensi sederhana bagi mentor dan rekap bagi admin. Nama sekolah resmi: **SDN Pacarkeling V**, **SDN Airlangga III**, **SDN Kertajaya IV**, tetap memakai ID s1/s2/s3. Satu arah visual: biru muda, merah koral, kuning, tipografi sistem, ilustrasi vektor lokal, tombol besar. Logo memakai berkas asli yang disediakan pengguna.
 
 - **Mentor:** simulasi izin perangkat tanpa akun pribadi → sekolah → **tanggal pelayanan** → kelompok sekolah tersebut → daftar tetap → Hadir sekali ketuk, Izin/koreksi melalui menu → tambah siswa sementara → tinjau/konfirmasi penyelesaian → hasil dan koreksi ulang.

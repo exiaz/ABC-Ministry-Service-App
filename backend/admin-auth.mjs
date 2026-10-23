@@ -1,5 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {DEMO_PROJECT_ID} from './emulator-config.mjs';
+import {emulatorConfig} from './emulator-config.mjs';
+import {adminPolicy,createAdminAccounts} from './admin-accounts.mjs';
 
 const digest=token=>createHash('sha256').update(token).digest('hex');
 const validUid=uid=>typeof uid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(uid);
@@ -30,14 +32,17 @@ export async function createConfiguredAdminAuthentication(){
 // calls this exact signIn path. UID claims alone cannot establish provenance,
 // even after Admin SDK verification in emulator mode.
 export async function createLocalAdminAuthentication(){
-  const config=adminAuthConfig(),allowed=new Set(config.uids),admitted=new Map();
+  const config=adminAuthConfig(),admitted=new Map();
   const {initializeApp,deleteApp}=await import('firebase-admin/app');
   const {getAuth}=await import('firebase-admin/auth');
   const app=initializeApp({projectId:config.projectId},'abc-admin-local-'+randomUUID());
   const auth=getAuth(app);
+  const store=emulatorConfig(),{getFirestore}=await import('firebase-admin/firestore');
+  const db=getFirestore(app);db.settings({host:store.host,ssl:false,universeDomain:'googleapis.com'});
+  const root=db.collection('emulatorNamespaces').doc(store.namespace);
   let closed=false;
   const assertLocal=()=>{
-    try{if(closed||JSON.stringify(adminAuthConfig())!==JSON.stringify(config))throw Error();}
+    try{if(closed||JSON.stringify(adminAuthConfig())!==JSON.stringify(config)||JSON.stringify(emulatorConfig())!==JSON.stringify(store))throw Error();}
     catch{throw Object.assign(Error('Konfigurasi autentikasi admin berubah; akses ditolak.'),{status:503});}
   };
   const verify=async token=>{
@@ -54,8 +59,9 @@ export async function createLocalAdminAuthentication(){
     // fallback identity, automatic account creation or public token endpoint.
     await auth.listUsers(1);
     assertLocal();
-  }catch{closed=true;await deleteApp(app);throw Error('Auth Emulator lokal tidak tersedia atau konfigurasi tidak valid.');}
+  }catch{closed=true;await db.terminate();await deleteApp(app);throw Error('Auth Emulator lokal tidak tersedia atau konfigurasi tidak valid.');}
   return {
+    accounts:createAdminAccounts({db,root,auth}),
     async signIn({email,password}){
       try{
         assertLocal();
@@ -65,8 +71,9 @@ export async function createLocalAdminAuthentication(){
         });
         if(!response.ok){const error=Error();if(response.status>=500||response.status===429)error.status=503;throw error;}
         const {idToken}=await response.json(),principal=await verify(idToken);
-        if(!allowed.has(principal.uid))throw Error();
-        prune();admitted.set(digest(idToken),{uid:principal.uid,exp:principal.exp});
+        let policy;
+        try{policy=await adminPolicy(root,principal.uid);}catch(error){if(error.adminAccountError)throw error;throw Object.assign(Error('Izin server belum tersedia.'),{status:503});}
+        prune();admitted.set(digest(idToken),{uid:principal.uid,exp:principal.exp,revision:policy.revision});
         return idToken;
       }catch(error){
         const failure=Error('Login admin emulator ditolak.');
@@ -80,13 +87,13 @@ export async function createLocalAdminAuthentication(){
         const match=typeof header==='string'&&header.length<=16384&&/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.)$/.exec(header);
         if(!match)return {kind:'unauthenticated'};
         const principal=await verify(match[1]);
-        if(!allowed.has(principal.uid))return {kind:'forbidden'};
+        const policy=await adminPolicy(root,principal.uid);
         const entry=admitted.get(digest(match[1]));
-        if(!entry||entry.uid!==principal.uid||entry.exp!==principal.exp)return {kind:'unauthenticated'};
-        return {kind:'ok',uid:principal.uid};
-      }catch{return {kind:'unauthenticated'};}
+        if(!entry||entry.uid!==principal.uid||entry.exp!==principal.exp||entry.revision!==policy.revision)return {kind:'unauthenticated'};
+        return {kind:'ok',...policy};
+      }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
     },
     revoke(token){return typeof token==='string'&&admitted.delete(digest(token));},
-    async close(){closed=true;admitted.clear();await deleteApp(app);}
+    async close(){closed=true;admitted.clear();await db.terminate();await deleteApp(app);}
   };
 }

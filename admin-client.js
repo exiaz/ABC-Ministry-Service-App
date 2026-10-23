@@ -13,7 +13,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
     const result=await response.json();
     if(g!==generation)return null;
     if(typeof result?.uid!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(result.uid)||result.mode!=='emulator-lokal')throw Error();
-    return {uid:result.uid,mode:result.mode};
+    return {uid:result.uid,mode:result.mode,...(result.role?{role:result.role,actions:result.actions??[]}: {})};
   };
   async function deviceRequest(path,body){
     if(!token||logoutToken||state.phase!=='active')throw Error('Sesi admin belum aktif.');
@@ -21,7 +21,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
     const response=await call(path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
     if(response.status===401){denied();throw Error('Sesi admin berakhir.');}
-    if(!response.ok){const error=Error(response.status===403?'Izin pengelolaan perangkat tidak mencakup permintaan ini.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan perangkat belum berhasil. Periksa koneksi.');error.status=response.status;throw error;}
+    if(!response.ok){const error=Error(response.status===403?'Izin Anda tidak mencakup permintaan ini.':response.status===409?'Data sudah berubah. Muat ulang sebelum mencoba lagi.':response.status===400?'Periksa email fiktif, kata sandi, tindakan dan cakupan yang dipilih.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan belum berhasil. Periksa koneksi dan kemungkinan email sudah dipakai.');error.status=response.status;throw error;}
     const value=await response.json();
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
     return value;
@@ -29,6 +29,9 @@ export function createAdminClient(onChange,{request=fetch}={}){
   const deviceId=id=>{if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(id))throw Error('ID perangkat tidak valid.');return id;};
   return {
     get state(){return {...state};},
+    readAccounts(){return deviceRequest('/api/admin/accounts');},
+    createAccount(body){return deviceRequest('/api/admin/accounts',body);},
+    updateAccount(id,body){return deviceRequest('/api/admin/accounts/'+deviceId(id),body);},
     readPairingContext(){return deviceRequest('/api/admin/pairing-context');},
     readDevices(){return deviceRequest('/api/admin/devices');},
     issuePairingCode(body){return deviceRequest('/api/admin/pairing-codes',body);},

@@ -11,6 +11,7 @@ import {createConfiguredRepositories} from './backend/configured-repositories.mj
 const root=path.dirname(fileURLToPath(import.meta.url));
 const assets=new Map([['/','admin.html'],['/index.html','admin.html'],['/admin-client.js','admin-client.js'],['/secure-admin.js','secure-admin.js'],['/styles.css','styles.css'],['/assets/abc-movement-logo.png','assets/abc-movement-logo.png'],['/icon.svg','icon.svg']]);
 assets.set('/admin-devices.js','admin-devices.js');
+assets.set('/admin-accounts.js','admin-accounts.js');
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/devices']);
 // Same-origin admin shell + existing protected API handler/context. No CORS,
 // cookie session, demo assets/database or public administrative dispatch here.
@@ -21,7 +22,7 @@ export function createAdminServer({adminAuthentication,pairing}){
     try{
       requireAdminOrigin(req);
       const url=new URL(req.url,'http://127.0.0.1');
-      if(apiPaths.has(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
+      if(apiPaths.has(url.pathname)||/^\/api\/admin\/accounts(?:\/[A-Za-z0-9_-]{1,128})?$/.test(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
       if(!['GET','HEAD'].includes(req.method)){send(405,'Metode tidak diizinkan.');return;}
       const file=assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}

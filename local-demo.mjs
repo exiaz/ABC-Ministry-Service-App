@@ -10,6 +10,7 @@ import {inspectLocalService,stopLocalService,serviceSignature} from './local-ser
 import {DEMO_PROJECT_ID} from './backend/emulator-config.mjs';
 import {createFirestoreEmulatorRepositories} from './backend/firestore-emulator.mjs';
 import {createLocalAdminAuthentication} from './backend/admin-auth.mjs';
+import {initializeOwner} from './backend/admin-accounts.mjs';
 import {createRosterServer} from './backend/server.mjs';
 import {createAdminServer} from './admin-server.mjs';
 import {createPrototypeServer} from './server.mjs';
@@ -247,6 +248,11 @@ export async function runDemo({open=openPages,log=console.log,address=controller
         await persist(state);check();log('Password baru telah tersimpan. Gunakan password baru untuk login; sesi lama telah ditutup.');
       }
       const result=await prepare(context,getAuth(app),{assertLocal:check,askPassword:()=>{log('Akun pertama: buat password 12–128 karakter. Input tidak terlihat; ketik lalu Enter, kemudian ulangi.');return askPassword({signal:abort.signal});}});
+      if(context.config.namespace===DEMO_NAMESPACE){
+        const marker=await context.root.collection('adminSecurity').doc('owner').get();
+        if(!marker.exists&&!await confirmOwner({input,output,signal:abort.signal}))throw fail('Penetapan Superadmin dibatalkan. Akun dan data tetap tersimpan; jalankan Start untuk mencoba lagi.');
+        if(await initializeOwner({...context,auth:getAuth(app),...DEMO_ADMIN,confirmed:true})){await persist(state);check();log('Superadmin ditetapkan pada UID demo yang sama. Password dan izin pairing tetap.');}
+      }
       if(!result.reused){await persist(state);check();}
       log(result.reused?'Akun dan data digunakan kembali. Password Anda tetap berlaku.':'Akun dan fixture tersimpan. Ingat password yang baru Anda buat.');
       if(!result.pairingReady)log('Perhatian: izin pairing dicabut atau tidak lengkap. Izin tersebut tetap dipertahankan; hubungi operator bila perlu.');
@@ -271,6 +277,15 @@ export function confirmRecovery({input=process.stdin,output=process.stdout}={}){
     const terminal=createInterface({input,output});let answered=false;
     terminal.once('close',()=>{if(!answered)resolve(false);});
     terminal.question('Ketik GANTI lalu Enter untuk melanjutkan. Enter saja untuk batal: ',answer=>{answered=true;terminal.close();resolve(answer.trim().toUpperCase()==='GANTI');});
+  });
+}
+export function confirmOwner({input=process.stdin,output=process.stdout,signal}={}){
+  output.write('\nPENETAPAN PEMILIK DEMO LOKAL\nAkun '+DEMO_ADMIN.email+' ('+DEMO_ADMIN.uid+') akan menjadi satu Superadmin awal. Password, izin dan data lama dipertahankan. Ketik TETAPKAN untuk setuju; Enter membatalkan.\n');
+  if(!input.isTTY||!output.isTTY)return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const terminal=createInterface({input,output});let done=false;const abort=()=>terminal.close();signal?.addEventListener('abort',abort,{once:true});
+    terminal.once('close',()=>{signal?.removeEventListener('abort',abort);if(!done)resolve(false);});
+    terminal.question('Pilihan Anda: ',answer=>{done=true;terminal.close();resolve(answer.trim()==='TETAPKAN');});if(signal?.aborted)abort();
   });
 }
 export async function recoverAndRun({confirm=confirmRecovery,log=console.log,...options}={}){
