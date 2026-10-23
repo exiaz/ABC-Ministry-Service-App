@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {PassThrough} from 'node:stream';
-import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {createServer} from 'node:net';
 import {demoEnvironment,controllerPath,createController,controlRequest,portOccupied,listen,validHub,previousSnapshot,saveSnapshot,snapshotDirectory,stopOwnedEmulator,stopDemo,runDemo} from '../local-demo.mjs';
 import {hiddenInput} from '../provision-demo.mjs';
+import {fakeSnapshot} from './fixtures/snapshot.mjs';
+import {spawnManagedEmulator} from '../local-emulator.mjs';
 
 test('Launcher fixes the shared demo configuration and rejects cloud credentials and projects',()=>{
   const env=demoEnvironment({ABC_ADMIN_UIDS:'[]',ABC_FIRESTORE_NAMESPACE:'other',ABC_EMULATOR_IMPORT_DIR:'stale'});
@@ -48,7 +49,7 @@ test('Snapshot export updates the pointer only after a complete Auth/Firestore e
     assert.equal(await previousSnapshot(folder),null);let exports=0;
     const saved=await saveSnapshot(folder,{verify:async()=>{},request:async(url,options)=>{
       const body=JSON.parse(options.body);assert.deepEqual(body.targets,['auth','firestore']);assert.equal(url,'http://127.0.0.1:4400/_admin/export');
-      await mkdir(path.join(body.path,'auth_export'),{recursive:true});await mkdir(path.join(body.path,'firestore_export'));await writeFile(path.join(body.path,'firebase-export-metadata.json'),JSON.stringify({auth:{path:'auth_export'},firestore:{path:'firestore_export'}}));exports++;
+      await fakeSnapshot(body.path);exports++;
     }});
     assert.equal(await previousSnapshot(folder),saved);assert.equal(exports,1);const pointer=await readFile(path.join(folder,'latest.json'),'utf8');
     await assert.rejects(saveSnapshot(folder,{verify:async()=>{},request:async()=>{throw Error('Export gagal');}}));assert.equal(await readFile(path.join(folder,'latest.json'),'utf8'),pointer);
@@ -61,8 +62,8 @@ test('Stopping during hidden password entry clears input and restores the termin
 });
 test('Shutdown only targets a live owned child; unrelated listeners remain running',async t=>{
   const external=await listen(createServer(socket=>socket.end()),0);t.after(()=>new Promise(resolve=>external.close(resolve)));
-  const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{windowsHide:true,stdio:'ignore'});await once(child,'spawn');
-  await stopOwnedEmulator(child);await new Promise(resolve=>{if(child.exitCode!==null||child.signalCode!==null)resolve();else child.once('exit',resolve);});assert.equal(external.listening,true);
+  const child=spawnManagedEmulator(['-e','process.on("SIGINT",()=>process.exit(0));setInterval(()=>{},1000)']);await once(child,'spawn');
+  await stopOwnedEmulator(child);await new Promise(resolve=>{if(child.exitCode!==null||child.signalCode!==null)resolve();else child.once('exit',resolve);});assert.equal(child.exitCode,0);assert.equal(external.listening,true);
   await stopOwnedEmulator(child);await stopOwnedEmulator(undefined);
 });
 test('Stop command leaves manual services alone when no launcher exists',async()=>{

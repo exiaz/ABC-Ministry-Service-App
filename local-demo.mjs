@@ -3,9 +3,12 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
-import {readFile,writeFile,mkdir,realpath,rename,access} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,readdir,realpath,unlink,access} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
+import {checkPrerequisites} from './local-prerequisites.mjs';
+import {spawnManagedEmulator,stopManagedEmulator} from './local-emulator.mjs';
+import {verifySnapshotContents,sealSnapshot,pointToSnapshot} from './local-snapshots.mjs';
 import {inspectLocalService,stopLocalService,serviceSignature} from './local-service.mjs';
 import {DEMO_PROJECT_ID} from './backend/emulator-config.mjs';
 import {createFirestoreEmulatorRepositories} from './backend/firestore-emulator.mjs';
@@ -41,17 +44,18 @@ export function controlRequest(address,command){
   return new Promise((resolve,reject)=>{
     const socket=net.createConnection(address);let raw='',done=false;
     const finish=(error,value)=>{if(done)return;done=true;socket.destroy();if(error)reject(error);else resolve(value);};
-    socket.setTimeout(2500,()=>finish(fail('Jendela demo tidak merespons. Periksa jendela ABC Attendance yang pertama.')));
+    socket.setTimeout(command==='stop'?90000:2500,()=>finish(fail('Jendela demo tidak merespons. Periksa jendela ABC Attendance yang pertama.')));
     socket.once('connect',()=>socket.write(command+'\n'));
     socket.on('data',chunk=>{raw+=chunk;if(raw.length>1024)return finish(fail('Respons peluncur tidak valid.'));if(raw.includes('\n')){try{finish(null,JSON.parse(raw.trim()));}catch{finish(fail('Respons peluncur tidak valid.'));}}});
-    socket.once('error',error=>['ENOENT','ECONNREFUSED'].includes(error.code)?finish(null,null):finish(error));
+    socket.once('error',error=>['ENOENT','ECONNREFUSED',...(command==='status'?['EPIPE','ECONNRESET']:[])].includes(error.code)?finish(null,null):finish(error));
     socket.once('end',()=>{if(!done)finish(fail('Jendela demo terputus.'));});
   });
 }
 export async function createController(address,handler){
   const server=net.createServer(socket=>{
     let raw='';socket.setTimeout(2500,()=>socket.destroy());
-    socket.on('data',chunk=>{raw+=chunk;if(raw.length>128){socket.destroy();return;}if(!raw.includes('\n'))return;const command=raw.trim();if(!['status','stop'].includes(command)){socket.end('{"phase":"invalid"}\n');return;}socket.end(JSON.stringify(handler(command))+'\n');});
+    let handled=false;
+    socket.on('data',chunk=>{if(handled)return;raw+=chunk;if(raw.length>128){socket.destroy();return;}if(!raw.includes('\n'))return;handled=true;socket.setTimeout(0);const command=raw.trim();if(!['status','stop'].includes(command)){socket.end('{"phase":"invalid"}\n');return;}Promise.resolve(handler(command)).then(value=>socket.end(JSON.stringify(value)+'\n'),()=>socket.end('{"phase":"save-error"}\n'));});
     socket.on('error',()=>{});
   });
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(address,resolve);});return server;
@@ -67,16 +71,22 @@ const json=async(url,options={})=>{
   const response=await fetch(url,{...options,redirect:'error',signal:AbortSignal.timeout(options.timeout??3000)});
   if(!response.ok)throw fail('Emulator lokal belum siap atau tidak merespons.');return response.json();
 };
-export function validHub(locator,hub,mapping){
-  if(!Number.isSafeInteger(hub?.pid)||hub.pid!==locator?.pid||hub.host!=='127.0.0.1'||hub.port!==4400||!locator.origins?.includes(HUB))return false;
-  for(const [name,port] of [['hub',4400],['auth',9099],['firestore',8080]]){
+export function validHub(locator,hub,mapping,{ports=EMULATOR_PORTS}={}){
+  const [firestore,auth,hubPort]=ports;
+  if(!Number.isSafeInteger(hub?.pid)||hub.pid!==locator?.pid||hub.host!=='127.0.0.1'||hub.port!==hubPort||!locator.origins?.includes('http://127.0.0.1:'+hubPort))return false;
+  for(const [name,port] of [['hub',hubPort],['auth',auth],['firestore',firestore]]){
     const entry=mapping?.[name];if(entry?.host!=='127.0.0.1'||entry.port!==port||!entry.listen?.length||entry.listen.some(s=>s.address!=='127.0.0.1'||s.port!==port))return false;
   }
   return mapping.firestore.webSocketHost===undefined||mapping.firestore.webSocketHost==='127.0.0.1';
 }
-export async function verifyHub(){
-  const [locator,hub,mapping]=await Promise.all([readFile(path.join(os.tmpdir(),'hub-'+DEMO_PROJECT_ID+'.json'),'utf8').then(JSON.parse),json(HUB+'/'),json(HUB+'/emulators')]);
-  if(!validHub(locator,hub,mapping))throw fail('Port emulator sedang dipakai layanan yang tidak cocok. Tutup layanan tersebut secara manual; peluncur tidak akan mematikannya.');
+export async function verifyHub({ports=EMULATOR_PORTS,locatorDirectory=os.tmpdir()}={}){
+  const origin='http://127.0.0.1:'+ports[2];
+  const [locator,hub,mapping]=await Promise.all([readFile(path.join(locatorDirectory,'hub-'+DEMO_PROJECT_ID+'.json'),'utf8').then(JSON.parse),json(origin+'/'),json(origin+'/emulators')]);
+  if(!validHub(locator,hub,mapping,{ports}))throw fail('Port emulator sedang dipakai layanan yang tidak cocok. Tutup layanan tersebut secara manual; peluncur tidak akan mematikannya.');
+  // The Hub can outlive a failed child; its registration is not readiness.
+  await json('http://127.0.0.1:'+ports[1]+'/emulator/v1/projects/'+DEMO_PROJECT_ID+'/config');
+  const response=await fetch('http://127.0.0.1:'+ports[0]+'/',{redirect:'error',signal:AbortSignal.timeout(2000)});
+  await response.body?.cancel();if(response.status!==200)throw fail('Firestore Emulator belum siap.');
   return hub;
 }
 export async function waitFor(check,{timeout=90000,alive=()=>true}={}){
@@ -97,16 +107,39 @@ export async function validateSnapshot(state,name){
   const meta=JSON.parse(await readFile(path.join(target,'firebase-export-metadata.json'),'utf8'));
   if(meta.auth?.path!=='auth_export'||meta.firestore?.path!=='firestore_export')throw fail('Snapshot demo tidak lengkap; akun dan absensi tidak direset otomatis.');
   for(const part of ['auth_export','firestore_export'])if(!within(await realpath(target),await realpath(path.join(target,part))))throw fail('Isi snapshot berada di luar folder yang diizinkan.');
+  await verifySnapshotContents(target);
   return target;
 }
 export async function previousSnapshot(state){
-  const pointer=path.join(state,'latest.json');if(!await exists(pointer))return null;
-  try{return await validateSnapshot(state,JSON.parse(await readFile(pointer,'utf8')).name);}catch{throw fail('Snapshot terakhir tidak dapat dibaca. Minta operator memeriksanya; data tidak direset otomatis.');}
+  const pointer=path.join(state,'latest.json');if(!await exists(pointer)){
+    if((await readdir(state)).some(name=>/^snapshot-/.test(name)))throw fail('Folder snapshot ditemukan tetapi latest.json tidak ada. Minta operator memeriksa snapshot; data kosong tidak dibuat otomatis.');
+    return null;
+  }
+  try{const selected=JSON.parse(await readFile(pointer,'utf8')),target=await validateSnapshot(state,selected.name);if(selected.integrity==='sha256'&&!(await verifySnapshotContents(target)).sealed)throw Error('Manifest hilang.');return target;}catch{throw fail('Snapshot terakhir tidak dapat dibaca. Minta operator memeriksanya; data tidak direset otomatis.');}
 }
 export async function saveSnapshot(state,{verify=verifyHub,request=json}={}){
   await verify();const name='snapshot-'+Date.now()+'-'+randomUUID(),target=path.join(state,name);
   await request(HUB+'/_admin/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:target,initiatedBy:'abc-local-demo',targets:['auth','firestore']}),timeout:60000});
-  await validateSnapshot(state,name);const temporary=path.join(state,'latest-'+randomUUID()+'.tmp');await writeFile(temporary,JSON.stringify({name}),{flag:'wx'});await rename(temporary,path.join(state,'latest.json'));return target;
+  await validateSnapshot(state,name);await sealSnapshot(target);await pointToSnapshot(state,name);return target;
+}
+export async function interruptedSnapshot(state,{confirm=confirmInterrupted}={}){
+  const marker=path.join(state,'active.json');if(!await exists(marker))return previousSnapshot(state);
+  let candidate;
+  try{candidate=await validateSnapshot(state,JSON.parse(await readFile(marker,'utf8')).rescueName);}catch{}
+  candidate??=await previousSnapshot(state);
+  if(!candidate)throw fail('Startup sebelumnya terputus dan belum ada snapshot lengkap. Data tidak direset. Periksa folder .emulator-data/local-demo-launcher dan layanan yang masih hidup bersama operator.');
+  if(!await confirm(path.basename(candidate)))throw fail('Pemulihan dibatalkan. Folder data dan snapshot tetap; jalankan Start untuk meninjau lagi.');
+  const {sealed}=await verifySnapshotContents(candidate);if(!sealed)await sealSnapshot(candidate);
+  await pointToSnapshot(state,path.basename(candidate));return candidate;
+}
+export function confirmInterrupted(name,{input=process.stdin,output=process.stdout,signal}={}){
+  output.write('\nStartup sebelumnya terputus. Snapshot yang dapat dibaca: '+name+'. Perubahan setelah snapshot dapat hilang; izin lama dapat aktif kembali. Ketik PULIHKAN untuk memakai snapshot ini, lalu tinjau/cabut izin yang perlu. Enter membatalkan.\n');
+  if(!input.isTTY||!output.isTTY)return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const terminal=createInterface({input,output});let answered=false;const abort=()=>terminal.close();signal?.addEventListener('abort',abort,{once:true});
+    terminal.once('close',()=>{signal?.removeEventListener('abort',abort);if(!answered)resolve(false);});
+    terminal.question('Pilihan Anda: ',answer=>{answered=true;terminal.close();resolve(answer.trim()==='PULIHKAN');});if(signal?.aborted)abort();
+  });
 }
 export async function prepareDemo(context,auth,{identity=DEMO_ADMIN,assertLocal,askPassword}={}){
   const refs=demoProvisioningRecords(identity).map(r=>context.root.collection(r.collection).doc(r.id));
@@ -140,8 +173,7 @@ export async function startDemoServers(context,{ports=APP_PORTS,check=()=>{},reu
   return resources;
 }
 function borrowedServer(service){
-  let stopped=false;
-  return {address:()=>({port:service.port}),async stop(){if(!stopped){await stopLocalService(service);stopped=true;}}};
+  return {borrowed:true,address:()=>({port:service.port}),async stop(){}};
 }
 export async function closeDemoServers(resources){
   const {servers=[],auths=[]}=resources??{};
@@ -149,12 +181,7 @@ export async function closeDemoServers(resources){
   await Promise.all(auths.map(auth=>auth.close()));
 }
 export async function stopOwnedEmulator(child){
-  if(!child||child.exitCode!==null||child.signalCode!==null)return;
-  if(process.platform==='win32'){
-    // Only the live child spawned by this launcher; never discover/kill by port,
-    // process name, PID file, or a caller-supplied PID.
-    await new Promise((resolve,reject)=>{const killer=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});killer.once('error',reject);killer.once('exit',code=>code===0?resolve():reject(fail('Emulator milik peluncur belum berhenti. Periksa jendela demo.')));});
-  }else{child.kill('SIGINT');await new Promise(resolve=>child.once('exit',resolve));}
+  await stopManagedEmulator(child);
 }
 export async function openPages(){
   for(const url of PAGES)await new Promise((resolve,reject)=>{const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});child.once('spawn',resolve);child.once('error',reject);});
@@ -176,7 +203,7 @@ export async function resolveDemoPorts(ports,{inspect=inspectLocalService,occupi
   for(const [index,port] of ports.entries()){
     while(port&&await occupied(port)){
       check();const service=await inspect(port,roles[index]);check();
-      if(service.kind==='compatible'&&!recover){reused[index]=service;log('Port '+port+': server ABC cocok dan sehat; digunakan kembali. Stop akan menutup server ini sebelum menyimpan snapshot.');break;}
+      if(service.kind==='compatible'&&!recover){reused[index]=service;log('Port '+port+': server ABC cocok dan sehat; digunakan kembali. Stop membiarkan layanan manual ini tetap hidup.');break;}
       const kind=service.kind==='compatible'?'incompatible':service.kind;
       if(!await confirm({...service,kind}))throw fail('Startup dibatalkan. Port '+port+' sudah digunakan; tidak ada proses yang dimatikan tanpa verifikasi dan persetujuan.');
       check();
@@ -191,9 +218,10 @@ export async function resolveDemoPorts(ports,{inspect=inspectLocalService,occupi
   return reused;
 }
 
-export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot,recover=false,askPassword=askDemoPassword,emulatorPorts=EMULATOR_PORTS,checkHub=verifyHub,confirmConflict}={}){
+export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot,recover=false,askPassword=askDemoPassword,emulatorPorts=EMULATOR_PORTS,checkHub=verifyHub,confirmConflict,prerequisites=checkPrerequisites,launchEmulator,confirmRestore}={}){
   const previous=await controlRequest(address,'status');
   if(previous){
+    if(previous.phase==='save-error')throw fail('Stop sebelumnya belum berhasil. Periksa pesan pada jendela pertama lalu ulangi Stop. Jika emulator sudah mati, minta operator meninjau snapshot sebelum menutup jendela tersebut dan menjalankan Start untuk pemulihan berkonfirmasi.');
     if(previous.phase!=='ready'){log('Demo sedang dimulai/dihentikan. Gunakan jendela ABC Attendance yang pertama.');return;}
     let healthy=false;
     try{if(previous.signature===await serviceSignature(environment())&&previous.ports?.length===3){await appsReady({servers:previous.ports.map(port=>({address:()=>({port})}))});await checkHub();healthy=true;}}catch{}
@@ -204,27 +232,32 @@ export async function runDemo({open=openPages,log=console.log,address=controller
   }
   Object.assign(process.env,environment());
   const abort=new AbortController(),config=JSON.stringify(provisioningConfig()),signature=await serviceSignature();
-  let phase='starting',emulator,context,apps,control,terminal,canSave=false,stopping,bootstrap,finish;
+  let phase='starting',emulator,context,apps,control,terminal,monitor,canSave=false,stopping,bootstrap,finish;
   const finished=new Promise(resolve=>{finish=resolve;});
   const check=()=>{if(abort.signal.aborted)throw fail('Startup dibatalkan.');if(JSON.stringify(provisioningConfig())!==config)throw fail('Konfigurasi emulator berubah. Akses ditolak.');};
   const state=await stateDirectory();
   const stop=()=>{
     if(stopping)return stopping;
     stopping=(async()=>{
-      phase='stopping';abort.abort();log('Menghentikan demo dan menyimpan data lokal…');
-      await bootstrap?.catch(()=>{});await closeDemoServers(apps);apps=null;
+      phase='stopping';clearInterval(monitor);abort.abort();log('Menghentikan demo dan menyimpan data lokal…');
+      await bootstrap?.catch(()=>{});
+      // An owned emulator cannot be stopped under borrowed application writers.
+      if(emulator&&(await Promise.all((apps?.servers??[]).filter(server=>server.borrowed).map(server=>portOccupied(server.address().port)))).some(Boolean))throw fail('Server manual masih memakai emulator milik peluncur. Tutup server manual melalui jendelanya, lalu ulangi Stop.');
+      await closeDemoServers(apps);apps=null;
       if(canSave)await persist(state);
       await context?.close();context=null;await stopOwnedEmulator(emulator);
+      if(emulator&&canSave)await unlink(path.join(state,'active.json')).catch(error=>{if(error.code!=='ENOENT')throw error;});
       terminal?.close();phase='stopped';control.close();process.removeListener('SIGINT',onSignal);process.removeListener('SIGTERM',onSignal);
       log('Demo berhenti.'+(canSave?' Data lokal tersimpan.':'')+(emulator?'':' Layanan manual tidak diubah.'));finish();
-    })().catch(error=>{phase='save-error';stopping=null;log('Demo belum ditutup: penyimpanan/penghentian belum terkonfirmasi. Emulator dipertahankan. Tekan Enter atau jalankan Stop ABC Attendance.cmd untuk mencoba lagi.');});return stopping;
+    })().catch(error=>{phase='save-error';stopping=null;if(error.demoSafe)log(error.message);log('Demo belum ditutup: penyimpanan/penghentian belum terkonfirmasi. Snapshot dan layanan yang masih hidup dipertahankan. Tekan Enter atau jalankan Stop ABC Attendance.cmd untuk mencoba lagi.');});return stopping;
   };
   const onSignal=()=>void stop();
-  try{control=await createController(address,command=>{if(command==='stop')void stop();return {phase,...(phase==='ready'?{signature,ports:apps.servers.map(s=>s.address().port)}:{})};});}
+  try{control=await createController(address,async command=>{if(command==='stop')await stop();return {phase,...(phase==='ready'?{signature,ports:apps.servers.map(s=>s.address().port)}:{})};});}
   catch{const owner=await controlRequest(address,'status');if(owner){log('Peluncur lain sudah berjalan. Klik Start lagi setelah jendela pertama menyatakan Demo siap.');return;}throw fail('Peluncur lokal tidak dapat dibuka. Periksa jendela demo yang masih aktif.');}
   process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
   bootstrap=(async()=>{
     log('1/4 · Memeriksa layanan lokal. Tunggu hingga muncul "Demo siap".');
+    await prerequisites();check();
     const reused=await resolveDemoPorts(ports,{log,check,recover,confirm:confirmConflict??(service=>confirmPortRecovery(service,{input,output,signal:abort.signal}))});check();
     const occupied=await Promise.all(emulatorPorts.map(portOccupied));check();
     if(occupied.some(Boolean)){
@@ -233,9 +266,18 @@ export async function runDemo({open=openPages,log=console.log,address=controller
     }
     else{
       await access(path.join(ROOT,'node_modules/firebase-tools/lib/bin/firebase.js')).catch(()=>{throw fail('Dependensi emulator belum tersedia. Minta operator menyiapkan dependensi proyek dan Java JDK 21+.');});
-      const snapshot=await previousSnapshot(state),env={...process.env};if(snapshot)env.ABC_EMULATOR_IMPORT_DIR=snapshot;
+      const snapshot=await interruptedSnapshot(state,{confirm:confirmRestore??(name=>confirmInterrupted(name,{input,output,signal:abort.signal}))}),env={...process.env};
+      const rescueName='snapshot-'+Date.now()+'-'+randomUUID();
+      await writeFile(path.join(state,'active.json'),JSON.stringify({rescueName}));check();
       log(snapshot?'Memulihkan data demo lokal…':'Menyalakan Auth/Firestore Emulator lokal…');
-      emulator=spawn(process.execPath,[path.join(ROOT,'tests/emulator/run.mjs'),'start'],{cwd:ROOT,env,windowsHide:true,stdio:'ignore'});emulator.on('error',()=>{});
+      const disabled=path.join(ROOT,'.firebase/unix-sockets-disabled');if(await exists(disabled))throw fail('Folder .firebase/unix-sockets-disabled harus tidak ada agar fallback Java aman. Minta operator memeriksa folder tersebut.');
+      env.JAVA_TOOL_OPTIONS=(env.JAVA_TOOL_OPTIONS??'')+' -Djdk.net.unixdomain.tmpdir="'+disabled+'"';
+      env.CI='true';
+      if(env.JAVA_HOME){const key=Object.keys(env).find(key=>key.toLowerCase()==='path')??'PATH';env[key]=path.join(env.JAVA_HOME,'bin')+path.delimiter+(env[key]??'');}
+      const args=[path.join(ROOT,'node_modules/firebase-tools/lib/bin/firebase.js'),'emulators:start','--only','firestore,auth','--project',DEMO_PROJECT_ID,'--config',path.join(ROOT,'firebase.json'),'--non-interactive','--export-on-exit='+path.join(state,rescueName)];
+      if(snapshot)args.push('--import='+snapshot);
+      const logFile=path.join(state,'emulator-'+randomUUID()+'.log');log('Diagnostik emulator lokal: '+logFile);
+      emulator=launchEmulator?await launchEmulator({args,env,state,snapshot}):spawnManagedEmulator(args,{cwd:ROOT,env,logFile});
       await waitFor(()=>checkHub(),{alive:()=>!abort.signal.aborted&&emulator.exitCode===null&&emulator.signalCode===null});
     }
     canSave=true;check();context=await createFirestoreEmulatorRepositories();check();log('2/4 · Memeriksa akun Admin dan izin pairing.');
@@ -260,14 +302,17 @@ export async function runDemo({open=openPages,log=console.log,address=controller
     check();log('3/4 · Menyiapkan halaman Admin dan Mentor…');
     // Recheck after emulator/provisioning work; never attach to a changed instance.
     for(const [index,service] of reused.entries())if(service){const current=await inspectLocalService(service.port,['api','admin','mentor'][index]);if(current.kind!=='compatible'||current.status.instance!==service.status.instance)throw fail('Server yang akan dipakai ulang berubah. Coba Start lagi.');}
-    apps={servers:[],auths:[]};await startDemoServers(context,{ports,check,reused,resources:apps});check();await appsReady(apps);check();
+    apps={servers:[],auths:[]};await startDemoServers(context,{ports,check,reused,resources:apps});check();await appsReady(apps);await checkHub();check();
     phase='ready';log('4/4 · Demo siap. Login Admin: '+DEMO_ADMIN.email+'\nGunakan password Anda. Lupa password? Klik Reset Admin Password.cmd.\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik Stop ABC Attendance.cmd.');
     try{await open();}catch{log('Browser belum terbuka. Buka http://127.0.0.1:4177 dan http://127.0.0.1:4176 secara manual.');}
   })();
   try{await bootstrap;}catch(error){log(error.demoSafe?error.message:recover?'Pemulihan belum terkonfirmasi. Password mungkin sudah berubah. Periksa koneksi lalu ulangi Reset Admin Password.cmd; absensi dan izin tetap.':'Demo belum siap. Periksa koneksi emulator, konfirmasi password dan akun demo. Password baru harus sama pada kedua isian dan minimal 12 karakter. Data tidak direset otomatis.');process.exitCode=1;await stop();}
   if(phase!=='stopped'){
     terminal=createInterface({input,output});terminal.on('line',()=>void stop());
-    if(phase==='ready')setInterval(()=>{if(phase==='ready')checkHub().catch(()=>{log('Koneksi emulator terputus. Jangan menyimpan absensi sampai layanan pulih.');});},15000).unref();
+    if(phase==='ready'){
+      let unhealthy=false;
+      monitor=setInterval(async()=>{if(phase!=='ready')return;try{await checkHub();if(phase!=='ready')return;await appsReady(apps);if(unhealthy)log('Layanan kembali siap. Periksa data server sebelum melanjutkan.');unhealthy=false;}catch{if(phase!=='ready')return;if(!unhealthy)log('Layanan lokal terputus. Hentikan perubahan, periksa jendela peluncur, lalu gunakan Start/Stop untuk meninjau layanan. Data tidak direset.');unhealthy=true;}},15000);monitor.unref();
+    }
   }
   await finished;
 }
@@ -297,10 +342,9 @@ export async function recoverAndRun({confirm=confirmRecovery,log=console.log,...
 }
 export async function stopDemo({address=controllerPath(),log=console.log}={}){
   const status=await controlRequest(address,'stop');if(!status){log('Demo dari peluncur ini tidak sedang berjalan. Layanan manual tidak diubah.');return;}
-  log('Menunggu penyimpanan dan penghentian demo…');
-  const end=Date.now()+90000;
-  while(Date.now()<end){const current=await controlRequest(address,'status');if(!current){log('Demo berhenti.');return;}if(current.phase==='save-error')throw fail('Data belum tersimpan. Periksa jendela ABC Attendance lalu coba Stop lagi.');await wait(300);}
-  throw fail('Demo masih menyimpan atau menunggu permintaan selesai. Periksa jendela pertama; jangan tutup paksa.');
+  if(status.phase==='stopped'){log('Demo berhenti. Penyimpanan dan penghentian telah dikonfirmasi peluncur.');return;}
+  if(status.phase==='save-error')throw fail('Data belum tersimpan. Periksa jendela ABC Attendance lalu coba Stop lagi.');
+  throw fail('Penghentian belum terkonfirmasi. Periksa jendela pertama; jangan tutup paksa.');
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const command=process.argv[2];

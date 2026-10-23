@@ -1,5 +1,24 @@
 # Pemeriksaan prototipe
 
+## Stage 3 — Windows, login dan penyimpanan lokal · 23 Oktober 2026
+
+Jalankan `npm.cmd run test:stage3` atau **Test ABC Attendance.cmd**. Prasyarat: Node.js 22+, Java JDK 21+, dependensi/cache emulator serta Chrome/Playwright yang telah disiapkan operator. Runner menggunakan emulator baru, lima port loopback sementara dan data fiktif; tidak mengimpor snapshot operasional. Exit **0/PASS** berarti seluruh tahap lulus; **1/FAIL** berarti ada prasyarat/pemeriksaan yang gagal. Runner lengkap telah lulus (69 tes emulator, 19 tes browser dan 2 cold lifecycle); regresi unit akhir 154/154 dan sintaks/import 117 modul lulus. Hasil rinci serta batas terbaru dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+| Cakupan | Pemeriksaan |
+|---|---|
+| Startup | Dependensi hilang/versi kurang, duplikasi launcher, layanan cocok, port tak dikenal, pembatalan startup, browser hanya setelah ready |
+| Login dan RBAC | Password pilihan sendiri melalui input tersembunyi, password salah, Superadmin/PIC, cakupan/tindakan, pencabutan, sesi login terpisah; Mentor tetap pairing |
+| Stop dan persistence | Snapshot Auth/Firestore unik, struktur dan checksum, pointer tetap saat export gagal, emulator tetap hidup untuk retry, graceful IPC, layanan manual tetap hidup |
+| Restart dan recovery | Cold export/import, password lama tetap, absensi/riwayat/perangkat dipertahankan, pemulihan password berkonfirmasi, startup terputus memerlukan PULIHKAN |
+| Stage 2 | Issuance berkunci, retry ambigu, dua login satu UID, konkurensi penulis/finalizer, 409 revisi usang, receipt persisten dan riwayat append-only |
+| Browser | Empat suite Chrome: akun Superadmin/PIC, login, perangkat, dan absensi Mentor; screenshot disimpan di folder run terisolasi |
+
+Tes yang mengubah port/controller memakai instance fiktif milik tes. Jangan memakai akun atau data anak nyata. Untuk pemeriksaan manual Windows, klik Start dari Explorer, selesaikan prompt pertama, login pemilik/PIC, buka Mentor dengan kode sah, lalu klik Stop dan tunggu konfirmasi. Coba Start ulang dan pastikan password/data tetap. Pembukaan browser melalui aplikasi default Windows dan klik Explorer harus dicatat terpisah dari callback readiness otomatis.
+
+Bila export gagal, jangan tutup paksa emulator: pulihkan masalah penyimpanan lalu ulangi Stop. Bila checksum salah atau tidak ada snapshot lengkap, jangan menghapus data untuk meloloskan startup. Recovery dari snapshot lama dapat mengembalikan izin lama; tinjau/cabut izin. Snapshot bukan transaksi atomik lintas Auth/Firestore ketika server manual masih menulis. Hentikan pekerjaan dan tutup server manual sebelum export untuk salinan yang tenang.
+
+Bagian berikut merupakan riwayat QA sebelum Stage 3.
+
 **Status terbaru:** revisi kalender dan 16 kelompok, 21 Oktober 2026. **37/37 tes otomatis lulus**, sintaks/import 21 JS/MJS lulus. Buildless JavaScript, tidak ada compiler TypeScript. QA Chrome dengan profil terisolasi lulus untuk kalender bulan/tahun, Jumat saja, konfirmasi/batal sesi sementara, 8/4/4 kartu kelompok, Hagai/Kak Louis, roster terpisah, kirim/koreksi/reload, blokir masa depan, override/permanen admin, verifikasi sesi tanpa perubahan riwayat, serta reload/kalender saat offline. Viewport 360/390/1365 tidak melebar; tidak ada error JavaScript. Android fisik belum diuji.
 
 Bukti dan daftar perubahan lengkap: [PROJECT_STATUS.md](PROJECT_STATUS.md). Skrip: `node --test tests/*.test.mjs`, `node tests/check.mjs`, `node tests/browser.mjs` (Playwright + Chrome tersedia di lingkungan uji).

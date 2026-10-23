@@ -4,7 +4,6 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes,randomUUID,generateKeyPairSync,sign} from 'node:crypto';
 import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
-import {spawn} from 'node:child_process';
 import {createServer} from 'node:net';
 import {PassThrough} from 'node:stream';
 import {snapshotDirectory,listen,waitFor,portOccupied,saveSnapshot,previousSnapshot,stopOwnedEmulator,prepareDemo,runDemo,recoverAndRun,stopDemo,controllerPath,controlRequest,demoEnvironment} from '../../local-demo.mjs';
@@ -13,6 +12,7 @@ import {hagai} from './device-management-source.mjs';
 import {proofMessage} from '../../backend/device-proof.mjs';
 import {createFirestoreEmulatorRepositories} from '../../backend/firestore-emulator.mjs';
 import {createLocalAdminAuthentication} from '../../backend/admin-auth.mjs';
+import {spawnManagedEmulator} from '../../local-emulator.mjs';
 
 test('First setup, confirmed recovery, shutdown and restart retain attendance/device permissions and require the new password',{timeout:120000},async()=>{
   const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),base=await snapshotDirectory(),state=await mkdtemp(path.join(base,'test-recovery-'));
@@ -28,7 +28,7 @@ test('First setup, confirmed recovery, shutdown and restart retain attendance/de
     const request=async(url,options={})=>{const response=await fetch(url.replace('http://127.0.0.1:4400',origin),{...options,signal:AbortSignal.timeout(options.timeout??2500)});if(!response.ok)throw Error('Emulator tes belum siap.');return response.json();};
     const start=async snapshot=>{
       const args=[path.join(projectRoot,'node_modules/firebase-tools/lib/bin/firebase.js'),'emulators:start','--only','firestore,auth','--project','demo-abc-attendance','--config',configFile,'--non-interactive'];if(snapshot)args.push('--import='+snapshot);
-      child=spawn(process.execPath,args,{cwd:state,env,windowsHide:true,stdio:'ignore'});child.on('error',()=>{});
+      child=spawnManagedEmulator(args,{cwd:state,env});
       await waitFor(async()=>{const value=await request(origin+'/emulators');return value.auth?.port===auth&&value.firestore?.port===firestore;},{alive:()=>child.exitCode===null&&child.signalCode===null});
     };
     const {initializeApp,deleteApp}=await import('firebase-admin/app'),{getAuth}=await import('firebase-admin/auth');
