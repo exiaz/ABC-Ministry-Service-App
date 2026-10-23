@@ -429,3 +429,9 @@ Lihat [MASTER_BRIEF.md](MASTER_BRIEF.md) untuk aturan dan batasan; [QA.md](QA.md
 Pemeriksaan kode: `npm run check` atau `node tests/check.mjs`. Aplikasi buildless JavaScript, tanpa compiler TypeScript. QA browser opsional: `node tests/browser.mjs`, memerlukan Playwright yang sudah tersedia serta Chrome (dapat diatur melalui CHROME_PATH). Skrip memakai profil browser terisolasi dan server sementara port 4174, tanpa mengubah data browser pengguna.
 
 Jika port 4173 sedang dipakai server versi lama, mulai ulang server tersebut untuk menyajikan modul baru atau pilih port lain melalui variabel lingkungan PORT. Data localStorage berbeda antarport/origin, sehingga gunakan origin lama untuk melanjutkan data lama. Tidak perlu mengatur ulang demo untuk migrasi.
+
+## Alur kerja Codex untuk teks
+
+Skill [No AI Slop](.agents/skills/no-ai-slop/SKILL.md) membantu menulis teks UI, petunjuk launcher, panduan pengguna dan laporan implementasi dalam bahasa Indonesia. [AGENTS.md](AGENTS.md) mengatur kapan skill dipakai; coding, tes dan inspeksi repositori saja tidak memerlukan proses editorial penuh.
+
+Untuk meminta penyuntingan, tulis: **Gunakan $no-ai-slop mode Edit untuk memperjelas teks berikut tanpa mengubah makna: [teks].** Untuk meninjau saja, tulis: **Gunakan $no-ai-slop mode Detect pada teks berikut; berikan kutipan masalah dan usulan perbaikan tanpa menulis ulang: [teks].** Edit diperiksa dengan [eval.md](.agents/skills/no-ai-slop/eval.md); Detect hanya melaporkan temuan. Aturan teknis, keamanan dan bukti tes tetap berlaku. Laporan implementasi menyertakan usulan Summary/Description GitHub Desktop, tanpa menjalankan commit.

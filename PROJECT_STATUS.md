@@ -1,6 +1,24 @@
 # ABC Attendance — status revisi
 
-**22 Oktober 2026 · reuse server lokal terverifikasi dan pemulihan konflik port · Auth/Firestore Emulator · tidak dipublikasikan**
+**23 Oktober 2026 · skill editorial No AI Slop terpasang · perubahan dokumentasi saja · tidak dipublikasikan**
+
+## Integrasi No AI Slop untuk alur kerja Codex
+
+- Dipasang `.agents/skills/no-ai-slop/SKILL.md` dan `eval.md` dari dua berkas sumber pengguna di root. Belum ada skill repositori bernama sama, sehingga tidak ada skill lama yang ditimpa. Prinsip editorial dan workflow sumber dipertahankan, termasuk Edit default, Detect tanpa penulisan ulang, serta pemeriksaan mandiri. `eval.md` disalin identik per byte. Penyesuaian terbatas pada metadata pemicu, tautan relatif dan penjelasan batas proyek; kedua sumber root tidak diubah.
+- `AGENTS.md` menambahkan pemakaian bersyarat untuk teks UI Indonesia, instruksi/error launcher, README, dokumentasi pengguna, laporan akhir dan tinjauan bahasa. Coding, tes dan inspeksi saja tidak memuat skill lengkap. Aturan sebelumnya tetap utuh. `README.md` menambahkan cara meminta Edit/Detect di bagian akhir agar panduan menjalankan demo tetap di depan.
+- Tanggung jawab acuan tetap: MASTER_BRIEF untuk aturan aplikasi, PROJECT_STATUS untuk status/bukti tes, README untuk petunjuk pemula, AGENTS untuk workflow, skill untuk mutu bahasa. Batas proyek mencegah aturan gaya mengubah sintaks, istilah/pesan kesalahan yang perlu persis, keamanan, privasi, integritas data atau fakta tes. Laporan akhir tetap ringkas dalam bahasa Indonesia dan menyertakan usulan Summary/Description GitHub Desktop. Tidak mengubah aplikasi, launcher, autentikasi, Firebase atau data; tidak commit, push atau deploy.
+
+Validasi terfokus:
+
+- Pemeriksaan Node dengan parser YAML yang sudah tersedia **lulus**: lokasi `.agents/skills/no-ai-slop`, nama folder/front matter, description terisi, tautan relatif termasuk `eval.md`, kesamaan byte checklist sumber, serta kesamaan isi editorial sumber setelah penyesuaian tautan. Perbandingan dengan HEAD memastikan aturan AGENTS lama tetap utuh dan diff tracked hanya Markdown. `git diff --check` lulus. Validator Python bawaan skill-creator tidak digunakan karena PyYAML tidak tersedia; tidak memasang dependensi baru.
+- Tinjauan manual pemicu **lulus**: enam kategori penulisan yang diminta memakai skill; coding murni, menjalankan tes dan membaca repositori tidak memerlukannya. Laporan akhir pekerjaan coding tetap memakai aturan editorial hanya untuk teks laporannya.
+- **Contoh Edit (bahan uji saja, tidak diterapkan ke launcher):** draf “Untuk meningkatkan efisiensi Anda, penting untuk diketahui bahwa port 4175 sudah digunakan. Tutup server ABC lama milik Anda dengan Ctrl+C pada jendelanya, lalu tekan Enter di jendela Start untuk mencoba lagi.” Hasil lengkap: “Port 4175 sudah digunakan. Tutup server ABC lama milik Anda dengan Ctrl+C pada jendelanya, lalu tekan Enter di jendela Start untuk mencoba lagi.” **Yang diubah:** menghapus pengantar yang menunda informasi utama. Port, kepemilikan server, Ctrl+C dan Enter di jendela Start dipertahankan. Pemeriksaan mandiri terhadap bagian Editing principles, Words to cut, Patterns to cut dan Final read dalam `eval.md` **lulus** untuk hasil Edit; ketentuan khusus Detect diperiksa pada contoh berikut.
+- **Contoh Detect (draf sama):** pola *Throat-clearing openers* pada kutipan “Untuk meningkatkan efisiensi Anda, penting untuk diketahui bahwa port 4175 sudah digunakan.” Usulan: hapus pengantar dan langsung sebutkan port yang terpakai. Hasil Detect hanya temuan, kutipan dan saran; tidak menyunting berkas, menampilkan draf pengganti, memberi skor atau mengklaim asal AI. Tinjauan checklist Detect **lulus**.
+- Pemeriksaan tambahan seluruh tautan PROJECT_STATUS berhenti pada `screenshots/admin-group-filters.png` yang tidak tersedia. Tautan itu sudah ada pada HEAD, di riwayat lama; tidak diperbaiki dalam tugas ini. Pemeriksaan terfokus tautan skill/AGENTS/README kemudian lulus.
+
+Batas verifikasi: struktur discovery sesuai dokumentasi resmi Codex dan berkas pendukung dapat dibaca, tetapi kemunculan otomatis di pemilih skill sesi baru belum diuji. Pemeriksaan Edit/Detect di atas adalah tinjauan editorial oleh agen ini, bukan benchmark atau evaluasi agen independen. Tes aplikasi tidak dijalankan karena perubahan hanya Markdown; hasil regresi di bagian berikut berasal dari milestone sebelumnya, bukan run baru. Tidak ada konflik dengan aturan proyek; batas akurasi teknis ditambahkan untuk menghindari penerapan aturan gaya secara harfiah pada kode atau bukti tes.
+
+Bagian berikut adalah riwayat implementasi sebelumnya.
 
 ## Peluncur Windows — server manual dan konflik port
 
