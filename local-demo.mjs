@@ -6,6 +6,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {readFile,writeFile,mkdir,realpath,rename,access} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
+import {inspectLocalService,stopLocalService,serviceSignature} from './local-service.mjs';
 import {DEMO_PROJECT_ID} from './backend/emulator-config.mjs';
 import {createFirestoreEmulatorRepositories} from './backend/firestore-emulator.mjs';
 import {createLocalAdminAuthentication} from './backend/admin-auth.mjs';
@@ -126,20 +127,24 @@ export async function appsReady({servers}){
 export async function listen(server,port){
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});return server;
 }
-export async function startDemoServers(context,{ports=APP_PORTS,check=()=>{}}={}){
-  const servers=[],auths=[];
+export async function startDemoServers(context,{ports=APP_PORTS,check=()=>{},reused=[],resources={servers:[],auths:[]}}={}){
+  const {servers,auths}=resources;
   try{
-    const apiAuth=await createLocalAdminAuthentication();auths.push(apiAuth);check();
-    servers.push(await listen(createRosterServer({...context,adminAuthentication:apiAuth,mentorOrigin:PAGES[1]}),ports[0]));
-    const adminAuth=await createLocalAdminAuthentication();auths.push(adminAuth);check();
-    servers.push(await listen(createAdminServer({adminAuthentication:adminAuth,pairing:context.pairing}),ports[1]));
-    servers.push(await listen(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+servers[0].address().port}),ports[2]));check();
+    if(reused[0])servers.push(borrowedServer(reused[0]));
+    else{const apiAuth=await createLocalAdminAuthentication();auths.push(apiAuth);check();servers.push(await listen(createRosterServer({...context,adminAuthentication:apiAuth,mentorOrigin:PAGES[1]}),ports[0]));}
+    if(reused[1])servers.push(borrowedServer(reused[1]));
+    else{const adminAuth=await createLocalAdminAuthentication();auths.push(adminAuth);check();servers.push(await listen(createAdminServer({adminAuthentication:adminAuth,pairing:context.pairing}),ports[1]));}
+    servers.push(reused[2]?borrowedServer(reused[2]):await listen(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+servers[0].address().port}),ports[2]));check();
   }catch(error){await closeDemoServers({servers,auths});throw error;}
-  return {servers,auths};
+  return resources;
+}
+function borrowedServer(service){
+  let stopped=false;
+  return {address:()=>({port:service.port}),async stop(){if(!stopped){await stopLocalService(service);stopped=true;}}};
 }
 export async function closeDemoServers(resources){
   const {servers=[],auths=[]}=resources??{};
-  await Promise.all(servers.map(server=>new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();})));
+  await Promise.all(servers.map(server=>server.stop?server.stop():new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();})));
   await Promise.all(auths.map(auth=>auth.close()));
 }
 export async function stopOwnedEmulator(child){
@@ -154,11 +159,50 @@ export async function openPages(){
   for(const url of PAGES)await new Promise((resolve,reject)=>{const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});child.once('spawn',resolve);child.once('error',reject);});
 }
 
-export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot,recover=false,askPassword=askDemoPassword,emulatorPorts=EMULATOR_PORTS,checkHub=verifyHub}={}){
+export async function confirmPortRecovery({port,kind},{input=process.stdin,output=process.stdout,signal}={}){
+  output.write('\nPort '+port+' sudah digunakan. '+(kind==='incompatible'?'Server ABC terverifikasi, tetapi konfigurasi atau versi berbeda. Ganti hanya server ini dengan konfigurasi demo? Data emulator tetap. Ketik GANTI untuk setuju; Enter untuk batal.':'Identitas/konfigurasi server belum terverifikasi (mungkin server ABC lama). Jangan hentikan proses yang tidak Anda kenal. Tutup server ABC lama melalui Ctrl+C di jendelanya. Jika bukan milik Anda, minta bantuan operator. Setelah port bebas, tekan Enter untuk mencoba lagi; ketik BATAL untuk keluar.')+'\n');
+  if(!input.isTTY||!output.isTTY)return false;
+  return new Promise(resolve=>{
+    const terminal=createInterface({input,output});let answered=false;
+    const cancel=()=>terminal.close();signal?.addEventListener('abort',cancel,{once:true});
+    terminal.once('close',()=>{signal?.removeEventListener('abort',cancel);if(!answered)resolve(false);});
+    terminal.question('Pilihan Anda: ',answer=>{answered=true;terminal.close();resolve(kind==='incompatible'?answer.trim().toUpperCase()==='GANTI':answer.trim()==='');});
+    if(signal?.aborted)cancel();
+  });
+}
+export async function resolveDemoPorts(ports,{inspect=inspectLocalService,occupied=portOccupied,confirm=confirmPortRecovery,stop=stopLocalService,log=console.log,check=()=>{},recover=false}={}){
+  const reused=[],roles=['api','admin','mentor'];
+  for(const [index,port] of ports.entries()){
+    while(port&&await occupied(port)){
+      check();const service=await inspect(port,roles[index]);check();
+      if(service.kind==='compatible'&&!recover){reused[index]=service;log('Port '+port+': server ABC cocok dan sehat; digunakan kembali. Stop akan menutup server ini sebelum menyimpan snapshot.');break;}
+      const kind=service.kind==='compatible'?'incompatible':service.kind;
+      if(!await confirm({...service,kind}))throw fail('Startup dibatalkan. Port '+port+' sudah digunakan; tidak ada proses yang dimatikan tanpa verifikasi dan persetujuan.');
+      check();
+      if(kind==='incompatible'){
+        const current=await inspect(port,roles[index]);
+        if(current.status?.instance!==service.status.instance||current.kind==='unknown')throw fail('Identitas server berubah. Penggantian dibatalkan; coba Start kembali.');
+        await stop(current);log('Server ABC pada port '+port+' ditutup dengan rapi. Data emulator dipertahankan.');
+        await waitFor(async()=>!await occupied(port),{timeout:15000});
+      }
+    }
+  }
+  return reused;
+}
+
+export async function runDemo({open=openPages,log=console.log,address=controllerPath(),input=process.stdin,output=process.stdout,ports=APP_PORTS,environment=demoEnvironment,stateDirectory=snapshotDirectory,prepare=prepareDemo,persist=saveSnapshot,recover=false,askPassword=askDemoPassword,emulatorPorts=EMULATOR_PORTS,checkHub=verifyHub,confirmConflict}={}){
   const previous=await controlRequest(address,'status');
-  if(previous){if(previous.phase==='ready')await open();log(previous.phase==='ready'?'Demo sudah berjalan. Halaman Admin dan Mentor dibuka.':'Demo sedang dimulai/dihentikan. Gunakan jendela ABC Attendance yang pertama.');return;}
+  if(previous){
+    if(previous.phase!=='ready'){log('Demo sedang dimulai/dihentikan. Gunakan jendela ABC Attendance yang pertama.');return;}
+    let healthy=false;
+    try{if(previous.signature===await serviceSignature(environment())&&previous.ports?.length===3){await appsReady({servers:previous.ports.map(port=>({address:()=>({port})}))});await checkHub();healthy=true;}}catch{}
+    if(healthy){await open();log('Demo sudah berjalan dan terverifikasi. Halaman Admin dan Mentor dibuka.');return;}
+    const confirm=confirmConflict??(service=>confirmPortRecovery(service,{input,output}));
+    if(!await confirm({port:'peluncur',kind:'incompatible'}))throw fail('Peluncur lama belum cocok/sehat. Startup dibatalkan; layanan dan data tetap.');
+    await stopDemo({address,log});
+  }
   Object.assign(process.env,environment());
-  const abort=new AbortController(),config=JSON.stringify(provisioningConfig());
+  const abort=new AbortController(),config=JSON.stringify(provisioningConfig()),signature=await serviceSignature();
   let phase='starting',emulator,context,apps,control,terminal,canSave=false,stopping,bootstrap,finish;
   const finished=new Promise(resolve=>{finish=resolve;});
   const check=()=>{if(abort.signal.aborted)throw fail('Startup dibatalkan.');if(JSON.stringify(provisioningConfig())!==config)throw fail('Konfigurasi emulator berubah. Akses ditolak.');};
@@ -175,12 +219,12 @@ export async function runDemo({open=openPages,log=console.log,address=controller
     })().catch(error=>{phase='save-error';stopping=null;log('Demo belum ditutup: penyimpanan/penghentian belum terkonfirmasi. Emulator dipertahankan. Tekan Enter atau jalankan Stop ABC Attendance.cmd untuk mencoba lagi.');});return stopping;
   };
   const onSignal=()=>void stop();
-  try{control=await createController(address,command=>{if(command==='stop')void stop();return {phase,...(phase==='ready'?{ports:apps.servers.map(s=>s.address().port)}:{})};});}
-  catch{const owner=await controlRequest(address,'status');if(owner){if(owner.phase==='ready')await open();log('Peluncur lain sudah berjalan. Gunakan jendela pertama.');return;}throw fail('Peluncur lokal tidak dapat dibuka. Periksa jendela demo yang masih aktif.');}
+  try{control=await createController(address,command=>{if(command==='stop')void stop();return {phase,...(phase==='ready'?{signature,ports:apps.servers.map(s=>s.address().port)}:{})};});}
+  catch{const owner=await controlRequest(address,'status');if(owner){log('Peluncur lain sudah berjalan. Klik Start lagi setelah jendela pertama menyatakan Demo siap.');return;}throw fail('Peluncur lokal tidak dapat dibuka. Periksa jendela demo yang masih aktif.');}
   process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
   bootstrap=(async()=>{
     log('1/4 · Memeriksa layanan lokal. Tunggu hingga muncul "Demo siap".');
-    for(const port of ports)if(port&&await portOccupied(port))throw fail('Port '+port+' sudah digunakan. Tutup server ABC manual pada port tersebut (Ctrl+C), lalu klik Start lagi. Layanan itu tidak dimatikan otomatis.');
+    const reused=await resolveDemoPorts(ports,{log,check,recover,confirm:confirmConflict??(service=>confirmPortRecovery(service,{input,output,signal:abort.signal}))});check();
     const occupied=await Promise.all(emulatorPorts.map(portOccupied));check();
     if(occupied.some(Boolean)){
       try{await checkHub();}catch{throw fail('Port emulator (8080/9099/4400/4500/9150) sedang dipakai layanan yang belum lengkap atau tidak cocok. Tutup instance manual tersebut lalu klik Start lagi. Peluncur tidak mematikannya otomatis.');}
@@ -207,7 +251,10 @@ export async function runDemo({open=openPages,log=console.log,address=controller
       log(result.reused?'Akun dan data digunakan kembali. Password Anda tetap berlaku.':'Akun dan fixture tersimpan. Ingat password yang baru Anda buat.');
       if(!result.pairingReady)log('Perhatian: izin pairing dicabut atau tidak lengkap. Izin tersebut tetap dipertahankan; hubungi operator bila perlu.');
     }finally{await deleteApp(app);}
-    check();log('3/4 · Menyiapkan halaman Admin dan Mentor…');apps=await startDemoServers(context,{ports,check});check();await appsReady(apps);check();
+    check();log('3/4 · Menyiapkan halaman Admin dan Mentor…');
+    // Recheck after emulator/provisioning work; never attach to a changed instance.
+    for(const [index,service] of reused.entries())if(service){const current=await inspectLocalService(service.port,['api','admin','mentor'][index]);if(current.kind!=='compatible'||current.status.instance!==service.status.instance)throw fail('Server yang akan dipakai ulang berubah. Coba Start lagi.');}
+    apps={servers:[],auths:[]};await startDemoServers(context,{ports,check,reused,resources:apps});check();await appsReady(apps);check();
     phase='ready';log('4/4 · Demo siap. Login Admin: '+DEMO_ADMIN.email+'\nGunakan password Anda. Lupa password? Klik Reset Admin Password.cmd.\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik Stop ABC Attendance.cmd.');
     try{await open();}catch{log('Browser belum terbuka. Buka http://127.0.0.1:4177 dan http://127.0.0.1:4176 secara manual.');}
   })();

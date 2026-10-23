@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {registerLocalService} from '../local-service.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {SCOPE_KEYS} from './access-control.mjs';
@@ -93,15 +94,18 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const port=Number(process.env.ABC_ROSTER_PORT||4175);
-  let adapters,adminAuthentication;
+  let adapters,adminAuthentication,server,lifecycle;
   try{
     adminAuthentication=await createConfiguredAdminAuthentication();
     adapters=await createConfiguredRepositories();
-    const server=createRosterServer({...adapters,adminAuthentication,mentorOrigin:process.env.ABC_MENTOR_ORIGIN});
-    const stop=()=>server.close(async()=>{await adminAuthentication?.close();await adapters.close();process.exit(0);});
+    server=createRosterServer({...adapters,adminAuthentication,mentorOrigin:process.env.ABC_MENTOR_ORIGIN});
+    const stop=async()=>{await new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();});await adminAuthentication?.close();await adapters.close();await lifecycle?.close();process.exit(0);};
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
-    server.listen(port,'127.0.0.1',()=>console.log(`API roster uji: http://127.0.0.1:${port} (${process.env.ABC_ROSTER_ADAPTER??'in-memory'})`));
+    await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
+    lifecycle=await registerLocalService(server,{role:'api',stop});
+    console.log(`API roster uji: http://127.0.0.1:${port} (${process.env.ABC_ROSTER_ADAPTER??'in-memory'})`);
   }catch{
+    server?.close();
     await adminAuthentication?.close();await adapters?.close();
     console.error('API tidak dimulai: konfigurasi autentikasi, repository atau emulator tidak tersedia.');process.exitCode=1;
   }

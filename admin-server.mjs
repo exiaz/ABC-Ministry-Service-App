@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {registerLocalService} from './local-service.mjs';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -32,15 +33,17 @@ export function createAdminServer({adminAuthentication,pairing}){
   });
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  let adminAuthentication,adapters;
+  let adminAuthentication,adapters,server,lifecycle;
   try{
     const port=Number(process.env.ABC_ADMIN_PORT||4177);
     if(!Number.isSafeInteger(port)||port<1||port>65535||[4173,4175,4176].includes(port))throw Error();
     adminAuthentication=await createLocalAdminAuthentication();
     adapters=await createConfiguredRepositories();
-    const server=createAdminServer({adminAuthentication,pairing:adapters.pairing});
-    const stop=()=>server.close(async()=>{await adapters.close();await adminAuthentication.close();process.exit(0);});
+    server=createAdminServer({adminAuthentication,pairing:adapters.pairing});
+    const stop=async()=>{await new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();});await adapters.close();await adminAuthentication.close();await lifecycle?.close();process.exit(0);};
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
-    server.listen(port,'127.0.0.1',()=>console.log(`Admin emulator lokal: http://127.0.0.1:${port}`));
-  }catch{await adapters?.close();await adminAuthentication?.close();console.error('Admin tidak dimulai: konfigurasi atau emulator tidak tersedia.');process.exitCode=1;}
+    await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
+    lifecycle=await registerLocalService(server,{role:'admin',stop});
+    console.log(`Admin emulator lokal: http://127.0.0.1:${port}`);
+  }catch{server?.close();await adapters?.close();await adminAuthentication?.close();console.error('Admin tidak dimulai: konfigurasi atau emulator tidak tersedia.');process.exitCode=1;}
 }

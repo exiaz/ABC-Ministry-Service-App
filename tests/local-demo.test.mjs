@@ -17,11 +17,11 @@ test('Launcher fixes the shared demo configuration and rejects cloud credentials
 });
 test('Local IPC handles duplicate launch and stop without provisioning, opening another server or trusting a PID file',async t=>{
   const address=controllerPath(path.resolve('ipc-test-'+randomUUID()));let stopped=0,opened=0;
-  const server=await createController(address,command=>{if(command==='stop')stopped++;return {phase:'ready'};});
+  const server=await createController(address,command=>{if(command==='stop')stopped++;return {phase:'starting'};});
   t.after(()=>new Promise(resolve=>server.close(resolve)));
-  assert.equal((await controlRequest(address,'status')).phase,'ready');assert.equal((await controlRequest(address,'untrusted')).phase,'invalid');
-  await runDemo({address,open:async()=>{opened++;},log:()=>{},environment:()=>{throw Error('Duplikasi tidak boleh memulai setup.');}});assert.equal(opened,1);
-  assert.equal((await controlRequest(address,'stop')).phase,'ready');assert.equal(stopped,1);
+  assert.equal((await controlRequest(address,'status')).phase,'starting');assert.equal((await controlRequest(address,'untrusted')).phase,'invalid');
+  await runDemo({address,open:async()=>{opened++;},log:()=>{},environment:()=>{throw Error('Duplikasi tidak boleh memulai setup.');}});assert.equal(opened,0);
+  assert.equal((await controlRequest(address,'stop')).phase,'starting');assert.equal(stopped,1);
   assert.equal(await controlRequest(controllerPath(path.resolve('missing-'+randomUUID())),'status'),null);
 });
 test('Port detection identifies an occupied service and never terminates it',async t=>{
