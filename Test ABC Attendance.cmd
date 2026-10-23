@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 title Uji ABC Attendance
-echo Menguji Stage 3-4 dengan data fiktif dan emulator terpisah.
+echo Menguji Stage 3-5 dengan data fiktif dan emulator terpisah.
 where node >nul 2>nul
 if errorlevel 1 (
   echo FAIL - Node.js belum ditemukan. Siapkan Node.js 22+ sesuai README.

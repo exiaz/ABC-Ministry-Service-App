@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {mkdir} from 'node:fs/promises';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {initializeApp,deleteApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
@@ -20,7 +21,7 @@ test('Superadmin creates/manages PIC in mobile Chrome; PIC login has scoped devi
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   const ownerContext=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID'}),picContext=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID'});
   const owner=await ownerContext.newPage(),pic=await picContext.newPage(),errors=[];for(const page of [owner,pic])page.on('pageerror',e=>errors.push(e.name));
-  const login=async(page,email,password)=>{await page.goto(f.base);await page.locator('#admin-email').fill(email);await page.locator('#admin-password').fill(password);await page.locator('#admin-login button[type=submit]').click();await page.waitForSelector('#admin-root[data-phase=active]');};
+  const login=async(page,email,password)=>{await page.goto(f.base);assert.equal(await page.locator('#admin-email').inputValue(),'');assert.equal((await page.locator('#admin-root').innerText()).includes(f.email),false);await page.locator('#admin-email').fill(email);await page.locator('#admin-password').fill(password);await page.locator('#admin-login button[type=submit]').click();await page.waitForSelector('#admin-root[data-phase=active]');};
   try{
   await login(owner,f.email,f.password);await owner.locator('[data-admin-tab=accounts]').click();await owner.waitForSelector('#account-form');
   const email='pic.'+randomUUID().slice(0,8)+'@abc-attendance.test',password=randomBytes(20).toString('base64url');
@@ -29,11 +30,13 @@ test('Superadmin creates/manages PIC in mobile Chrome; PIC login has scoped devi
   await owner.locator('#account-form button[type=submit]').click();await owner.waitForFunction(()=>document.querySelector('#admin-accounts')?.textContent.includes('Akun PIC tersimpan.'));
   assert.equal(await owner.locator('input[name=password]').inputValue(),'');
   await login(pic,email,password);assert.equal(await pic.locator('[data-admin-tab=accounts]').count(),0);
+  await pic.locator('[data-admin-tab=schedule]').click();await pic.waitForSelector('#admin-calendar[data-state=ready]');await pic.locator('#service-school').selectOption('s1');await pic.locator('#service-date').fill('2026-11-01');await pic.locator('#service-date').press('Tab');assert.equal(await pic.locator('[data-calendar-field=group]').count(),1);await pic.locator('[data-calendar-field=group]').check();await pic.locator('#admin-service-form button[type=submit]').click();await pic.waitForFunction(()=>document.querySelector('#admin-calendar')?.textContent.includes('Jadwal tersimpan.'));const special=(await c.root.collection('serviceSessions').where('date','==','2026-11-01').get()).docs[0].id;
+  await mkdir('screenshots',{recursive:true});for(const width of [360,390,1365]){await pic.setViewportSize({width,height:900});assert.equal(await pic.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);if(width!==360)await pic.screenshot({path:'screenshots/calendar-pic-'+(width===390?'mobile':'desktop')+'.png',fullPage:true});}await pic.setViewportSize({width:390,height:844});
   await pic.locator('[data-admin-tab=devices]').click();await pic.waitForSelector('#admin-devices[data-state=ready]');
   assert.equal(await pic.locator('#device-school option').count(),2);
-  await pic.locator('#device-school').selectOption('s1');const visits=await pic.locator('#device-visit option').evaluateAll(nodes=>nodes.map(n=>n.value).filter(Boolean));assert.equal(visits.length,1);
-  await pic.locator('#device-visit').selectOption(visits[0]);assert.equal(await pic.locator('[data-device-field=group]').count(),1);
-  await pic.locator('[data-device-field=group]').check();const issuedResponse=pic.waitForResponse(response=>response.url().endsWith('/api/admin/activation-codes')&&response.request().method()==='POST');await pic.locator('#device-issue-form button[type=submit]').click();const issued=await issuedResponse;assert.equal(issued.status(),201);const metadata=await issued.json();assert.equal(metadata.codes.length,1);assert.equal(metadata.codes[0].expiresAt-metadata.codes[0].createdAt,172800000);assert.equal(metadata.codes[0].assignment.groupId,'g13');await pic.waitForSelector('[data-activation-code]');assert.equal(await pic.locator('#device-issue-form button[type=submit]').isDisabled(),true);await pic.locator('[data-activation=hide]').click();
+  await pic.locator('#device-school').selectOption('s1');const visits=await pic.locator('#device-visit option').evaluateAll(nodes=>nodes.map(n=>n.value).filter(Boolean));assert.equal(visits.length,2);
+  await pic.locator('#device-visit').selectOption(special);assert.equal(await pic.locator('[data-device-field=group]').count(),1);
+  await pic.locator('[data-device-field=group]').check();const issuedResponse=pic.waitForResponse(response=>response.url().endsWith('/api/admin/activation-codes')&&response.request().method()==='POST');await pic.locator('#device-issue-form button[type=submit]').click();const issued=await issuedResponse;assert.equal(issued.status(),201);const metadata=await issued.json();assert.equal(metadata.codes.length,1);assert.equal(metadata.codes[0].expiresAt-metadata.codes[0].createdAt,172800000);assert.equal(metadata.codes[0].assignment.groupId,'g13');assert.equal(metadata.codes[0].assignment.serviceDate,'2026-11-01');await pic.waitForSelector('[data-activation-code]');assert.equal(await pic.locator('#device-issue-form button[type=submit]').isDisabled(),true);await pic.locator('[data-activation=hide]').click();
   const storage=await owner.evaluate(()=>JSON.stringify({local:localStorage,session:sessionStorage}));assert.equal(storage.includes(password),false);
   await owner.locator('.device-card').filter({hasText:email}).locator('[data-account=edit]').click();await owner.locator('#account-form select[name=state]').selectOption('disabled');
   owner.once('dialog',dialog=>dialog.accept());await owner.locator('#account-form button[type=submit]').click();await owner.waitForFunction(()=>document.querySelector('#admin-accounts')?.textContent.includes('Akun PIC tersimpan.'));

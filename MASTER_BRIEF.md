@@ -1,10 +1,16 @@
 # ABC Goes to School — Master Brief
 
-**Status revisi 23 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–4. Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
+**Status revisi 23 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–5. Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
 
 **Tambahan Milestone 1:** fondasi API roster baca-saja dan otorisasi kredensial uji tersedia pada server terpisah; belum merupakan backend/autentikasi produksi dan tidak mengganti penyimpanan atau akses demo frontend. Seluruh proyek tetap khusus data fiktif. Kontrak, pemisahan jalur legacy, bukti tes dan batasnya dijelaskan pada `README.md` dan revisi terbaru `PROJECT_STATUS.md`; pernyataan batas backend di bawah tetap berlaku untuk operasi produksi/prototipe frontend.
 
 ## Tujuan dan lingkup
+
+**Tambahan Stage 5 (23 Oktober 2026):** Jumat reguler dan pelayanan khusus dapat dikonfigurasi pada semua hari. Tanggal hanya filter: memilih tanggal tidak membuat sesi, menambah kelompok atau memberi izin. Sesi harus dikonfigurasi secara eksplisit dan selalu memakai `serviceSessionId` stabil, termasuk beberapa sesi pada sekolah/tanggal sama. Mentor memilih ID sesi bila ada beberapa pilihan; aktivasi Stage 4 tetap langsung membuka satu penugasan dari server. Pelayanan sementara lama perlu verifikasi admin sebelum dipilih Mentor. Arsip, ID, penugasan dan riwayat dipertahankan tanpa migrasi massal.
+
+**Klarifikasi pengguna untuk Admin:** PIC dan Superadmin dapat mengatur jadwal pengelolaan perangkat. PIC dengan izin `pairing:issue` hanya boleh membuat sesi bagi pasangan sekolah/kelompok yang sudah diberikan kepadanya. Penyimpanan eksplisit menambahkan tuple sesi baru hanya kepada operator dan Superadmin pemilik, yang juga harus tetap memiliki cakupan kelompok tersebut. PIC lain tidak otomatis memperoleh akses. Edit memerlukan izin seluruh kelompok sesi, revisi terkini, receipt idempotensi dan audit server. Sekolah dan kelompok lama tetap disertakan; tidak tersedia penghapusan sesi. Jadwal tidak membuat kode/kredensial otomatis. Batas kode 48 jam dan akses maksimal 1 jam/akhir tanggal WIB tetap berlaku.
+
+Superadmin tetap akun administrator aplikasi yang terpisah dari PIC. Form login tidak memublikasikan/mengisi email pemilik atau menyediakan pemilih peran; server menentukan peran. Identitas/password pemilik yang sudah tersimpan tidak diganti otomatis. Tidak menambah alur pengganti mentor/merge Stage 6 atau deployment.
 
 **Tambahan Stage 4 (23 Oktober 2026):** pada jalur Mentor aman/emulator, PIC berizin menerbitkan satu kode unik per sekolah, ID pelayanan, tanggal, kelompok dan mentor efektif. Kode acak disimpan sebagai hash, ditampilkan sekali, dapat diterbitkan serentak secara atomik, berlaku tepat 48 jam sejak waktu penerbitan server dan hanya sekali ditebus. Mentor memasukkan kode saja; server menentukan penugasannya. Perangkat tambahan memerlukan kode lain, bukan pemakaian ulang kode lama. Kode dicabut/kedaluwarsa/sudah dipakai atau penugasannya berubah ditolak. Izin perangkat lama tetap mengikuti kontraknya.
 
@@ -20,7 +26,7 @@ Menggantikan percobaan alur laporan WhatsApp dengan absensi sederhana bagi mento
 
 ## Aturan bisnis
 
-1. Satu pelayanan per pasangan sekolah dan tanggal. **Service Session ID** adalah acuan utama, tidak berubah saat reschedule. Satu batch absensi per pasangan Service Session ID dan kelompok; satu catatan per pasangan Service Session ID dan siswa, termasuk saat siswa berpindah kelompok. Siswa yang sama dapat dicatat pada Jumat lain secara terpisah.
+1. Beberapa sesi eksplisit dapat memiliki sekolah/tanggal sama; tanggal bukan identitas sesi. **Service Session ID** adalah acuan utama, tidak berubah saat reschedule. Satu batch absensi per pasangan Service Session ID dan kelompok; satu catatan per pasangan Service Session ID dan siswa, termasuk saat siswa berpindah kelompok. Siswa yang sama dapat dicatat pada Jumat lain secara terpisah.
 2. Daftar sesi merupakan salinan siswa aktif saat sesi dibuat. Status awal **Belum Diabsen**. Mengetuk **Hadir** selalu menghasilkan Hadir, bukan toggle yang bisa membatalkan tanpa sengaja. Menu status menyediakan Belum Diabsen, Hadir, Izin, Tidak Hadir.
 3. Draf disimpan setiap perubahan jika penyimpanan browser tersedia. Progres menghitung semua status selain Belum Diabsen.
 4. Penyelesaian selalu memerlukan konfirmasi. Dialog menyebut jumlah siswa tersisa dan menjelaskan perubahan menjadi **Tidak Hadir**. Batal tidak mengubah status. Sesi kosong tidak bisa diselesaikan.
@@ -43,6 +49,8 @@ Menggantikan percobaan alur laporan WhatsApp dengan absensi sederhana bagi mento
 - Backup lokal sebelum migrasi revisi ini: `abc-school-prototype-v1-before-mentor-config-3` (backup revisi 1 lama tetap dipertahankan). Nama mentor lama dimigrasikan ke identitas dan snapshot tanpa mengubah catatan absensi atau mereset data. Batas akses admin tetap simulasi frontend, bukan otorisasi produksi.
 
 ## Jadwal pelayanan
+
+Aturan Stage 5 di atas menggantikan pembatasan Jumat, keunikan sekolah/tanggal dan pembuatan pelayanan sementara oleh Mentor pada uraian prototipe lama berikut. Frekuensi Jumat tetap panduan reguler; pelayanan khusus hari lain tidak memenuhi target Jumat. Tidak ada sesi berulang otomatis.
 
 - Frekuensi reguler: Pakel **2 Jumat**, Airlangga **1 Jumat**, Kertajaya **1 Jumat** per bulan; total **4 kunjungan**. Tidak ada penetapan pekan tetap, perulangan otomatis, atau pembuatan absensi untuk setiap Jumat.
 - Admin memilih sekolah, tanggal Jumat dan kelompok terkait; dapat membuat atau mengubah jadwal. Form menolak tanggal non-Jumat dan duplikasi sekolah/tanggal. Perbandingan frekuensi per bulan ditampilkan sebagai panduan, bukan penghalang perubahan kebutuhan.

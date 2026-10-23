@@ -13,7 +13,8 @@ const assets=new Map([['/','admin.html'],['/index.html','admin.html'],['/admin-c
 assets.set('/admin-devices.js','admin-devices.js');
 assets.set('/admin-activation.js','admin-activation.js');
 assets.set('/admin-accounts.js','admin-accounts.js');
-const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices']);
+assets.set('/admin-calendar.js','admin-calendar.js');
+const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
 // Same-origin admin shell + existing protected API handler/context. No CORS,
 // cookie session, demo assets/database or public administrative dispatch here.
 export function createAdminServer({adminAuthentication,pairing}){

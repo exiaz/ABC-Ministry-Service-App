@@ -1,5 +1,25 @@
 # Pemeriksaan prototipe
 
+## Stage 5 — Kalender semua hari · 23 Oktober 2026
+
+Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage5`. Runner memakai emulator, namespace, port dan TEMP terpisah; tidak mengimpor snapshot operasional. Kalender demo/offline memakai server port sementara dan screenshot pada folder run yang diabaikan Git. Hasil akhir berada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+Putaran final `npm.cmd run test:stage5`: **PASS/exit 0**, 125 modul sintaks/import, 161 unit, 83 integrasi emulator, 21 pemeriksaan Chrome (termasuk parent), kalender demo/offline PASS dan 2 cold lifecycle. QA Admin/XLSX serta form siswa terpisah juga PASS. Setelah penyesuaian visual, suite PIC diulang 1/1 PASS pada 360/390/1365 piksel. Log utama `.emulator-data/stage5-validation-final.log`; screenshot awal `.emulator-data/stage3-tests/run-gkmC3i/`, screenshot panel akhir `run-H8al71/` pada induk folder yang sama.
+
+| Cakupan | Pemeriksaan |
+|---|---|
+| Kalender | Semua hari, Jumat lama, hari khusus, tahun kabisat/batas WIB, tanggal rusak dan sesi kosong |
+| Identitas | Dua sesi sekolah/kelompok/tanggal sama tetap terpisah; ID wajib saat pilihan ambigu; tanggal bukan ID; pemilihan tidak membuat sesi/batch |
+| PIC dan Superadmin | PIC menambah jadwal/token dalam kelompok sendiri, PIC baca-saja ditolak, lintas sekolah/kelompok ditolak; email pemilik kosong/tersembunyi pada login; tidak ada eskalasi peran browser |
+| Transaksi | Retry membuat satu sesi, konflik revisi satu pemenang, izin hilang membatalkan write dan tambahan grant, provisional tidak memberi akses |
+| Aktivasi | Kode 48 jam, single-use/proof/replay/revoke Stage 4 tetap, aktivasi non-Jumat dan akses berakhir paling lambat tengah malam WIB |
+| Absensi/riwayat | Finalisasi/koreksi non-Jumat, receipt dan history append-only, dua sesi tidak bercampur, reschedule mempertahankan ID serta snapshot/absensi sebelumnya |
+| Browser/laporan | PIC membuat Minggu lalu menerbitkan kode, Mentor memilih dua sesi berizin pada tanggal sama, laporan/XLSX demo per ID, kalender mobile/desktop dan offline |
+
+Pemeriksaan operator: login PIC dengan akun sendiri, buat sesi khusus dalam cakupan kelompoknya, kemudian terbitkan kode melalui Perangkat Mentor. Buat dua sesi tanggal sama untuk memeriksa ID. Tanggal kosong dan kelompok di luar izin tidak boleh membuka absensi. Reschedule harus menolak kode/akses lama tanpa mengubah riwayat; terbitkan kode baru. Selesaikan dengan Stop dan tunggu snapshot tersimpan. Jangan mengubah jam sistem atau memakai data operasional untuk mencoba batas waktu; tes otomatis menyuntikkan jam fixture.
+
+Android fisik, Safari/Firefox dan rekap/ekspor Admin server belum diverifikasi/tersedia. Tidak menguji produksi atau data anak nyata. Bagian berikut adalah bukti historis Stage 4 dan sebelumnya.
+
 ## Stage 4 — Aktivasi Mentor dan kode 48 jam · 23 Oktober 2026
 
 Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage4`. Perintah ini memakai runner Stage 3 yang sama dan menjalankan seluruh regresi Stage 1–4; PASS/exit 0 hanya jika semua tahap lulus. Prasyarat dan isolasi emulator mengikuti Stage 3. Hasil eksekusi terkini dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).

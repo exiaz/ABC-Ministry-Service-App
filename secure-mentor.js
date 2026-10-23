@@ -1,6 +1,6 @@
 import {escape as esc} from './data.js';
 import {calendarGrid} from './service-ui.js';
-import {longDate,isFriday} from './scheduling.js';
+import {longDate,isValidDate} from './scheduling.js';
 import {jakartaToday,shiftMonth} from './dates.js';
 import {createMentorAttendance,attendanceStatuses as statuses} from './mentor-attendance.js';
 
@@ -8,14 +8,14 @@ const ids=['schoolId','groupId','serviceSessionId'];
 const scopeKey=scope=>ids.map(k=>scope[k]).join('|');
 function contextsFrom(value){
   if(!Array.isArray(value?.contexts))throw Error();
-  const seen=new Set(),dates=new Map();
+  const seen=new Set();
   return value.contexts.map(row=>{
     if(!ids.every(k=>typeof row[k]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(row[k]))||!['schoolName','groupName','mentorName'].every(k=>typeof row[k]==='string'&&row[k].trim())||!/^\d{4}-\d{2}-\d{2}$/.test(row.serviceDate))throw Error();
-    const key=scopeKey(row),dateKey=row.schoolId+'|'+row.serviceDate;
-    if(seen.has(key)||dates.has(dateKey)&&dates.get(dateKey)!==row.serviceSessionId)throw Error();
-    seen.add(key);dates.set(dateKey,row.serviceSessionId);
+    const key=scopeKey(row);
+    if(seen.has(key)||!isValidDate(row.serviceDate))throw Error();
+    seen.add(key);
     return Object.fromEntries([...ids,'schoolName','groupName','mentorName','serviceDate'].map(k=>[k,row[k]]));
-  }).filter(row=>isFriday(row.serviceDate));
+  });
 }
 export function createSecureMentor({client,render,icon,steps,art,openModal,closeModal}){
   let contexts=[],phase='loading-context',schoolId='',selectedDate='',month='',calendarOpen=false,selected=null,students=[],query='',error='',epoch=0;
@@ -68,10 +68,10 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       <div class="roster-layout"><section class="panel"><div class="panel-head"><div><h2>Daftar siswa · ${students.length}</h2><p>${done?'Hasil absensi dari server':'Ketuk Hadir. Gunakan ⋯ untuk mengubah status.'}</p></div>${icon('users')}</div>${students.length?`<div class="roster-toolbar"><div class="search">${icon('search')}<input id="secure-student-search" aria-label="Cari siswa" placeholder="Cari nama siswa…" value="${esc(query)}" autocomplete="off"></div></div><div class="roster-label"><span>NAMA SISWA</span><span>KEHADIRAN</span></div><div id="secure-roster-rows">${rowsView()}</div>`:message('Belum ada siswa pada kelompok dan pelayanan ini.')}</section><aside class="roster-aside"><div class="panel summary-card"><h3>Ringkasan absensi</h3><p>${students.length-counts.unmarked} dari ${students.length} siswa dicatat</p><div class="summary-stats">${Object.entries(statuses).map(([key,label])=>`<div class="summary-stat"><span><i class="status-dot ${key}"></i>${label}</span><strong>${counts[key]}</strong></div>`).join('')}</div>${!done?`<button class="btn primary" data-action="secure-review" ${editable&&students.length?'':'disabled'}>Tinjau & selesaikan ${icon('arrow')}</button>`:''}<p class="summary-note">Belum Diabsen tetap terpisah dari Tidak Hadir. Setiap perubahan harus dikonfirmasi server.</p>${selected.serviceDate>jakartaToday()?'<p class="calendar-hint">Absensi dapat diselesaikan mulai tanggal pelayanan (WIB).</p>':''}</div></aside></div>`}`;
     }else if(calendarOpen!==null){
       const school=schoolRows().find(c=>c.schoolId===schoolId);
-      html=`<button class="back-btn" data-action="back-schools">${icon('back')} Semua sekolah</button><div class="heading"><div><h1>Pilih Tanggal Pelayanan</h1><p>${esc(school.schoolName)} · Jumat dalam izin perangkat.</p></div></div>${steps(2)}<section class="panel date-picker-panel"><label id="service-date-label" for="service-date-trigger">Pilih Tanggal Pelayanan</label><div class="calendar-anchor"><button id="service-date-trigger" class="date-field" data-action="calendar-toggle" aria-expanded="${calendarOpen}" aria-controls="service-calendar">${icon('calendar')}<span>${longDate(selectedDate)}</span><span>⌄</span></button>${calendarOpen?`<div id="service-calendar" class="calendar-popover" role="dialog" aria-modal="false" aria-labelledby="service-date-label">${calendarGrid(month,selectedDate,icon,dates())}<p class="calendar-hint">Hanya Jumat dalam izin perangkat · WIB</p><button class="btn text small" data-action="calendar-close">Tutup kalender</button></div>`:''}</div><p class="date-selection-note">${dates().includes(selectedDate)?'Pelayanan tersedia dalam cakupan izin.':'Tanggal ini tidak tersedia dalam izin perangkat.'}</p><button class="btn primary" data-action="continue-date" ${dates().includes(selectedDate)?'':'disabled'}>Pilih kelompok ${icon('arrow')}</button><p class="calendar-hint">Tidak membuat pelayanan baru. Izin tetap diperiksa oleh server saat daftar siswa diminta.</p></section>`;
+      html=`<button class="back-btn" data-action="back-schools">${icon('back')} Semua sekolah</button><div class="heading"><div><h1>Pilih tanggal pelayanan</h1><p>${esc(school.schoolName)} · Sesi pelayanan dalam izin perangkat.</p></div></div>${steps(2)}<section class="panel date-picker-panel"><label id="service-date-label" for="service-date-trigger">Pilih tanggal pelayanan</label><div class="calendar-anchor"><button id="service-date-trigger" class="date-field" data-action="calendar-toggle" aria-expanded="${calendarOpen}" aria-controls="service-calendar">${icon('calendar')}<span>${longDate(selectedDate)}</span><span>⌄</span></button>${calendarOpen?`<div id="service-calendar" class="calendar-popover" role="dialog" aria-modal="false" aria-labelledby="service-date-label">${calendarGrid(month,selectedDate,icon,dates())}<p class="calendar-hint">Hanya tanggal dalam izin perangkat · WIB</p><button class="btn text small" data-action="calendar-close">Tutup kalender</button></div>`:''}</div><p class="date-selection-note">${dates().includes(selectedDate)?'Pelayanan tersedia dalam cakupan izin.':'Tanggal ini tidak tersedia dalam izin perangkat.'}</p><button class="btn primary" data-action="continue-date" ${dates().includes(selectedDate)?'':'disabled'}>Pilih kelompok ${icon('arrow')}</button><p class="calendar-hint">Tidak membuat pelayanan baru. Izin tetap diperiksa oleh server saat daftar siswa diminta.</p></section>`;
     }else{
       const rows=contexts.filter(c=>c.schoolId===schoolId&&c.serviceDate===selectedDate);
-      html=`<button class="back-btn" data-action="back-dates">${icon('back')} Pilih tanggal lain</button><div class="heading"><div><h1>Pilih kelompokmu</h1><p>${esc(rows[0]?.schoolName??'')} · ${longDate(selectedDate)}</p></div></div>${steps(3)}<div class="group-grid">${rows.map(c=>`<button class="group-card" data-action="select-group" data-id="${esc(c.groupId)}"><div class="group-top"><span class="badge excused">API lokal</span></div><h3>${esc(c.groupName)}</h3><p class="mentor-subtitle">${esc(c.mentorName)}</p><div class="bottom"><span class="muted">Daftar sesuai izin perangkat</span>${icon('arrow')}</div></button>`).join('')}</div>`;
+      html=`<button class="back-btn" data-action="back-dates">${icon('back')} Pilih tanggal lain</button><div class="heading"><div><h1>Pilih kelompokmu</h1><p>${esc(rows[0]?.schoolName??'')} · ${longDate(selectedDate)}</p></div></div>${steps(3)}<div class="group-grid">${rows.map(c=>`<button class="group-card" data-action="select-group" data-id="${esc(c.groupId)}" data-visit="${esc(c.serviceSessionId)}"><div class="group-top"><span class="badge excused">API lokal</span></div><h3>${esc(c.groupName)}</h3><p class="calendar-hint">Sesi: ${esc(c.serviceSessionId)}</p><p class="mentor-subtitle">${esc(c.mentorName)}</p><div class="bottom"><span class="muted">Daftar sesuai izin perangkat</span>${icon('arrow')}</div></button>`).join('')}</div>`;
     }
     return `<section id="secure-mentor" data-state="${phase}">${html}</section>`;
   }
@@ -99,7 +99,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       });
     }
   }
-  function action(name,id){
+  function action(name,id,serviceSessionId){
     if(client.state.assignment){if(name==='mentor'){void refresh();return;}if(['select-school','select-group','continue-date','back-schools','back-dates','back-groups'].includes(name)||name.startsWith('calendar-'))return;}
     switch(name){
       case 'secure-present':if(students.some(s=>s.id===id))void attendance.mutate('save',{records:[{studentId:id,status:'present'}]});return;
@@ -117,7 +117,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       case 'continue-date':if(!dates().includes(selectedDate))return;calendarOpen=null;break;
       case 'back-dates':epoch++;students=[];selected=null;calendarOpen=false;break;
       case 'back-groups':epoch++;students=[];selected=null;phase='ready';calendarOpen=null;break;
-      case 'select-group':{const scope=contexts.find(c=>c.schoolId===schoolId&&c.serviceDate===selectedDate&&c.groupId===id);if(scope)void loadRoster(scope);return;}
+      case 'select-group':{const rows=contexts.filter(c=>c.schoolId===schoolId&&c.serviceDate===selectedDate&&c.groupId===id),scope=serviceSessionId?rows.find(c=>c.serviceSessionId===serviceSessionId):rows.length===1?rows[0]:null;if(scope)void loadRoster(scope);return;}
       default:return;
     }
     if(!selected)attendance.reset();

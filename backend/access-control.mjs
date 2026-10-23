@@ -1,7 +1,9 @@
 import {createHash,randomBytes} from 'node:crypto';
+import {isValidDate} from '../dates.js';
 
 export const SCOPE_KEYS=['schoolId','groupId','serviceSessionId'];
 const validId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value);
+export const validServiceSession=visit=>!!visit&&validId(visit.id)&&isValidDate(visit.date)&&visit.provisional!==true;
 export function validRosterScope(scope){
   return !!scope&&SCOPE_KEYS.every(key=>validId(scope[key]));
 }

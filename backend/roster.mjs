@@ -1,3 +1,4 @@
+import {validServiceSession} from './access-control.mjs';
 import {effectiveMentor} from '../assignments.js';
 
 // Shared output allowlist also protects the async boundary from adapter extras.
@@ -18,7 +19,7 @@ export function toRosterContext(scope,value){
 }
 export function describeRosterScope(db,scope){
   const {schoolId,groupId,serviceSessionId}=scope,school=db.schools.find(s=>s.id===schoolId),group=db.groups.find(g=>g.id===groupId&&g.schoolId===schoolId),visit=db.serviceSessions.find(v=>v.id===serviceSessionId&&v.schoolId===schoolId&&v.groupIds.includes(groupId));
-  if(!school||!group||!visit)return null;
+  if(!school||!group||!validServiceSession(visit))return null;
   return toRosterContext(scope,{...scope,schoolName:school.name,groupName:group.name,serviceDate:visit.date,mentorName:effectiveMentor(db,groupId,serviceSessionId).name});
 }
 
@@ -30,7 +31,7 @@ export function createRosterRepository(source={schools:[],groups:[],serviceSessi
     read({schoolId,groupId,serviceSessionId}){
       const group=db.groups.find(g=>g.id===groupId&&g.schoolId===schoolId);
       const visit=db.serviceSessions.find(s=>s.id===serviceSessionId&&s.schoolId===schoolId&&s.groupIds.includes(groupId));
-      if(!db.schools.some(s=>s.id===schoolId)||!group||!visit)return null;
+      if(!db.schools.some(s=>s.id===schoolId)||!group||!validServiceSession(visit))return null;
       const batch=db.sessions.find(s=>s.schoolId===schoolId&&s.groupId===groupId&&s.serviceSessionId===serviceSessionId);
       // Existing batches retain their roster snapshot. No getSession(): GET must
       // never create batches, modify planned groups, or rewrite attendance.

@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {canReadRoster,validRosterScope,SCOPE_KEYS} from './access-control.mjs';
+import {canReadRoster,validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {toRosterResponse} from './roster.mjs';
 
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -57,7 +57,7 @@ export function createEmulatorAttendance({db,root,credentials,now}){
         const command=action==='read'?null:attendanceCommand(action,input);
         const {schoolId,groupId,serviceSessionId}=scope;
         const [school,group,visit]=(await tx.getAll(col('schools').doc(schoolId),col('groups').doc(groupId),col('serviceSessions').doc(serviceSessionId))).map(d=>d.data());
-        if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))deny();
+        if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||!validServiceSession(visit)||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))deny();
         const lock=col('attendanceSessionLocks').doc(serviceSessionId),guard=(await tx.get(lock)).data();
         const batches=(await tx.get(col('sessions').where('serviceSessionId','==',serviceSessionId))).docs;
         const matching=batches.filter(d=>d.data().groupId===groupId);

@@ -8,7 +8,7 @@ import {applyStudentSchema,saveRegisteredStudent,addTemporaryStudent} from '../s
 import {birthdayOverview,birthdayInYear,ageOn} from '../birthdays.js';
 import {studentExportData,attendanceExportData} from '../reports.js';
 import {planStudentImport,commitStudentImport,importBirthdate} from '../student-import.js';
-import {selectFridayService} from '../scheduling.js';
+import {saveService} from '../scheduling.js';
 mock.timers.enable({apis:['Date'],now:new Date('2026-10-21T05:00:00Z')});
 const student={name:'Siswa Fiktif Éka',schoolClass:'3A',gender:'male',schoolId:'s1',groupId:'g13'};
 test('Group management filters use existing group IDs with 8/4/4 configured groups',()=>{
@@ -38,7 +38,7 @@ test('Gender migration leaves unknown values null and attendance unchanged, with
 });
 test('Both creation paths require exactly male/female, and approval retains the selected gender',()=>{
   const db=seed();for(const gender of [null,'','unknown','other','Laki-laki'])assert.throws(()=>saveRegisteredStudent(db,{...student,gender},{admin:true}),/Jenis Kelamin/);
-  const visit=selectFridayService(db,'s1','2026-10-16',{confirmed:true}),batch=getSession(db,'g13',visit.id),ctx={schoolId:'s1',groupId:'g13',serviceSessionId:visit.id,sessionId:batch.id,serviceDate:visit.date};
+  const visit=saveService(db,{schoolId:'s1',date:'2026-10-16',groupIds:db.groups.filter(g=>g.schoolId==='s1'&&!g.retired).map(g=>g.id)}),batch=getSession(db,'g13',visit.id),ctx={schoolId:'s1',groupId:'g13',serviceSessionId:visit.id,sessionId:batch.id,serviceDate:visit.date};
   assert.throws(()=>addTemporaryStudent(db,ctx,{...student,gender:''}),/Jenis Kelamin/);
   const pending=addTemporaryStudent(db,ctx,{...student,gender:'female'}),before=structuredClone(db.sessions);
   const approved=saveRegisteredStudent(db,{...student,gender:pending.gender},{provisionalId:pending.id,admin:true});

@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
+import {validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {adminAuthConfig} from './admin-auth.mjs';
 
 export const PIC_ACTIONS=['pairing:read','pairing:issue','pairing:revoke'];
@@ -44,12 +44,12 @@ export function createAdminAccounts({db,root,auth}){
   };
   const project=row=>({uid:row.uid,email:row.email,state:row.state,revision:row.revision,actions:row.actions??[],grants:row.grants??[],updatedAt:row.updatedAt??row.createdAt});
   const validate=async(tx,uid,value)=>{
-    if(!value||!Array.isArray(value.actions)||!value.actions.length||value.actions.some(a=>!PIC_ACTIONS.includes(a))||new Set(value.actions).size!==value.actions.length||!Array.isArray(value.grants)||!value.grants.length||value.grants.length>16||value.grants.some(s=>!validRosterScope(s)||Object.keys(s).length!==3)||new Set(value.grants.map(scopeKey)).size!==value.grants.length)fail(400,'Pilih tindakan dan cakupan PIC yang valid.');
+    if(!value||!Array.isArray(value.actions)||!value.actions.length||value.actions.some(a=>!PIC_ACTIONS.includes(a))||new Set(value.actions).size!==value.actions.length||!Array.isArray(value.grants)||!value.grants.length||value.grants.length>256||value.grants.some(s=>!validRosterScope(s)||Object.keys(s).length!==3)||new Set(value.grants.map(scopeKey)).size!==value.grants.length)fail(400,'Pilih tindakan dan cakupan PIC yang valid.');
     const permission=(await tx.get(root.collection('adminPairingPermissions').doc(uid))).data();
     if(!permission?.active||value.grants.some(s=>!permission.grants.some(p=>scopeKey(s)===scopeKey(p))))fail(403,'Cakupan PIC melampaui izin Superadmin.');
     for(const s of value.grants){
       const [school,group,visit]=(await tx.getAll(root.collection('schools').doc(s.schoolId),root.collection('groups').doc(s.groupId),root.collection('serviceSessions').doc(s.serviceSessionId))).map(d=>d.data());
-      if(school?.id!==s.schoolId||group?.id!==s.groupId||group.schoolId!==s.schoolId||visit?.id!==s.serviceSessionId||visit.schoolId!==s.schoolId||!visit.groupIds?.includes(s.groupId))fail(400,'Sekolah, kelompok atau sesi tidak sesuai.');
+      if(school?.id!==s.schoolId||group?.id!==s.groupId||group.schoolId!==s.schoolId||!validServiceSession(visit)||visit?.id!==s.serviceSessionId||visit.schoolId!==s.schoolId||!visit.groupIds?.includes(s.groupId))fail(400,'Sekolah, kelompok atau sesi tidak sesuai.');
     }
     return {actions:[...value.actions],grants:value.grants.map(s=>Object.fromEntries(SCOPE_KEYS.map(k=>[k,s[k]])))};
   };

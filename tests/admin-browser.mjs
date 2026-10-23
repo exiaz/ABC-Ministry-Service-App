@@ -1,15 +1,17 @@
 // Targeted admin/gender/birthday/XLSX checks; isolated profile, fictional data only.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {once} from 'node:events';
 import {spawn} from 'node:child_process';
+import {createPrototypeServer} from '../server.mjs';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {seed,KEY,getSession} from '../data.js';
 import {saveRegisteredStudent} from '../student-data.js';
-import {selectFridayService} from '../scheduling.js';
+import {saveService} from '../scheduling.js';
 import {buildWorkbook} from '../xlsx.js';
 import {studentExportData,attendanceExportData} from '../reports.js';
-const {chromium}=createRequire(import.meta.url)('playwright'),dir=path.resolve('qa-artifacts/admin-revision');await mkdir(dir,{recursive:true});
+const require=createRequire(import.meta.url);let chromium;try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}const dir=path.resolve('qa-artifacts/admin-revision');await mkdir(dir,{recursive:true});
 const fixture=seed();fixture.authorized=true;fixture.mentorPreferences={schoolId:'s1',groupId:'g13'};
 for(const [id,name,schoolId,groupId,gender,dateOfBirth] of [
   ['qa-female','Anak Fiktif Éléna','s1','g13','female','2016-10-03'],['qa-male','Anak Fiktif Budi','s2','g4','male','2015-11-20'],['qa-empty','Anak Fiktif C','s1','g13','male',null],['qa-today','Anak Fiktif Hari Ini','s1','g1','female','2014-10-21']]){
@@ -17,7 +19,7 @@ for(const [id,name,schoolId,groupId,gender,dateOfBirth] of [
 }
 fixture.mentorConfigRevision=2;fixture.mentors.push({id:'demo-raka',name:'Kak Raka'});fixture.defaultMentorAssignments.push({id:'legacy-plan',groupId:'g1',mentorId:'demo-raka',effectiveFrom:'2026-11-01'});
 const current=getSession(fixture,'g1','demo-pakel-2026-10-23');current.records[0].status='excused';current.records[0].schoolClass='3A';
-const visit=selectFridayService(fixture,'s1','2026-10-16',{confirmed:true});getSession(fixture,'g13',visit.id);
+const visit=saveService(fixture,{schoolId:'s1',date:'2026-10-16',groupIds:fixture.groups.filter(g=>g.schoolId==='s1'&&!g.retired).map(g=>g.id)});getSession(fixture,'g13',visit.id);
 const oldSessions=structuredClone(fixture.sessions);
 const importRows=[['ID siswa','Nama lengkap','Sekolah','Kelas sekolah','Kelompok ABC','Jenis kelamin','Tanggal lahir'],['import-001','Impor Fiktif Ñana','SDN Airlangga III','4B','Amos','Perempuan','42429'],['import-002','Impor Fiktif Danu','SDN Kertajaya IV','2','Amos','Laki-laki','']];
 const importPath=path.join(dir,'import-source.xlsx');await writeFile(importPath,new Uint8Array(await buildWorkbook(importRows).arrayBuffer()));
@@ -41,14 +43,14 @@ with zipfile.ZipFile(p,'w',zipfile.ZIP_DEFLATED) as z:
  for n,b in files.items(): z.writestr(n,b)
 `,importPath],{windowsHide:true,stdio:'pipe'});let error='';python.stderr.on('data',s=>error+=s);python.once('error',reject);python.once('exit',code=>code?reject(Error(error)):resolve());
 });
-const server=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4174'},windowsHide:true,stdio:'pipe'});let browser;
+const server=createPrototypeServer();server.listen(0,'127.0.0.1');await once(server,'listening');const port=server.address().port;let browser;
 try{
-  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',c=>reject(Error('QA server exited '+c)));});
+  await mkdir('screenshots',{recursive:true});
   browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   const context=await browser.newContext({viewport:{width:1365,height:900},locale:'id-ID',timezoneId:'Asia/Jakarta',acceptDownloads:true}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.clock.install({time:new Date('2026-10-21T05:00:00Z')});
   await page.addInitScript(({key,value})=>{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(value));},{key:KEY,value:fixture});
-  await page.goto('http://127.0.0.1:4174/');
+  await page.goto('http://127.0.0.1:'+port+'/');
   const action=(name,id)=>page.locator(`[data-action="${name}"]${id?`[data-id="${id}"]`:''}`),submit=()=>page.locator('#modal button[type=submit]'),close=()=>page.locator('#modal .close').click(),db=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)),KEY);
   await action('admin').first().click();await page.locator('#field-code').fill('ABC2026');await submit().click();
   await action('admin-tab','groups').click();assert.equal(await page.locator('tbody tr').count(),16);
@@ -64,7 +66,7 @@ try{
   const before=(await db()).students.length;await submit().click();assert.equal((await db()).students.length,before);
   await page.locator('[name=gender][value=female]').check();await submit().click();assert.equal((await db()).students.at(-1).gender,'female');
   // Context-preserving mentor form requires explicit gender and no private fields.
-  await action('mentor').first().click();await action('continue-date').click();await action('select-group','g13').click();await action('add-provisional').click();
+  await action('mentor').first().click();await action('calendar-toggle').click();await action('calendar-date','2026-10-16').click();await action('continue-date').click();await action('select-group','g13').click();await action('add-provisional').click();
   assert.equal(await page.locator('#modal select').count(),0);assert.equal(await page.locator('[name=gender]:checked').count(),0);assert.match(await page.locator('.student-context').innerText(),/Hagai · Kak Louis/);
   await page.locator('#field-name').fill('Siswa Fiktif Sementara Gender');await page.locator('#field-schoolClass').fill('2A');await page.locator('[name=gender][value=male]').check();await submit().click();
   let stored=await db(),temporary=stored.provisionals.at(-1),batch=structuredClone(stored.sessions.find(s=>s.id===temporary.sessionId));
@@ -103,4 +105,4 @@ try{
   await page.reload();assert.ok((await db()).students.some(s=>s.id==='import-001'));
   assert.deepEqual(errors,[]);await writeFile(path.join(dir,'expected-export-rows.json'),JSON.stringify({public:publicRows,private:privateExpected}));
   console.log('Admin browser checks passed: dependent group filters, 8 mentors, mandatory gender/approval, birthday month/school/group/mobile, public/private XLSX accuracy, compressed/shared-string import + re-import, stable IDs/history.');
-}finally{await browser?.close();server.kill();}
+}finally{await browser?.close();await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}

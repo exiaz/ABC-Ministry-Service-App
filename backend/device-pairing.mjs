@@ -1,5 +1,6 @@
+import {createServiceCalendar} from './service-calendar.mjs';
 import {randomBytes,randomUUID} from 'node:crypto';
-import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
+import {validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {emulatorConfig} from './emulator-config.mjs';
 import {adminAuthConfig} from './admin-auth.mjs';
 import {hash,devicePublicKey,validDeviceProof} from './device-proof.mjs';
@@ -13,8 +14,8 @@ export class PairingError extends Error{
 const invalid=()=>new PairingError(400,'Kode pairing tidak valid atau tidak berlaku.');
 const denied=()=>new PairingError(403,'Cakupan pairing tidak diizinkan.');
 const copy=grants=>grants.map(scope=>Object.fromEntries(SCOPE_KEYS.map(key=>[key,scope[key]])));
-const validGrants=grants=>Array.isArray(grants)&&grants.length>0&&grants.length<=16&&grants.every(scope=>validRosterScope(scope)&&Object.keys(scope).length===3)&&new Set(grants.map(s=>JSON.stringify(copy([s])[0]))).size===grants.length;
-const permitted=(permission,grants)=>permission?.active===true&&validGrants(permission.grants)&&validGrants(grants)&&grants.every(scope=>permission.grants.some(p=>SCOPE_KEYS.every(k=>p[k]===scope[k])));
+const validGrants=(grants,max=16)=>Array.isArray(grants)&&grants.length>0&&grants.length<=max&&grants.every(scope=>validRosterScope(scope)&&Object.keys(scope).length===3)&&new Set(grants.map(s=>JSON.stringify(copy([s])[0]))).size===grants.length;
+const permitted=(permission,grants)=>permission?.active===true&&validGrants(permission.grants,256)&&validGrants(grants,256)&&grants.every(scope=>permission.grants.some(p=>SCOPE_KEYS.every(k=>p[k]===scope[k])));
 const validId=id=>typeof id==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(id);
 export const ACTIVATION_CODE_TTL_MS=48*60*60*1000;
 // Exclusive next midnight in WIB; redemption expiry is independent of this cap.
@@ -40,12 +41,12 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
   const relations=async(tx,grants)=>{
     for(const s of grants){
       const [school,group,visit]=(await tx.getAll(col('schools').doc(s.schoolId),col('groups').doc(s.groupId),col('serviceSessions').doc(s.serviceSessionId))).map(d=>d.data());
-      if(school?.id!==s.schoolId||group?.id!==s.groupId||group.schoolId!==s.schoolId||visit?.id!==s.serviceSessionId||visit.schoolId!==s.schoolId||!visit.groupIds?.includes(s.groupId))throw denied();
+      if(school?.id!==s.schoolId||group?.id!==s.groupId||group.schoolId!==s.schoolId||!validServiceSession(visit)||visit?.id!==s.serviceSessionId||visit.schoolId!==s.schoolId||!visit.groupIds?.includes(s.groupId))throw denied();
     }
   };
   const assignmentFor=async(tx,scope)=>{
     const value=await repository.describe(scope,{transaction:tx,mentorIdentity:true});
-    if(!value||!validId(value.mentorId)||new Date(value.serviceDate+'T12:00:00Z').getUTCDay()!==5)throw denied();
+    if(!value||!validId(value.mentorId))throw denied();
     return {...toRosterContext(scope,value),mentorId:value.mentorId};
   };
   const assignmentMetadata=value=>{if(!validId(value?.mentorId))throw denied();return {...toRosterContext(value,value),mentorId:value.mentorId};};
@@ -60,6 +61,7 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
     });
   };
   return {
+    ...createServiceCalendar({db,root,now,assertLocal:assertAdminLocal,currentAdmin}),
     limit,
     async issueActivation(uid,{grants,idempotencyKey},stillAuthorized=async()=>true){
       await authorizeOperator(uid,'pairing:issue');

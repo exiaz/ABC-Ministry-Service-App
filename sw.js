@@ -1,4 +1,4 @@
-const CACHE = 'abc-school-v12';
+const CACHE = 'abc-school-v13';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './pairing-client.js', './pairing-ui.js', './device-storage.js', './secure-mentor.js', './mentor-attendance.js', './data.js', './student-data.js', './birthdays.js', './birthday-ui.js', './xlsx-reader.js', './student-import.js', './dates.js', './group-config.js', './service-config.js', './scheduling.js', './service-ui.js', './reports.js', './mentor-config.js', './assignments.js', './assignment-ui.js', './xlsx.js', './icon.svg', './manifest.webmanifest', './assets/abc-movement-logo.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('abc-school-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

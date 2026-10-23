@@ -1,3 +1,4 @@
+import {createAdminCalendar} from './admin-calendar.js';
 import {createAdminClient} from './admin-client.js';
 import {createAdminDevices} from './admin-devices.js';
 import {createAccountPanel} from './admin-accounts.js';
@@ -7,13 +8,13 @@ const brand=()=>'<div class="brand"><img class="brand-logo" src="./assets/abc-mo
 const tabs=[['overview','Ringkasan','Dasbor kehadiran'],['history','Riwayat absensi','Riwayat absensi'],['schedule','Jadwal Pelayanan','Jadwal Pelayanan'],['students','Data siswa','Data siswa'],['groups','Kelompok & mentor','Kelompok & mentor'],['birthdays','Ulang Tahun Siswa','Ulang tahun siswa']];
 tabs.push(['devices','Perangkat Mentor','Perangkat Mentor']);
 tabs.push(['accounts','Akun PIC','Pengelolaan akun PIC']);
-let selected='overview',devicePanel,accountPanel;
+let selected='overview',devicePanel,accountPanel,calendarPanel;
 const dialog=document.querySelector('#admin-device-dialog');
 function render(state){
   root.dataset.phase=state.phase;
   if(state.phase!=='active'){
     const busy=['loading','checking','signing-out'].includes(state.phase),pending=state.phase==='logout-error',checking=state.canVerify||state.phase==='checking';
-    root.innerHTML=`<section class="panel pairing-panel">${brand()}<p class="eyebrow">ADMIN · DEMO LOKAL</p><h1>Masuk ke dasbor admin</h1><p id="admin-message" role="${['invalid','error','expired','logout-error'].includes(state.phase)?'alert':'status'}" aria-live="polite">${esc(state.message)}</p>${checking?'<button class="btn small" data-admin="verify">Periksa kembali sesi</button><button class="btn small" data-admin="logout">Keluar</button>':pending?'<button class="btn primary" data-admin="logout">Coba keluar lagi</button>':`<form id="admin-login"><div class="form-row"><label for="admin-email">Email Admin</label><input id="admin-email" name="email" type="email" value="admin.demo@abc-attendance.test" autocomplete="username" required maxlength="254" ${busy?'disabled':''}><small class="calendar-hint">Pemilik demo: gunakan email yang terisi. PIC: ganti dengan email akun yang diberikan Superadmin.</small></div><div class="form-row"><label for="admin-password">Kata sandi Anda</label><input id="admin-password" name="password" type="password" autocomplete="current-password" aria-describedby="admin-password-help" required maxlength="512" ${busy?'disabled':''}><small id="admin-password-help" class="calendar-hint">Pemilik memakai password dari setup lokal. PIC memakai password yang diberikan Superadmin.</small><button class="btn small" type="button" data-admin="toggle-password" aria-pressed="false" ${busy?'disabled':''}>Tampilkan kata sandi</button></div><button class="btn primary" type="submit" ${busy?'disabled':''}>${busy?'Memeriksa…':'Masuk'}</button></form>`}<details class="calendar-hint"><summary>Lupa kata sandi?</summary><p>Klik dua kali <strong>Reset Admin Password.cmd</strong> di folder proyek. Ketik GANTI saat diminta, lalu buat password baru. Setelah halaman dibuka kembali, login dengan password baru. Absensi dan izin perangkat tetap.</p></details><details class="calendar-hint"><summary>Server belum siap atau belum membuat akun?</summary><p>Klik dua kali <strong>Start ABC Attendance.cmd</strong>. Biarkan jendelanya terbuka dan tunggu <strong>Demo siap</strong>. Saat diminta, buat password dua kali tanpa mengetik perintah apa pun.</p></details><p class="calendar-hint">Khusus data fiktif. Reload halaman memerlukan login ulang.</p></section>`;
+    root.innerHTML=`<section class="panel pairing-panel">${brand()}<p class="eyebrow">ADMIN · DEMO LOKAL</p><h1>Masuk ke dasbor admin</h1><p id="admin-message" role="${['invalid','error','expired','logout-error'].includes(state.phase)?'alert':'status'}" aria-live="polite">${esc(state.message)}</p>${checking?'<button class="btn small" data-admin="verify">Periksa kembali sesi</button><button class="btn small" data-admin="logout">Keluar</button>':pending?'<button class="btn primary" data-admin="logout">Coba keluar lagi</button>':`<form id="admin-login"><div class="form-row"><label for="admin-email">Email Admin</label><input id="admin-email" name="email" type="email" autocomplete="username" required maxlength="254" ${busy?'disabled':''}><small class="calendar-hint">Gunakan email akun yang diberikan kepada Anda.</small></div><div class="form-row"><label for="admin-password">Kata sandi Anda</label><input id="admin-password" name="password" type="password" autocomplete="current-password" aria-describedby="admin-password-help" required maxlength="512" ${busy?'disabled':''}><small id="admin-password-help" class="calendar-hint">Gunakan kata sandi akun Anda.</small><button class="btn small" type="button" data-admin="toggle-password" aria-pressed="false" ${busy?'disabled':''}>Tampilkan kata sandi</button></div><button class="btn primary" type="submit" ${busy?'disabled':''}>${busy?'Memeriksa…':'Masuk'}</button></form>`}<details class="calendar-hint"><summary>Lupa kata sandi?</summary><p>Klik dua kali <strong>Reset Admin Password.cmd</strong> di folder proyek. Ketik GANTI saat diminta, lalu buat password baru. Setelah halaman dibuka kembali, login dengan password baru. Absensi dan izin perangkat tetap.</p></details><details class="calendar-hint"><summary>Server belum siap atau belum membuat akun?</summary><p>Klik dua kali <strong>Start ABC Attendance.cmd</strong>. Biarkan jendelanya terbuka dan tunggu <strong>Demo siap</strong>. Saat diminta, buat password dua kali tanpa mengetik perintah apa pun.</p></details><p class="calendar-hint">Khusus data fiktif. Reload halaman memerlukan login ulang.</p></section>`;
     return;
   }
   if(selected==='accounts'&&state.role!=='superadmin')selected='overview';
@@ -21,15 +22,17 @@ function render(state){
   const tab=tabs.find(t=>t[0]===selected)??tabs[0];
   root.innerHTML=`<aside class="sidebar">${brand()}<p class="workspace-label">RUANG PELAYANAN</p><nav aria-label="Navigasi utama"><button class="nav-btn active" data-admin-tab="overview">Dasbor admin</button></nav><div class="sidebar-bottom"><div class="sidebar-note"><strong>Admin · API lokal</strong>Identitas dan izin diperiksa server. Khusus data fiktif.</div><div class="profile"><span class="avatar">AD</span><div><strong>${state.role==='superadmin'?'Superadmin':state.role==='pic'?'Admin PIC':'Admin terotorisasi'}</strong><small>ABC Movement · Surabaya</small></div></div></div></aside><div class="shell"><header class="topbar"><div class="breadcrumb">ABC Movement <span>/</span><strong>Dasbor admin</strong></div><div class="mobile-brand">${brand()}</div><span class="demo-tag">EMULATOR LOKAL</span></header><main class="content"><div class="heading admin-heading"><div><h1>${tab[2]}</h1><p>${esc(state.message)}</p></div><div class="student-actions"><button class="btn" data-admin="verify">Periksa sesi</button><button class="btn" data-admin="logout">Keluar</button></div></div><nav class="admin-tabs" aria-label="Bagian admin">${visibleTabs.map(([id,label])=>`<button data-admin-tab="${id}" class="${selected===id?'active':''}" ${selected===id?'aria-current="page"':''}>${label}</button>`).join('')}</nav><section class="panel"><div class="panel-head"><h2>${tab[1]}</h2><button class="btn small" disabled title="Pengelolaan data server belum tersedia">${selected==='students'?'Tambah siswa':selected==='groups'?'Tambah kelompok':selected==='schedule'?'Tambah jadwal':'Ekspor XLSX'}</button></div><div class="empty" role="status">Data server untuk bagian ini belum tersedia.<br>Pengelolaan belum diaktifkan. Tidak menggunakan data demo atau penyimpanan browser.</div></section><p class="calendar-hint">Sesi terverifikasi: ${esc(state.uid)} · data fiktif.</p><footer class="footer"><span>ABC Movement · Goes to School</span><span>2026 · Admin lokal</span></footer></main></div>`;
   if(selected==='devices')root.querySelector('.content > .panel').outerHTML=devicePanel.view();
+  if(selected==='schedule')root.querySelector('.content > .panel').outerHTML=calendarPanel.view();
   if(selected==='accounts')root.querySelector('.content > .panel').outerHTML=accountPanel.view();
 }
 const client=createAdminClient(state=>{
-  if(state.phase!=='active'){devicePanel?.reset({preserveIntent:state.phase==='checking'});accountPanel?.reset();if(dialog.open)dialog.close();}
+  if(state.phase!=='active'){devicePanel?.reset({preserveIntent:state.phase==='checking'});accountPanel?.reset();calendarPanel?.reset({preserveIntent:state.phase==='checking'});if(dialog.open)dialog.close();}
   render(state);
   if(state.phase==='active'&&state.role==='superadmin'&&selected==='accounts'&&accountPanel.phase==='idle')void accountPanel.load();
+  if(state.phase==='active'&&selected==='schedule'&&calendarPanel.phase==='idle')void calendarPanel.load();
   if(state.phase==='active'&&selected==='devices'&&devicePanel.state.phase==='idle')void devicePanel.load();
 });
-devicePanel=createAdminDevices(client,()=>render(client.state));accountPanel=createAccountPanel(client,()=>render(client.state));render(client.state);
+calendarPanel=createAdminCalendar(client,()=>render(client.state));devicePanel=createAdminDevices(client,()=>render(client.state));accountPanel=createAccountPanel(client,()=>render(client.state));render(client.state);
 function confirmDevice(kind,id){
   const s=devicePanel.state,device=s.devices.find(d=>d.deviceId===id),pairingId=s.issued?.pairingId;
   if(s.phase!=='ready'||kind==='revoke'&&!device||kind==='cancel-code'&&!pairingId)return;
@@ -45,12 +48,14 @@ function confirmActivation(pairingId){
 }
 root.addEventListener('submit',e=>{
   if(e.target.id==='account-form'){e.preventDefault();void accountPanel.submit(e.target);return;}
+  if(e.target.id==='admin-service-form'){e.preventDefault();void calendarPanel.save();return;}
   if(e.target.id==='device-issue-form'){e.preventDefault();void (['superadmin','pic'].includes(client.state.role)?devicePanel.issueActivation():devicePanel.issue());return;}
   if(e.target.id!=='admin-login')return;e.preventDefault();
   const email=root.querySelector('#admin-email').value.trim(),password=root.querySelector('#admin-password').value;
   root.querySelector('#admin-password').value='';void client.login(email,password);
 });
 root.addEventListener('click',e=>{
+  const calendarAction=e.target.closest('[data-calendar]');if(calendarAction){const a=calendarAction.dataset.calendar;if(a==='reload')void calendarPanel.load();if(a==='retry')void calendarPanel.retry();if(a==='edit')calendarPanel.edit(calendarAction.dataset.serviceId);if(a==='cancel')calendarPanel.cancel();return;}
   const activationAction=e.target.closest('[data-activation]');
   if(activationAction&&client.state.phase==='active'){
     const action=activationAction.dataset.activation;
@@ -76,7 +81,7 @@ root.addEventListener('click',e=>{
   const tab=e.target.closest('[data-admin-tab]')?.dataset.adminTab;
   if(tab&&client.state.phase==='active'&&tabs.some(t=>t[0]===tab)){selected=tab;void client.verify();}
 });
-root.addEventListener('change',e=>{if(client.state.phase==='active'&&e.target.dataset.deviceField)devicePanel.choose(e.target.dataset.deviceField,e.target.value,e.target.checked);});
+root.addEventListener('change',e=>{if(client.state.phase==='active'&&e.target.dataset.calendarField){calendarPanel.choose(e.target.dataset.calendarField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.deviceField)devicePanel.choose(e.target.dataset.deviceField,e.target.value,e.target.checked);});
 setInterval(()=>devicePanel.expireCode(),1000);
 for(const event of ['focus','online','offline'])window.addEventListener(event,()=>void client.verify());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void client.verify();});

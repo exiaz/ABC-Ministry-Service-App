@@ -6,7 +6,7 @@ export function activationCodesFrom(value){
   if(!Array.isArray(value?.codes))throw Error();const seen=new Set();
   return value.codes.map(row=>{
     const a=row.assignment,stamp=Date.parse(a?.serviceDate+'T12:00:00Z');
-    if(!/^[a-f0-9]{64}$/.test(row.pairingId)||seen.has(row.pairingId)||!Number.isSafeInteger(row.createdAt)||row.expiresAt!==row.createdAt+172800000||!Object.hasOwn(labels,row.state)||!a||![...ids,'mentorId'].every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(a[id]))||!['schoolName','groupName','mentorName'].every(id=>typeof a[id]==='string'&&a[id].trim())||!Number.isFinite(stamp)||new Date(stamp).toISOString().slice(0,10)!==a.serviceDate||new Date(stamp).getUTCDay()!==5)throw Error();
+    if(!/^[a-f0-9]{64}$/.test(row.pairingId)||seen.has(row.pairingId)||!Number.isSafeInteger(row.createdAt)||row.expiresAt!==row.createdAt+172800000||!Object.hasOwn(labels,row.state)||!a||![...ids,'mentorId'].every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(a[id]))||!['schoolName','groupName','mentorName'].every(id=>typeof a[id]==='string'&&a[id].trim())||!Number.isFinite(stamp)||new Date(stamp).toISOString().slice(0,10)!==a.serviceDate)throw Error();
     seen.add(row.pairingId);return {pairingId:row.pairingId,createdAt:row.createdAt,expiresAt:row.expiresAt,state:row.state,assignment:Object.fromEntries([...ids,'mentorId','schoolName','groupName','mentorName','serviceDate'].map(id=>[id,a[id]]))};
   });
 }

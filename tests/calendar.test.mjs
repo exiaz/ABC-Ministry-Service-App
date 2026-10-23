@@ -4,7 +4,7 @@ import {seed,getSession,applyGroupConfiguration} from '../data.js';
 import {activeGroups} from '../group-config.js';
 import {applyMentorConfiguration,defaultMentorAt,effectiveMentor,setTemporaryMentor,setPermanentMentor} from '../assignments.js';
 import {jakartaToday,recentFriday,shiftMonth} from '../dates.js';
-import {selectFridayService,isFriday,canSubmitAttendance,submitAttendance,mentorGroups} from '../scheduling.js';
+import {selectFridayService,saveService,isFriday,canSubmitAttendance,submitAttendance,mentorGroups} from '../scheduling.js';
 import {calendarGrid,dateSelectionView} from '../service-ui.js';
 mock.timers.enable({apis:['Date'],now:new Date('2026-10-21T05:00:00Z')});
 
@@ -15,7 +15,7 @@ test('Jakarta day and latest Friday use WIB at UTC midnight boundaries',()=>{
   assert.equal(recentFriday('2027-01-01'),'2027-01-01');
   assert.equal(shiftMonth('2026-12',1),'2027-01');assert.equal(shiftMonth('2026-01',-1),'2025-12');
 });
-test('Calendar is a compact popover with month/year controls and only Friday enabled',()=>{
+test('Calendar is a compact popover with month/year controls and all weekdays enabled',()=>{
   const db=seed(),html=dateSelectionView(db,'s1','2026-10-16',()=>'',()=>'',{open:true,month:'2026-10'});
   assert.match(html,/aria-expanded="true"/);assert.match(html,/role="dialog"/);assert.doesNotMatch(html,/date-card/);
   assert.match(html,/id="calendar-month"/);assert.match(html,/id="calendar-year"/);assert.match(html,/Bulan sebelumnya/);assert.match(html,/Bulan berikutnya/);
@@ -23,16 +23,13 @@ test('Calendar is a compact popover with month/year controls and only Friday ena
     const grid=calendarGrid(month,'2026-10-16');
     const days=[...grid.matchAll(/data-action="calendar-date" data-id="([^"]+)"[^>]*>/g)];
     assert.equal(days.length,{'2026-10':31,'2026-11':30,'2027-01':31,'2028-02':29}[month]);
-    for(const match of days)assert.equal(match[0].includes('disabled'),!isFriday(match[1]));
+    for(const match of days)assert.equal(match[0].includes('disabled'),false);
   }
 });
-test('Unscheduled Friday requires confirmation; cancel creates nothing, repeated selection reuses identity',()=>{
+test('Selecting any unscheduled date never creates a service, even with an old confirmation flag',()=>{
   const db=seed(),before=structuredClone(db);
-  assert.throws(()=>selectFridayService(db,'s1','2026-10-02'),/Konfirmasi/);assert.deepEqual(db,before);
-  assert.throws(()=>selectFridayService(db,'s1','2026-10-01',{confirmed:true}),/Jumat/);assert.deepEqual(db,before);
-  const visit=selectFridayService(db,'s1','2026-10-02',{confirmed:true});assert.equal(visit.provisional,true);assert.equal(visit.groupIds.length,8);
-  assert.equal(selectFridayService(db,'s1',visit.date),visit);
-  assert.equal(db.serviceSessions.filter(v=>v.schoolId==='s1'&&v.date===visit.date).length,1);
+  for(const date of ['2026-10-02','2026-10-01'])assert.throws(()=>selectFridayService(db,'s1',date,{confirmed:true}),/Belum dijadwalkan/);
+  assert.deepEqual(db,before);const visit=saveService(db,{schoolId:'s1',date:'2026-10-01',groupIds:['g1']});assert.equal(selectFridayService(db,'s1',visit.date),visit);
 });
 test('All 16 active groups have authoritative subtitles and one shared Chriz identity',()=>{
   const db=seed(),mapping={Hosea:'Lupi',Amos:'Chriz',Obaja:'Yulius',Zefanya:'Gabby',Zakharia:'Eva',Hagai:'Louis',Yunus:'Akris',Yoel:'Devid'};
@@ -41,14 +38,14 @@ test('All 16 active groups have authoritative subtitles and one shared Chriz ide
   assert.equal(new Set(db.groups.filter(g=>g.name==='Amos').map(g=>defaultMentorAt(db,g.id).mentorId)).size,1);
   assert.equal(new Set(db.groups.filter(g=>g.name==='Amos').map(g=>g.id)).size,3);
 });
-test('School/date/group selection keeps roster and history isolated and enables all active groups',()=>{
+test('School/date/group selection keeps roster and history isolated and limits groups to the configured session',()=>{
   const db=seed();
   for(const school of db.schools){
-    const visit=selectFridayService(db,school.id,'2026-10-16',{confirmed:true});
+    const visit=saveService(db,{schoolId:school.id,date:'2026-10-16',groupIds:activeGroups(db).filter(g=>g.schoolId===school.id).map(g=>g.id)});
     assert.equal(mentorGroups(db,visit.id).length,activeGroups(db).filter(g=>g.schoolId===school.id).length);
     for(const {id:groupId} of mentorGroups(db,visit.id)){const batch=getSession(db,groupId,visit.id);assert.deepEqual(batch.records.map(r=>r.studentId),db.students.filter(s=>s.active&&s.groupId===groupId).map(s=>s.id));}
   }
-  const older=selectFridayService(db,'s1','2026-10-02',{confirmed:true});
+  const older=saveService(db,{schoolId:'s1',date:'2026-10-02',groupIds:['g1']});
   const a=getSession(db,'g1',older.id),b=getSession(db,'g1','demo-pakel-2026-10-09');const original=structuredClone(b);
   a.records[0].status='excused';submitAttendance(db,a);assert.deepEqual(b,original);
   assert.equal(getSession(db,'g1',older.id),a);
@@ -88,7 +85,7 @@ test('Spelling aliases resolve to single canonical people without changing atten
   assert.deepEqual(db.sessions,before);
 });
 test('Admin temporary and effective permanent assignments preserve all attendance and past snapshots',()=>{
-  const db=seed(),first=selectFridayService(db,'s1','2026-10-23'),second=selectFridayService(db,'s1','2026-11-06',{confirmed:true});
+  const db=seed(),first=selectFridayService(db,'s1','2026-10-23'),second=saveService(db,{schoolId:'s1',date:'2026-11-06',groupIds:['g1']});
   getSession(db,'g1',first.id).records[0].status='present';const before=structuredClone(db.sessions),snapshots=structuredClone(db.mentorAssignmentSnapshots);
   setTemporaryMentor(db,{groupId:'g1',serviceSessionId:first.id,mentorId:'mentor-eva'});
   setPermanentMentor(db,{groupId:'g1',effectiveFrom:'2026-11-01',mentorId:'mentor-chriz'});

@@ -41,12 +41,13 @@ async function main(){
     await run('Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
     // Screenshots go to this run's ignored directory, never historical evidence.
     await run('Regresi Chrome Superadmin/PIC/Mentor',['--test','--test-concurrency=1',...browser.map(file=>path.join(ROOT,file))],env,state);
+    await run('Kalender demo, laporan dan offline (data fiktif)',[''+path.join(ROOT,'tests/browser.mjs')],env,state);
     await run('Cold recovery dan startup/shutdown milik peluncur',['--test','--test-concurrency=1','tests/emulator/local-demo-recovery.mjs','tests/emulator/stage3-startup.mjs'],env);
   }finally{
     await stopManagedEmulator(child);
     await waitFor(async()=>!(await Promise.all(ports.map(portOccupied))).some(Boolean),{timeout:10000});
     console.log('Emulator tes ditutup. Artefak fiktif terisolasi: '+state);
   }
-  console.log('\nPASS · Stage 3–4. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
+  console.log('\nPASS · Stage 3–5. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
 }
 main().catch(error=>{console.error('\nFAIL · '+(error.demoSafe?error.message:error.message?.startsWith('Pengujian gagal:')?error.message:'Prasyarat, layanan atau penghentian tes belum terkonfirmasi. Periksa keluaran di atas dan README.'));process.exitCode=1;});

@@ -14,7 +14,7 @@ test('Admin login UI in isolated Chrome and real Auth Emulator',{timeout:120000}
   const wait=phase=>page.waitForSelector('#admin-root[data-phase='+phase+']');
   const login=async(email=f.email,password=f.password)=>{await page.locator('#admin-email').fill(email);await page.locator('#admin-password').fill(password);await page.locator('#admin-login button[type=submit]').click();};
   await page.goto(f.base);await wait('signed-out');
-  assert.equal(await page.locator('#admin-email').inputValue(),'admin.demo@abc-attendance.test');
+  assert.equal(await page.locator('#admin-email').inputValue(),'');assert.equal((await page.locator('#admin-root').innerText()).includes('admin.demo@abc-attendance.test'),false);
   await page.getByText('Lupa kata sandi?',{exact:true}).click();assert.match(await page.locator('body').innerText(),/Reset Admin Password.cmd/);
   await page.locator('#admin-password').fill('fictional-display-check');await page.locator('[data-admin=toggle-password]').click();assert.equal(await page.locator('#admin-password').getAttribute('type'),'text');await page.locator('[data-admin=toggle-password]').click();assert.equal(await page.locator('#admin-password').getAttribute('type'),'password');await page.locator('#admin-password').fill('');
   await mkdir('screenshots',{recursive:true});await page.screenshot({path:'screenshots/admin-login-help-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

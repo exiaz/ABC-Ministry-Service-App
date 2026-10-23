@@ -1,7 +1,7 @@
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import net from 'node:net';
 import {emulatorConfig} from './emulator-config.mjs';
-import {validRosterScope,SCOPE_KEYS} from './access-control.mjs';
+import {validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {toRosterResponse,describeRosterScope} from './roster.mjs';
 import {effectiveMentor} from '../assignments.js';
 import {createEmulatorDevicePairing,sameActivationAssignment} from './device-pairing.mjs';
@@ -106,7 +106,7 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       const getAll=(...refs)=>transaction?transaction.getAll(...refs):db.getAll(...refs);
       const {schoolId,groupId,serviceSessionId}=scope;
       const [school,group,visit]=(await getAll(collection('schools').doc(schoolId),collection('groups').doc(groupId),collection('serviceSessions').doc(serviceSessionId))).map(d=>d.data());
-      if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))return null;
+      if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||!validServiceSession(visit)||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))return null;
       const names=['defaultMentorAssignments','sessionMentorOverrides','mentorAssignmentSnapshots'];
       const snapshots=await Promise.all(names.map(name=>{
         let query=collection(name).where('groupId','==',groupId);
@@ -128,7 +128,7 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       const {schoolId,groupId,serviceSessionId}=scope;
       const snapshots=await db.getAll(collection('schools').doc(schoolId),collection('groups').doc(groupId),collection('serviceSessions').doc(serviceSessionId));
       const [school,group,visit]=snapshots.map(s=>s.data());
-      if(!school||school.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))return null;
+      if(!school||school.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||!validServiceSession(visit)||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))return null;
       const batches=await collection('sessions').where('serviceSessionId','==',serviceSessionId).get();
       const all=batches.docs.map(s=>s.data()),matching=all.filter(s=>s.groupId===groupId&&s.schoolId===schoolId);
       if(matching.length>1)throw Error('Batch roster tidak unik.');

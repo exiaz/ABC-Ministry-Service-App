@@ -1,5 +1,5 @@
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={'pairing:read':'Lihat cakupan dan perangkat','pairing:issue':'Terbitkan kode Mentor','pairing:revoke':'Cabut kode/perangkat'};
+const labels={'pairing:read':'Lihat cakupan dan perangkat','pairing:issue':'Terbitkan kode Mentor dan atur jadwal','pairing:revoke':'Cabut kode/perangkat'};
 const key=s=>JSON.stringify([s.schoolId,s.groupId,s.serviceSessionId]);
 export function createAccountPanel(client,notify){
   const errorMessage=error=>Number.isInteger(error.status)?error.message:'Server belum dapat dihubungi. Muat ulang setelah koneksi pulih.';

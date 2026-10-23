@@ -1,7 +1,7 @@
 // Bearer lives only in this closure. No storage, cookie, refresh token, demo flag
 // or decoded client claim supplies authority; every operation verifies backend.
 export function createAdminClient(onChange,{request=fetch}={}){
-  let token=null,logoutToken=null,generation=0,state={phase:'signed-out',message:'Gunakan email demo dan password yang Anda buat di jendela Start ABC Attendance.'};
+  let token=null,logoutToken=null,generation=0,state={phase:'signed-out',message:'Gunakan email dan kata sandi akun Anda.'};
   const publish=next=>{state=next;onChange({...state});};
   const call=(path,options={})=>request(path,{...options,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(8000)});
   const denied=()=>{generation++;token=null;publish({phase:'expired',message:'Sesi berakhir atau izin dicabut. Masuk kembali.'});};
@@ -38,6 +38,8 @@ export function createAdminClient(onChange,{request=fetch}={}){
     createAccount(body){return deviceRequest('/api/admin/accounts',body);},
     updateAccount(id,body){return deviceRequest('/api/admin/accounts/'+deviceId(id),body);},
     readPairingContext(){return deviceRequest('/api/admin/pairing-context');},
+    readServices(){return deviceRequest('/api/admin/service-sessions');},
+    saveService(body){return deviceRequest('/api/admin/service-sessions',body);},
     readDevices(){return deviceRequest('/api/admin/devices');},
     issuePairingCode(body){return deviceRequest('/api/admin/pairing-codes',body);},
     issueActivationCodes(body){return deviceRequest('/api/admin/activation-codes',body);},

@@ -11,7 +11,7 @@ function fixture(){
 }
 test('48-hour code projection drops raw secrets/private extras and rejects malformed assignments or expiry',()=>{
   const source=row();assert.deepEqual(activationCodesFrom({codes:[{...source,code:'SECRET',assignment:{...source.assignment,guardianName:'PRIVATE'}}]}),[source]);
-  for(const patch of [{expiresAt:source.expiresAt+1},{state:'unknown'},{assignment:{...assignment,mentorId:'../private'}},{assignment:{...assignment,serviceDate:'2026-10-22'}}])assert.throws(()=>activationCodesFrom({codes:[{...source,...patch}]}));
+  for(const patch of [{expiresAt:source.expiresAt+1},{state:'unknown'},{assignment:{...assignment,mentorId:'../private'}},{assignment:{...assignment,serviceDate:'2026-02-30'}}])assert.throws(()=>activationCodesFrom({codes:[{...source,...patch}]}));
 });
 test('Bulk UI preserves one idempotent intent, reveals each code once, and ignores results after logout',async()=>{
   const f=fixture();await f.panel.load();let release;const issue=f.client.issueActivationCodes;

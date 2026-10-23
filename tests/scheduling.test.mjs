@@ -32,9 +32,9 @@ test('Same student on two Pakel Fridays gets independent attendance; duplicate r
   const other=getSession(db,'g2',second.serviceSessionId);assert.ok(!other.records.some(r=>r.studentId===moved.id));
   assert.ok(second.records.every(r=>r.schoolId==='s1'&&r.serviceSessionId===second.serviceSessionId&&r.serviceDate===second.date&&r.groupId==='g1'));
 });
-test('Admin rejects duplicate dates, non-Fridays and wrong-school groups without changing data',()=>{
+test('Admin rejects invalid dates and wrong-school groups without changing data',()=>{
   const db=seed(),original=structuredClone(db);
-  for(const data of [{schoolId:'s1',date:'2026-10-23',groupIds:['g1']},{schoolId:'s1',date:'2026-10-22',groupIds:['g1']},{schoolId:'s1',date:'2026-11-06',groupIds:['g4']},{schoolId:'s1',date:'2026-11-06',groupIds:[]}])assert.throws(()=>saveService(db,data));
+  for(const data of [{schoolId:'s1',date:'2026-02-30',groupIds:['g1']},{schoolId:'s1',date:'2026-11-06',groupIds:['g4']},{schoolId:'s1',date:'2026-11-06',groupIds:[]}])assert.throws(()=>saveService(db,data));
   assert.deepEqual(db,original);
 });
 test('Rescheduling retains service and attendance IDs, students, statuses and original-date history',()=>{
