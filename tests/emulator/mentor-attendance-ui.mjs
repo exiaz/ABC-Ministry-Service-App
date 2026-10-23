@@ -53,7 +53,7 @@ test('Secure mentor attendance in real Chrome with paired device and Firestore E
     const value=await client.readAttendance(s);return client.saveAttendance(s,{expectedRevision:value.revision,idempotencyKey:crypto.randomUUID(),records});
   },{api:apiOrigin,s,records});
   const issue=async(options={})=>{
-    const response=await fetch(apiOrigin+'/api/admin/pairing-codes',{method:'POST',headers:{Authorization:'Bearer '+adminToken,'Content-Type':'application/json'},body:JSON.stringify({grants,...options})});assert.equal(response.status,201);return response.json();
+    const response=await fetch(apiOrigin+'/api/admin/pairing-codes',{method:'POST',headers:{Authorization:'Bearer '+adminToken,'Content-Type':'application/json'},body:JSON.stringify({grants,idempotencyKey:randomUUID(),...options})});assert.equal(response.status,201);return response.json();
   };
   const activate=async code=>{await page.locator('#pairing-code').fill(code);await page.locator('#pairing-form button[type=submit]').click();await active();};
   await page.goto(origin);await page.waitForSelector('#pairing-root[data-phase=inactive]');

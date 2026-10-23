@@ -1,4 +1,4 @@
-import {createHash,randomUUID} from 'node:crypto';
+import {createHash,randomUUID,randomBytes} from 'node:crypto';
 import {DEMO_PROJECT_ID} from './emulator-config.mjs';
 import {emulatorConfig} from './emulator-config.mjs';
 import {adminPolicy,createAdminAccounts} from './admin-accounts.mjs';
@@ -26,8 +26,9 @@ export async function createConfiguredAdminAuthentication(){
   return createLocalAdminAuthentication();
 }
 
-// Emulator tokens are unsigned. Only exact tokens obtained by this trusted
-// server process through emulator password sign-in are admitted (hashes only).
+// Emulator tokens are unsigned. Only login handles issued by this trusted
+// server after emulator password sign-in are admitted (hashes only). Each
+// handle carries the verified ID token and a random per-login suffix.
 // This core helper exposes no HTTP route. The opt-in M2B.5A same-origin login
 // calls this exact signIn path. UID claims alone cannot establish provenance,
 // even after Admin SDK verification in emulator mode.
@@ -73,8 +74,11 @@ export async function createLocalAdminAuthentication(){
         const {idToken}=await response.json(),principal=await verify(idToken);
         let policy;
         try{policy=await adminPolicy(root,principal.uid);}catch(error){if(error.adminAccountError)throw error;throw Object.assign(Error('Izin server belum tersedia.'),{status:503});}
-        prune();admitted.set(digest(idToken),{uid:principal.uid,exp:principal.exp,revision:policy.revision});
-        return idToken;
+        // Auth Emulator can return the same ID token for two password logins
+        // in one second. Bind each admitted login to its own random handle.
+        const session=idToken+'~'+randomBytes(32).toString('base64url');
+        prune();admitted.set(digest(session),{uid:principal.uid,exp:principal.exp,revision:policy.revision});
+        return session;
       }catch(error){
         const failure=Error('Login admin emulator ditolak.');
         if(error.status===503||error instanceof TypeError||['TimeoutError','AbortError'].includes(error.name)||['app/network-error','auth/internal-error'].includes(error.code))failure.status=503;
@@ -84,9 +88,9 @@ export async function createLocalAdminAuthentication(){
     async authorize(header){
       try{
         assertLocal();prune();
-        const match=typeof header==='string'&&header.length<=16384&&/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.)$/.exec(header);
+        const match=typeof header==='string'&&header.length<=16384&&/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?)$/.exec(header);
         if(!match)return {kind:'unauthenticated'};
-        const principal=await verify(match[1]);
+        const principal=await verify(match[1].split('~')[0]);
         const policy=await adminPolicy(root,principal.uid);
         const entry=admitted.get(digest(match[1]));
         if(!entry||entry.uid!==principal.uid||entry.exp!==principal.exp||entry.revision!==policy.revision)return {kind:'unauthenticated'};

@@ -35,7 +35,7 @@ test('Mentor pairing UI with real Chrome, IndexedDB and local Auth/Firestore',{t
   const context=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID',timezoneId:'Asia/Jakarta'}),page=await context.newPage();
   const errors=[],requests=[],logs=[];page.on('pageerror',error=>errors.push(error.name));page.on('console',message=>logs.push(message.text()));page.on('request',req=>requests.push(new URL(req.url()).pathname));
   const issue=async(options={})=>{
-    const response=await fetch(apiOrigin+'/api/admin/pairing-codes',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({grants:[scope],...options})});assert.equal(response.status,201);return response.json();
+    const response=await fetch(apiOrigin+'/api/admin/pairing-codes',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({grants:[scope],idempotencyKey:randomUUID(),...options})});assert.equal(response.status,201);return response.json();
   };
   const activate=async code=>{await page.locator('#pairing-code').fill(code);await page.locator('#pairing-form button[type=submit]').click();};
   await page.goto(origin);await wait(page,'inactive');

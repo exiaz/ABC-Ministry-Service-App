@@ -21,7 +21,7 @@ async function fixture(t){
     const response=await fetch(f.base+'/api/admin/login',{method:'POST',headers:{Origin:f.base,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     return {status:response.status,...(response.ok?await response.json():{})};
   };
-  const request=(token,path,body)=>fetch(f.base+path,{method:body===undefined?'GET':'POST',headers:{Origin:f.base,Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const request=(token,path,body)=>fetch(f.base+path,{method:body===undefined?'GET':'POST',headers:{Origin:f.base,Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(path==='/api/admin/pairing-codes'?{idempotencyKey:randomUUID(),...body}:body)})});
   return {...c,...f,grants,initialize,login,request};
 }
 

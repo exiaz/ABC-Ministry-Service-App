@@ -29,7 +29,7 @@ test('Provisioned demo is idempotent, admits the matching UID and pairs Hagai wi
   const again=await provisionDemo({...c,askPassword:()=>{throw Error('Password tidak boleh diminta ulang.');}});assert.equal(again.accountCreated,false);assert.equal(again.recordsCreated,0);assert.equal((await c.root.collection('sessions').doc('existing-history').get()).exists,true);
   const authentication=await createLocalAdminAuthentication();t.after(()=>authentication.close());
   const token=await authentication.signIn({email:c.identity.email,password:c.password}),base=await server(t,createAdminServer({adminAuthentication:authentication,pairing:c.pairing}));
-  const admin=(target,body)=>fetch(base+target,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:base,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+  const admin=(target,body)=>fetch(base+target,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:base,'Content-Type':'application/json'},...(body?{body:JSON.stringify(target==='/api/admin/pairing-codes'?{idempotencyKey:randomUUID(),...body}:body)}:{})});
   const contexts=await admin('/api/admin/pairing-context');assert.equal(contexts.status,200);const metadata=(await contexts.json()).contexts;assert.equal(metadata.length,16);assert.equal(metadata.find(s=>s.groupId==='g13').mentorName,'Kak Louis');
   const issue=await admin('/api/admin/pairing-codes',{grants:[hagai]});assert.equal(issue.status,201);const {code}=await issue.json();
   const mentorBase=await server(t,createRosterServer(c)),keys=generateKeyPairSync('ec',{namedCurve:'prime256v1'}),publicKey=keys.publicKey.export({type:'spki',format:'der'}).toString('base64url');

@@ -31,7 +31,8 @@ export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,sen
   await pairing.limit(context||list?'admin-read':'admin',uid,context||list?60:20);
   if(context||list){send(200,await pairing[context?'adminContext':'listDevices'](uid,stillAuthorized));return true;}
   if(issue){
-    const {body}=await jsonBody(req,['grants','codeTtlMs','grantTtlMs'],adminOrigin);
+    const {body}=await jsonBody(req,['grants','codeTtlMs','grantTtlMs','idempotencyKey'],adminOrigin);
+    if(typeof body.idempotencyKey!=='string'||!/^[A-Za-z0-9_-]{16,128}$/.test(body.idempotencyKey))throw new PairingError(400,'Kunci idempotensi penerbitan wajib diisi.');
     send(201,await pairing.issue(uid,body,stillAuthorized));
   }else if(code){
     await jsonBody(req,[],adminOrigin);send(200,await pairing.revokeCode(uid,code[1],stillAuthorized));

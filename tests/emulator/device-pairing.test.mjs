@@ -43,7 +43,7 @@ async function fixture(t){
     const after=await Promise.all(before.map(async([name])=>[name,(await c.root.collection(name).get()).docs.map(d=>d.data())]));
     assert.deepEqual(after,before);await c.close();
   });
-  const admin=(target,body,token=adminToken,method='POST')=>fetch(base+target,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(method==='GET'?{}:{body:JSON.stringify(body)})});
+  const admin=(target,body,token=adminToken,method='POST')=>fetch(base+target,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(method==='GET'?{}:{body:JSON.stringify(target==='/api/admin/pairing-codes'?{idempotencyKey:randomUUID(),...body}:body)})});
   const issue=async(options={})=>{const response=await admin('/api/admin/pairing-codes',{grants:[scope],...options});assert.equal(response.status,201);return response.json();};
   const redeem=async(code,d,extra={})=>{
     const target='/api/pairing/redeem',body=JSON.stringify({code,publicKey:d.publicKey,...extra});
@@ -103,7 +103,7 @@ test('Simultaneous redemption and revocation are atomic: at most one code winner
 test('Admin authentication and exact server pairing permissions are required, without client role or scope escalation',async t=>{
   const f=await fixture(t),body={grants:[scope]};
   for(const headers of [{},{Authorization:'Bearer ABC2026','X-Admin':'true',Cookie:'adminUnlocked=true'}]){
-    const response=await fetch(f.base+'/api/admin/pairing-codes',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});assert.equal(response.status,401);
+    const response=await fetch(f.base+'/api/admin/pairing-codes',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({idempotencyKey:randomUUID(),...body})});assert.equal(response.status,401);
   }
   const mentor=await f.deviceAuthorization.issue({deviceId:'fictional-legacy',grants:[scope]});
   assert.equal((await f.admin('/api/admin/pairing-codes',body,mentor)).status,401);

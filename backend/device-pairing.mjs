@@ -90,10 +90,13 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
         return {devices:devices.sort((a,b)=>b.createdAt-a.createdAt||a.deviceId.localeCompare(b.deviceId))};
       });
     },
-    async issue(uid,{grants,codeTtlMs=300000,grantTtlMs=3600000},stillAuthorized=async()=>true){
+    async issue(uid,{grants,codeTtlMs=300000,grantTtlMs=3600000,idempotencyKey},stillAuthorized=async()=>true){
       await authorizeOperator(uid,'pairing:issue');
       if(!validGrants(grants)||!Number.isSafeInteger(codeTtlMs)||codeTtlMs<1000||codeTtlMs>600000||!Number.isSafeInteger(grantTtlMs)||grantTtlMs<1000||grantTtlMs>3600000)throw new PairingError(400,'Parameter pairing tidak valid.');
       const scopes=copy(grants);
+      if(idempotencyKey!==undefined&&(typeof idempotencyKey!=='string'||!/^[A-Za-z0-9_-]{16,128}$/.test(idempotencyKey)))throw new PairingError(400,'Kunci idempotensi penerbitan tidak valid.');
+      const receiptRef=idempotencyKey===undefined?null:col('pairingSubmissions').doc(hash(JSON.stringify([uid,idempotencyKey])));
+      const fingerprint=hash(JSON.stringify({scopes:[...scopes].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),codeTtlMs,grantTtlMs}));
       if(!permitted((await permissionRef(uid).get()).data(),scopes))throw denied();
       // Preserve existing relation/roster rules, then recheck relations and
       // server permission in the transaction that commits the issuance.
@@ -103,11 +106,20 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
         await authorizeOperator(uid,'pairing:issue',tx);
         if(!permitted((await tx.get(permissionRef(uid))).data(),scopes))throw denied();
         await relations(tx,scopes);assertAdminLocal();await currentAdmin(stillAuthorized);
+        const receipt=receiptRef?(await tx.get(receiptRef)).data():null;
+        assertAdminLocal();await currentAdmin(stillAuthorized);
+        if(receipt){
+          if(receipt.fingerprint!==fingerprint)throw new PairingError(409,'Kunci penerbitan sudah dipakai untuk pilihan lain. Muat ulang sebelum mencoba lagi.');
+          return {duplicate:true,pairingId:receipt.pairingId,expiresAt:receipt.expiresAt};
+        }
         const expiresAt=now()+codeTtlMs;
         tx.create(ref,{codeHash:pairingId,issuedBy:uid,grants:scopes,expiresAt,grantTtlMs,state:'pending',createdAt:now()});
         event(tx,'pairing-issued',uid,{pairingId});
+        if(receiptRef)tx.create(receiptRef,{fingerprint,pairingId,expiresAt});
         return {pairingId,code,expiresAt};
-      });return result;
+      });
+      if(result.duplicate)throw Object.assign(new PairingError(409,'Permintaan sudah diproses. Kode hanya ditampilkan sekali; batalkan kode terakhir atau tunggu kedaluwarsa sebelum menerbitkan lagi.'),{duplicateSubmission:true,pairingId:result.pairingId,expiresAt:result.expiresAt});
+      return result;
     },
     async redeem({code,publicKey},proof){
       assertAdminLocal();

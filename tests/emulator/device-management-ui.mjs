@@ -51,6 +51,19 @@ test('Admin device management and secure mentor pairing in isolated Chrome',{tim
     await mentor.locator('[data-pairing=refresh]').click();await mentor.waitForSelector('#pairing-root[data-phase=revoked]');assert.equal(await mentor.locator('.student-row,.school-card').count(),0);
     assert.equal((await f.root.collection('sessions').get()).size,0);
   });
+  await t.test('Lost issuance response retries the same key, never creates/reveals a second code and offers explicit cancellation',async()=>{
+    await select();const before=(await f.root.collection('pairingCodes').get()).size;let firstKey;
+    await page.route('**/api/admin/pairing-codes',async route=>{
+      firstKey=route.request().postDataJSON().idempotencyKey;const committed=await route.fetch();assert.equal(committed.status(),201);secrets.push((await committed.json()).code);await route.abort();
+    });
+    await page.locator('#device-issue-form button[type=submit]').click();await page.waitForSelector('[data-device=retry-issue]');await page.unroute('**/api/admin/pairing-codes');
+    let retriedKey;const inspect=request=>{if(request.url().endsWith('/api/admin/pairing-codes'))retriedKey=request.postDataJSON().idempotencyKey;};page.on('request',inspect);
+    await page.locator('[data-device=retry-issue]').click();await ready();page.off('request',inspect);
+    assert.equal(firstKey===retriedKey,true);assert.equal((await f.root.collection('pairingCodes').get()).size,before+1);assert.equal(await page.locator('#pairing-code-once').count(),0);
+    assert.match(await page.locator('#admin-devices').innerText(),/kode tidak ditampilkan ulang/);assert.equal(await page.locator('#device-issue-form button[type=submit]').isDisabled(),true);
+    await page.locator('[data-device=cancel-code]').click();await page.locator('#device-confirm button[type=submit]').click();await ready();
+    assert.match(await page.locator('#admin-devices').innerText(),/Kode dibatalkan oleh server/);
+  });
   await t.test('API failure clears data without false success; logout and session expiry remove codes and device access',async()=>{
     await page.route('**/api/admin/devices',route=>route.fulfill({status:500,contentType:'application/json',body:'{"error":"Gagal fiktif"}'}));await page.locator('[data-device=reload]').click();await page.waitForSelector('#admin-devices[data-state=error]');assert.equal(await page.locator('.device-card').count(),0);await page.unroute('**/api/admin/devices');await page.locator('[data-device=reload]').click();await ready();
     await select();await page.locator('#device-issue-form button[type=submit]').click();await page.waitForSelector('#pairing-code-once');secrets.push(await page.locator('#pairing-code-once').innerText());

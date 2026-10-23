@@ -21,6 +21,17 @@ Auth/Firestore Emulator manual yang identitas project dan listener loopback-nya 
 
 Prasyarat disiapkan operator sekali: **Windows, Node.js, Java JDK 21+, dependensi proyek dan cache emulator yang sudah tersedia**. Peluncur tidak memasang dependensi atau meminta login Firebase cloud. Kesalahan Node/Java/port/data ditampilkan dalam bahasa Indonesia. Hanya Firebase Emulator **demo-abc-attendance**, listener loopback dan data fiktif; tanpa billing/deploy atau endpoint provisioning publik. Panduan PowerShell/operator tetap tersedia di bawah.
 
+## Stage 2 — Bekerja bersamaan dan menangani konflik
+
+- Superadmin, PIC dan perangkat Mentor dapat bekerja bersamaan sesuai izin masing-masing. Gunakan akun PIC sendiri dan tab/profil browser yang sesuai. Keluar dari satu sesi Admin tidak mengakhiri sesi lain, termasuk dua login akun yang sama. Pencabutan akun/izin PIC tetap membatalkan seluruh sesi PIC tersebut.
+- Jika absensi menampilkan **Data atau ketentuan absensi berubah**, pilih **Muat ulang data server**, periksa status terbaru, lalu lakukan perubahan yang masih diperlukan. Perubahan lama tidak dikirim ulang otomatis. Tombol **Coba lagi** untuk respons penyimpanan yang hilang memakai permintaan yang sama; tidak menambah revisi atau catatan riwayat dua kali. Siswa Belum Diabsen tetap harus ditandai secara eksplisit sebelum finalisasi.
+- Jika penerbitan kode belum pasti, gunakan **Coba lagi penerbitan**. Pilihan dan kunci permintaan dipertahankan dalam memori, termasuk saat pemeriksaan ulang sesi. Bila permintaan pertama sudah berhasil, server menolak duplikat tanpa membuat kode kedua atau menampilkan kembali kode rahasia. Pilih **Batalkan kode terakhir** dengan konfirmasi, atau tunggu kedaluwarsa sebelum menerbitkan pengganti. PIC tanpa izin pencabutan perlu menunggu kedaluwarsa atau meminta bantuan pemilik kode yang berwenang.
+- Hindari F5/menutup tab saat penerbitan belum pasti. Reload seluruh halaman menghapus kunci percobaan ulang dari memori; kode yang sempat terbit tetap bisa berlaku sampai kedaluwarsa. Tunggu jendela kode UI **5 menit** berakhir sebelum menerbitkan pengganti yang tidak dapat dikonfirmasi. Tidak ada penyimpanan token/kode mentah/kunci retry di browser storage atau sinkronisasi offline.
+
+Kontrak API penerbitan sekarang mewajibkan `idempotencyKey` 16–128 karakter `[A-Za-z0-9_-]` untuk `POST /api/admin/pairing-codes`. Satu maksud penerbitan memakai satu kunci; retry mempertahankan body dan kunci yang sama. Receipt `pairingSubmissions` terikat UID dan fingerprint pilihan; hanya hash kunci, fingerprint, pairingId dan waktu kedaluwarsa yang disimpan. Duplikat memberi 409 dengan metadata nonrahasia, tanpa `code`; payload berbeda dengan kunci sama ditolak. Helper internal tepercaya masih mendukung pemanggilan lama tanpa kunci, tetapi jalur HTTP tidak. Dua operasi baru dengan kunci berbeda tetap boleh menerbitkan kode berbeda untuk perangkat yang memang berbeda.
+
+Bearer login Admin kini berupa handle per-login: ID token Auth Emulator yang diverifikasi server ditambah nonce acak. Formatnya tetap field `token` pada respons login; gunakan utuh melalui client, jangan merakit atau memotongnya. Server hanya menyimpan hash handle dan tetap memeriksa token Auth, status/peran/revisi izin pada setiap request. ID token langsung dari Auth Emulator atau nonce yang dikarang tidak memberi akses. Riwayat absensi dan mekanisme pairing/proof lama tetap; Stage 3–7 belum diterapkan.
+
 ## Stage 1 — Superadmin dan akun PIC
 
 1. Klik **Start ABC Attendance.cmd**. Jika instance lama masih berjalan, ikuti konfirmasi **GANTI** untuk menyimpan dan menggantinya. Saat pertama mengaktifkan peran, baca penetapan pemilik lalu ketik **TETAPKAN**. Enter saja membatalkan. UID **demo-admin-local** yang sudah ada menjadi satu Superadmin awal; email, password, izin pairing dan absensi lama tetap. Akun baru tetap meminta password tersembunyi melalui setup lama. Tidak membuat pemilik kedua atau mengaktifkan akun/izin yang dicabut.
@@ -118,7 +129,7 @@ Endpoint same-origin berikut memakai bearer yang sudah di-admit M2B.1 dan verifi
 |---|---|
 | `GET /api/admin/pairing-context` (baru) | `{contexts:[{schoolId,groupId,serviceSessionId,schoolName,groupName,mentorName,serviceDate}]}`; hanya scope berizin, relasi server valid. |
 | `GET /api/admin/devices` (baru) | `{devices:[{deviceId,state,createdAt,expiresAt,revokedAt,grants,lastEvent}]}`; proyeksi minimum tanpa rahasia. |
-| `POST /api/admin/pairing-codes` | Lifecycle lama, body `{grants,codeTtlMs:300000,grantTtlMs:3600000}`; 201 `{pairingId,code,expiresAt}`; raw code hanya pada respons ini. |
+| `POST /api/admin/pairing-codes` | Body `{grants,codeTtlMs:300000,grantTtlMs:3600000,idempotencyKey}`; 201 `{pairingId,code,expiresAt}` hanya sekali. Duplikat kunci/payload sama memberi 409 `{duplicateSubmission:true,pairingId,expiresAt,error}` tanpa kode baru; kunci sama/payload berbeda juga ditolak 409. |
 | `POST /api/admin/pairing-codes/{pairingId}/revoke` | Lifecycle lama, body `{}`; membatalkan kode pending. |
 | `GET /api/admin/devices/{deviceId}` / `POST /api/admin/devices/{deviceId}/revoke` | Lifecycle lama; revoke body `{}`; server memeriksa seluruh grant. |
 

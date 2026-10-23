@@ -20,7 +20,7 @@ test('Issuance selects exact permitted scope, blocks duplicate clicks and reveal
   const f=fixture();await f.panel.load();f.select();let resume;const issue=f.client.issuePairingCode;
   f.client.issuePairingCode=async body=>{await new Promise(r=>{resume=r;});return issue(body);};
   const pending=f.panel.issue();assert.equal(f.panel.state.phase,'issuing');await f.panel.issue();assert.equal(f.calls.length,0);resume();await pending;
-  assert.deepEqual(f.calls,[{grants:[scope],codeTtlMs:300000,grantTtlMs:3600000}]);assert.equal(f.panel.view().includes(f.code),true);assert.equal(JSON.stringify(f.panel.state).includes(f.code),false);
+  assert.match(f.calls[0].idempotencyKey,/^[a-f0-9-]{36}$/);assert.deepEqual(f.calls,[{grants:[scope],codeTtlMs:300000,grantTtlMs:3600000,idempotencyKey:f.calls[0].idempotencyKey}]);assert.equal(f.panel.view().includes(f.code),true);assert.equal(JSON.stringify(f.panel.state).includes(f.code),false);
   f.panel.hideCode();assert.equal(f.panel.view().includes(f.code),false);f.panel.choose('group','g13',true);assert.equal(f.panel.view().includes(f.code),false);
   f.panel.choose('group','g1',true);assert.deepEqual(f.panel.state.groups,['g13']);
 });
@@ -38,6 +38,23 @@ test('Revocation requires explicit confirmation, waits for server readback, and 
 test('Permission/API failures clear device data and never fall back to local or canonical demo data',async()=>{
   const f=fixture();await f.panel.load();f.client.readDevices=async()=>{throw Object.assign(Error(),{status:403});};await f.panel.load();assert.equal(f.panel.state.phase,'error');assert.deepEqual(f.panel.state.devices,[]);
   const g=fixture();g.client.readDevices=async()=>({devices:[{...device,grants:[{...scope,groupId:'g1'}]}]});await g.panel.load();assert.equal(g.panel.state.phase,'error');
+});
+
+test('Lost issuance responses retain the same command across reload/retry and duplicates never reveal a code again',async()=>{
+  const f=fixture(),commands=[];await f.panel.load();f.select();
+  f.client.issuePairingCode=async body=>{commands.push(structuredClone(body));if(commands.length===1)throw Error('Simulasi respons hilang');throw Object.assign(Error(),{status:409,duplicateSubmission:true,pairingId:'b'.repeat(64),expiresAt:Date.now()+300000});};
+  await f.panel.issue();assert.equal(f.panel.state.phase,'error');assert.match(f.panel.view(),/Coba lagi penerbitan/);
+  f.client.state.phase='checking';f.panel.reset({preserveIntent:true});f.client.state.phase='active';
+  await f.panel.load();assert.equal(f.panel.state.phase,'error');await f.panel.retryIssue();
+  assert.deepEqual(commands[0],commands[1]);assert.equal(f.panel.state.phase,'ready');assert.equal(f.panel.state.issued.pairingId,'b'.repeat(64));assert.equal(f.panel.view().includes(f.code),false);
+  f.select();await f.panel.issue();assert.equal(commands.length,2);assert.match(f.panel.state.message,/kode tidak ditampilkan ulang/);
+});
+
+test('Logout clears an uncertain issuance and stale retry responses cannot restore code metadata',async()=>{
+  const f=fixture();await f.panel.load();f.select();f.client.issuePairingCode=async()=>{throw Error();};await f.panel.issue();
+  let resume;f.client.issuePairingCode=()=>new Promise(resolve=>{resume=resolve;});const pending=f.panel.retryIssue();
+  f.panel.reset();resume({code:f.code,pairingId:'a'.repeat(64),expiresAt:Date.now()+300000});await pending;
+  assert.equal(f.panel.state.phase,'idle');assert.equal(f.panel.view().includes(f.code),false);assert.equal(f.panel.state.issued,null);
 });
 test('Admin device requests reuse the in-memory bearer, treat permission denial separately and stop after logout/expiry',async()=>{
   const calls=[];let status=200;

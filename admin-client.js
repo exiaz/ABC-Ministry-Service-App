@@ -21,7 +21,9 @@ export function createAdminClient(onChange,{request=fetch}={}){
     const response=await call(path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
     if(response.status===401){denied();throw Error('Sesi admin berakhir.');}
-    if(!response.ok){const error=Error(response.status===403?'Izin Anda tidak mencakup permintaan ini.':response.status===409?'Data sudah berubah. Muat ulang sebelum mencoba lagi.':response.status===400?'Periksa email fiktif, kata sandi, tindakan dan cakupan yang dipilih.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan belum berhasil. Periksa koneksi dan kemungkinan email sudah dipakai.');error.status=response.status;throw error;}
+    if(!response.ok){const error=Error(response.status===403?'Izin Anda tidak mencakup permintaan ini.':response.status===409?'Data sudah berubah. Muat ulang sebelum mencoba lagi.':response.status===400?'Periksa email fiktif, kata sandi, tindakan dan cakupan yang dipilih.':response.status===429?'Terlalu banyak permintaan. Coba lagi nanti.':'Permintaan belum berhasil. Periksa koneksi dan kemungkinan email sudah dipakai.');error.status=response.status;
+      if(response.status===409){try{const value=await response.json();if(g===generation&&value.duplicateSubmission===true&&/^[a-f0-9]{64}$/.test(value.pairingId)&&Number.isSafeInteger(value.expiresAt))Object.assign(error,{duplicateSubmission:true,pairingId:value.pairingId,expiresAt:value.expiresAt});}catch{}}
+      throw error;}
     const value=await response.json();
     if(g!==generation||state.phase!=='active')throw Error('Sesi admin berubah.');
     return value;
@@ -47,7 +49,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
         if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.':response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start ABC Attendance.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
         const result=await response.json();
         if(g!==generation)return;
-        if(typeof result?.token!=='string'||result.token.length>16384||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.$/.test(result.token))throw Error();
+        if(typeof result?.token!=='string'||result.token.length>16384||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?$/.test(result.token))throw Error();
         token=result.token;
         const identity=await session(token,g);
         if(g!==generation||!identity)return;

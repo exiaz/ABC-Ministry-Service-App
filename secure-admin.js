@@ -24,7 +24,7 @@ function render(state){
   if(selected==='accounts')root.querySelector('.content > .panel').outerHTML=accountPanel.view();
 }
 const client=createAdminClient(state=>{
-  if(state.phase!=='active'){devicePanel?.reset();accountPanel?.reset();if(dialog.open)dialog.close();}
+  if(state.phase!=='active'){devicePanel?.reset({preserveIntent:state.phase==='checking'});accountPanel?.reset();if(dialog.open)dialog.close();}
   render(state);
   if(state.phase==='active'&&state.role==='superadmin'&&selected==='accounts'&&accountPanel.phase==='idle')void accountPanel.load();
   if(state.phase==='active'&&selected==='devices'&&devicePanel.state.phase==='idle')void devicePanel.load();
@@ -51,6 +51,7 @@ root.addEventListener('click',e=>{
   if(deviceAction&&client.state.phase==='active'){
     const action=deviceAction.dataset.device;
     if(action==='reload')void devicePanel.load();
+    if(action==='retry-issue')void devicePanel.retryIssue();
     if(action==='hide-code')devicePanel.hideCode();
     if(action==='revoke'||action==='cancel-code')confirmDevice(action,deviceAction.dataset.deviceId);
     return;
