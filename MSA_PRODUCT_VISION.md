@@ -133,12 +133,12 @@ Setiap lintasan baru memerlukan validasi relasi organisasi/program/event, allowl
 
 ### 7.1 Akun personal — kebutuhan dikonfirmasi; solusi teknis masih usulan
 
-- Satu akun relawan untuk semua peran; registrasi nama lengkap, nomor telepon, username dan password, tanpa email dalam UX login. Undangan dan pendaftaran umum menunggu verifikasi/persetujuan sesuai konteks; pengguna baru tidak otomatis menjadi Mentor/PIC/admin.
-- Mentor lama mewarisi default terverifikasi sesudah identity linking terverifikasi. Superadmin/PIC menugaskan relawan yang layak dalam scope. Kelayakan PIC tidak bergantung full-time atau daftar pengecualian individu. Pemberian role administratif tetap kemampuan berbeda dari penugasan operasional.
+- CONFIRMED target: satu akun relawan untuk beberapa peran; registrasi nama lengkap, nomor HP, username dan password, tanpa email dalam UX login. Username unik case-insensitive; normalisasi nomor Indonesia +62 tidak sama dengan verifikasi. Undangan/pendaftaran umum menunggu verifikasi/persetujuan; pengguna baru tidak otomatis menjadi Mentor/PIC/admin.
+- Mentor lama mewarisi default setelah explicit identity linking terverifikasi. PIC yang diberi wewenang hanya approve/link dalam scope, dengan promosi PIC/hak lebih luas melalui Superadmin atau delegasi eksplisit. Eligibility dapat dikonfigurasi tanpa syarat full-time/pengecualian individu. Pemberian role administratif berbeda dari penugasan operasional; suspend akun harus menutup akses personal dan legacy device terkait.
 - UID lama, default/override/backup dan riwayat dipertahankan. Recovery tanpa email, suspension, duplikat akun dan keterikatan perangkat harus didesain sebelum onboarding luas.
 - Broker username di backend dengan Firebase password provider, alias internal dan registry privat merupakan **rekomendasi teknis**, bukan keputusan final atau implementasi. Tidak mengganti Firebase dengan password store sendiri, tidak melepas rules/backend gate, dan tidak memperluas `pairing:issue` menjadi seluruh izin MSA.
 
-[MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) menjadi rincian kajian: sumber kode/rujukan Firebase, alternatif, linking, migrasi PIC/Mentor, dependensi Stage 6, recovery/suspension, usulan fase dan acceptance test. Kebijakan username/telepon, reviewer/approval, alias provider, recovery, sesi dan transisi kode masih terbuka. Ini tidak mengizinkan implementasi fitur akun atau Stage 7.
+[MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) bagian 2.1–2.2 menjadi kontrak kandidat dan batas UI; kebijakan teknis tidak disalin ulang di visi ini. Rekomendasi 3–32 karakter/grammar, contoh normalisasi, uniqueness race, opsi Firebase/broker dan gate recovery/suspension ada di sana. Izin alias, validator, reviewer/delegasi, recovery, sesi dan transisi device tetap blocker implementasi. Autentikasi personal, approval/linking serta suspension lintas jalur berstatus NOT IMPLEMENTED; perapian UI PIC hanya memakai API email/password lama. Ini tidak memulai Stage 7/modul MSA.
 
 ## 8. Google Sheets — PLANNED / NOT IMPLEMENTED
 

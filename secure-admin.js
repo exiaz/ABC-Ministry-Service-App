@@ -88,6 +88,7 @@ root.addEventListener('click',e=>{
   const tab=e.target.closest('[data-admin-tab]')?.dataset.adminTab;
   if(tab&&client.state.phase==='active'&&tabs.some(t=>t[0]===tab)){selected=tab;void client.verify();}
 });
+root.addEventListener('input',e=>{if(e.target.closest('#account-form'))accountPanel.input(e.target);});
 root.addEventListener('change',e=>{if(client.state.phase==='active'&&e.target.dataset.backupField){backupPanel.choose(e.target.dataset.backupField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.calendarField){calendarPanel.choose(e.target.dataset.calendarField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.deviceField)devicePanel.choose(e.target.dataset.deviceField,e.target.value,e.target.checked);});
 setInterval(()=>devicePanel.expireCode(),1000);
 for(const event of ['focus','online','offline'])window.addEventListener(event,()=>void client.verify());

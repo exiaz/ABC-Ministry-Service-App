@@ -1,6 +1,6 @@
 # MSA — Kajian arsitektur akun personal
 
-**24 Oktober 2026 · REVIEW / PLANNED / NOT IMPLEMENTED.** Acuan kode: HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`, sesudah Stage 6. Kajian dan dokumentasi saja; tidak menjalankan emulator, membaca data operasional, mengubah database/rules/dependensi, atau mengizinkan implementasi/deployment. [MASTER_BRIEF.md](MASTER_BRIEF.md) memuat kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat rencana perluasan; [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat status terverifikasi.
+**24 Oktober 2026 · Kontrak akun: CONFIRMED arah produk / PROPOSED keputusan teknis / NOT IMPLEMENTED autentikasi personal.** Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan kontrak dan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. UI PIC tetap memakai kontrak email/password yang ada. Tidak mengizinkan migrasi autentikasi, perubahan rules/dependensi atau deployment. [MASTER_BRIEF.md](MASTER_BRIEF.md) memuat kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan; [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat hasil implementasi/tes aktual.
 
 ## 1. Rekomendasi
 
@@ -17,6 +17,38 @@ Migrasi awal sebaiknya mempertahankan UID PIC/Superadmin lama, menautkan `mentor
 - Pertahankan catatan mentor, seluruh ID/penugasan, sejarah absensi dan batas keamanan; rancang pemulihan password dan penangguhan akun.
 
 Kontrak Mentor tanpa akun pada AGENTS.md dan implementasi lama tetap menggambarkan perilaku **saat ini**. Kebutuhan akun personal adalah target yang menggantikan asumsi itu setelah migrasi disetujui dan diuji, bukan alasan memutus akses lama dalam kajian ini. Akun Superadmin tetap milik orang yang berwenang, tidak menjadi akun bersama atau akun tambahan hanya karena orang tersebut juga melayani sebagai Mentor.
+
+### 2.1 Kontrak keputusan dan kompatibilitas
+
+**CONFIRMED** berarti kebutuhan target yang diminta pengguna, bukan fungsi yang sudah tersedia. **PROPOSED** berarti keputusan teknis yang direkomendasikan untuk fase broker. Seluruh akun personal/registrasi/linking di tabel ini **NOT IMPLEMENTED**; perapian UI PIC tidak mengaktifkannya.
+
+| Kebijakan | Status/keputusan yang direkomendasikan | Kompatibilitas dan gate |
+|---|---|---|
+| Akun dan peran | CONFIRMED: satu akun personal per relawan, beberapa role assignment dengan scope/status/revision masing-masing | Pertahankan UID PIC/owner dan `mentorId`; jangan membuat akun baru per peran atau menyalin role berdasarkan nama |
+| Form personal | CONFIRMED: Nama lengkap, Nomor HP, Username, Password; login Username + Password tanpa email wajib dalam UX | Backend akun PIC sekarang hanya menerima email/password/actions/grants; tiga field profil baru dan login username menunggu endpoint/broker baru |
+| Username unik | CONFIRMED: unik tanpa membedakan kapital. PROPOSED: panjang 3–32 karakter setelah trim; karakter ASCII huruf/angka/titik/underscore/hyphen, diawali huruf/angka | Tolak Unicode/confusable dan input di luar grammar, jangan transliterasi otomatis. Simpan bentuk tampilan dan canonical lowercase; rekomendasi grammar canonical `^[a-z0-9][a-z0-9._-]{2,31}$` |
+| Race username | PROPOSED: satu registry canonical privat; reservasi/create atomik, idempotency dan state provisioning | `Kak.Louis` dan `kak.louis` adalah satu kunci. Dua submit bersamaan hanya satu pemilik. Auth dan Firestore tetap perlu rekonsiliasi karena tidak punya transaksi bersama; orphan/pending tidak diberi izin |
+| Nomor Indonesia | CONFIRMED: normalisasi Indonesia ke E.164 +62, supplied dibedakan dari verified. PROPOSED: terima `08…`, `628…`, `+628…`; hilangkan spasi/hyphen/kurung yang diizinkan, lalu normalisasi sekali | `081234567890`, `6281234567890`, `+6281234567890` menjadi `+6281234567890` (contoh fiktif, bukan nomor yang diverifikasi). Tolak prefix ambigu seperti `8…`, huruf/ext, country code lain dan `+620…`; jangan menebak nomor |
+| Validasi/kepemilikan HP | PROPOSED: validator Indonesia yang disetujui dan batas E.164; simpan supplied, normalized, verifiedAt/method/actor/revision secara privat | Format bukan bukti nomor aktif/pemilik. Maksimal E.164 15 digit bukan validasi nasional lengkap. Perubahan nomor membatalkan status verified. Jangan mengisi klaim nomor Auth dari input belum terverifikasi atau menganggap nomor unik global |
+| Lifecycle | CONFIRMED: pendaftar baru tidak berhak istimewa sampai approval/linking. PROPOSED: provisioning → pending verification/approval → active; membership/role/link masing-masing dapat pending/revoked | Login untuk melihat proses verifikasi sendiri boleh, tetapi tidak membuka roster, role PIC, grant perangkat atau sesi |
+| Inheritance | CONFIRMED: default Mentor terverifikasi diwarisi setelah explicit identity linking | Link berbukti dan berscope, bukan nama/nomor/kode perangkat; evaluasi default/override efektif dan sesi yang sudah dikonfigurasi, bukan seluruh sejarah sebagai izin aktif |
+| Otoritas PIC | CONFIRMED: PIC berwenang boleh approve/link Mentor hanya dalam scope yang diberikan; promosi PIC/hak lebih luas memerlukan Superadmin atau delegasi eksplisit | PROPOSED: kemampuan approve/link terpisah dari assignment dan `pairing:issue`. PIC tidak mengesahkan eskalasi dirinya; link Mentor dengan cakupan di luar reviewer menunggu otoritas yang sesuai |
+| Eligibility | CONFIRMED: konfigurasi eligibility/status/provenance per scope, tanpa syarat full-time atau pengecualian individu hardcoded | Persetujuan operasional tetap diperlukan. Allowlist Mentor demo bukan sumber eligibility personal; jangan menghapus safeguard lama sebelum adapter baru siap |
+| Suspension | CONFIRMED: suspend akun harus menolak sesi personal dan device legacy milik akun pada request/transaksi berikutnya | NOT IMPLEMENTED: status PIC sekarang bukan suspension global Mentor. Gate akun/revision/epoch harus dibaca pada semua jalur, termasuk device/backup/receipt; Auth disabled saja tidak cukup |
+
+Rujukan format: [ITU E.164](https://www.itu.int/rec/T-REC-E.164/en), [kode negara Indonesia](https://www.itu.int/oth/T0202.aspx?lang=en&parent=T0202) dan [Firebase user fields/E.164](https://firebase.google.com/docs/auth/admin/manage-users). Pemilihan validator/metadata nomor belum dilakukan; tidak memasang dependency baru dalam pekerjaan UI ini.
+
+**PROPOSED pilihan provider:** pertahankan Firebase password provider dan pilih broker username → UID → identifier internal sebagai rancangan minimal. Alias internal berbasis UID/ID acak untuk akun baru, identifier lama untuk PIC yang sudah ada, tidak dikirim ke UX dan bukan alamat recovery. Ini menghindari password store aplikasi sendiri dan menjaga UID/password lama. Kekurangannya: broker menangani credential transit, registry, redaction, rate limit, sesi dan recovery tanpa email; izin namespace alias dan kanal recovery masih gate sebelum implementasi. Custom auth memerlukan verifier kredensial tersendiri dan tidak otomatis lebih sederhana.
+
+Broker harus memverifikasi password melalui Firebase, mencocokkan UID hasil dengan registry, menolak account/membership yang tidak sah, dan menerbitkan sesi aplikasi opaque. Terapkan TLS kelak, batas ukuran/attempt, respons generik, audit tanpa credential/nomor penuh, serta reauth tindakan sensitif. Signup langsung Firebase tidak memberi izin domain. Jangan memakai custom token sebagai pembuktian password atau registry publik untuk mengungkap identifier akun. Proses uniqueness/approval/link/suspension harus diuji race dan gagal tertutup saat penyimpanan/provider tidak tersedia.
+
+**Cutover yang direkomendasikan:** pertahankan kode 48 jam, proof perangkat, expiry dan revocation Stage 4–6 selama transisi. Link perangkat lama hanya melalui verifikasi pemilik/proof; device tak teratribusi diselesaikan sebelum gate akun wajib. Sesudah gate aktif, suspend/reset sesuai epoch tidak boleh jatuh ke jalur legacy tanpa pemeriksaan akun; login baru tidak memperpanjang grant atau menyalin backup. Keputusan menghapus kode atau membuat password-only attendance belum disetujui. Fase A1 dimulai terbatas setelah A0; A2–A4 termasuk recovery/suspension harus lulus sebelum onboarding umum/cutover.
+
+### 2.2 Batas UI PIC yang tersedia
+
+Halaman Akun PIC saat ini tetap khusus Superadmin, dengan Email akun dan Kata sandi awal serta tindakan/cakupan yang diperiksa server. Label lama “Email fiktif” diringkas menjadi “Email akun”; petunjuk .test/.example.invalid tetap terlihat karena backend memang mensyaratkannya. Tidak menambah field Nama lengkap/Nomor HP/Username yang belum disimpan atau mengganti login menjadi username semu. API, UID, password lama dan kontrak autentikasi tidak berubah.
+
+Perapian memakai section/card untuk detail akun, tindakan, cakupan per sekolah/ID sesi dan daftar PIC; label `for/id`, bantuan `aria-describedby`, ringkasan/inline error, focus visible dan target label sentuh minimal 44 piksel. Validasi izin mempertahankan input ketika gagal; status Nonaktif/Dicabut mempertahankan cakupan tersimpan sebagaimana backend. Acuan prinsip, bukan salinan branding: [W3C grouping](https://www.w3.org/WAI/tutorials/forms/grouping/), [W3C feedback](https://www.w3.org/WAI/tutorials/forms/notifications/) dan [GOV.UK hint text](https://design-system.service.gov.uk/patterns/question-pages/).
 
 ## 3. Kondisi aktual yang diperiksa
 
@@ -51,8 +83,8 @@ Nama berikut konseptual; belum membuat koleksi/index baru.
 | Konsep | Invariant |
 |---|---|
 | Akun personal (`personalAccounts/{uid}`) | UID stabil, username tampilan, nama, state, revision/securityEpoch. Satu akun kanonik per identitas orang yang telah diverifikasi dalam realm MSA; peran bukan akun baru. Profil tanpa akun boleh tetap sebagai arsip belum diklaim selama migrasi. |
-| Registry username | Klaim canonical username unik dan atomik ke UID. Usulan awal ASCII terbatas, trim/lowercase, aturan reserved names dan larangan confusable; panjang/rename/retensi masih keputusan produk. Tidak memakai `displayName` Firebase sebagai kunci unik. Registry tidak dapat dibaca publik. |
-| Kontak privat | Nomor input, bentuk normalisasi, status verifikasi/waktu/metode. Usulan E.164 dengan kode negara eksplisit. Nomor yang diketik belum membuktikan kepemilikan; nomor bersama/daur ulang bukan dasar merge otomatis. |
+| Registry username | Klaim canonical username unik dan atomik ke UID sesuai kontrak 2.1; rekomendasi 3–32 karakter ASCII. Reserved names/rename/retensi masih keputusan produk. Tidak memakai `displayName` Firebase sebagai kunci unik. Registry tidak dapat dibaca publik. |
+| Kontak privat | Nomor supplied, normalisasi Indonesia +62 dan status verifikasi/waktu/metode terpisah sesuai kontrak 2.1. Nomor bersama/daur ulang bukan dasar merge otomatis; jangan menganggap format valid sebagai bukti kepemilikan. |
 | Pemetaan identitas (`mentorIdentityLinks`) | Namespace + `mentorId` lama → akun/person kanonik, status terverifikasi, bukti terkontrol, actor, cakupan/revision dan timestamps. Satu Mentor kanonik tidak boleh diklaim dua UID aktif secara bersamaan. Beberapa ID lama hanya ditautkan ke orang sama setelah peninjauan, tanpa mengganti ID historis. |
 | Membership/role/eligibility | Akun global terpisah dari keanggotaan organisasi, eligibility dan kemampuan mengelola orang/penugasan. Seseorang boleh menjadi Mentor dan PIC sekaligus; izin berlaku per organisasi/sekolah/kelompok/sesi. Status pekerjaan tidak menjadi predicate kelayakan PIC. |
 | Penugasan domain | Default Mentor/override/backup yang ada tetap sumber kebenaran untuk pelayanan sekolah. Relasi MSA baru kelak memakai adapter eksplisit, tidak mengubah session ID menjadi tanggal atau event ID. |
@@ -128,7 +160,8 @@ Recovery/suspension harus siap sebelum membuka onboarding luas, walau prototipe 
 
 | Area | Acceptance test wajib |
 |---|---|
-| Username/password | Login tanpa email tampilan, canonicalization/confusable/rename, request credential salah generik, password policy; perubahan username tidak mengubah UID/password/izin |
+| Username/password | Login tanpa email tampilan; panjang 2/3/32/33, kapital berbeda dan confusable/rename, credential salah generik, password policy; perubahan username tidak mengubah UID/password/izin |
+| Nomor HP | `08…`/`628…`/`+628…` setara; separator yang diizinkan konsisten; prefix ambigu/non-ID, `+620…`, nomor terlalu panjang/huruf/ext ditolak; supplied tidak menjadi verified; nomor diganti/bersama/daur ulang tidak auto-link atau membuka recovery |
 | Registrasi/provisioning | Dua pendaftar username sama satu pemilik; crash sebelum/sesudah create Auth tidak memberi akses; retry satu UID; signup langsung Firebase/orphan tidak mengotorisasi domain |
 | Undangan | Penerima salah, token bocor/expired/revoked/used, issuer kehilangan izin dan redeem bersamaan ditolak; user existing tidak menjadi akun kedua |
 | Linking/duplikat | Dua UID mengklaim Mentor satu pemenang; nama/nomor sama tidak auto-link; PIC scope sempit tidak mengklaim mentor lintas scope; konflik PIC UID dengan registrasi baru perlu review |
@@ -142,11 +175,11 @@ Recovery/suspension harus siap sebelum membuka onboarding luas, walau prototipe 
 ## 11. Keputusan yang masih terbuka
 
 1. **Backend identifier:** apakah alias email teknis internal diperbolehkan? Jika ya, pilih namespace/domain teknis dan aturan agar tidak dipakai recovery/ditampilkan. Larangan email dalam UX sudah dikonfirmasi; larangan email dalam penyimpanan provider belum ditetapkan.
-2. **Username dan nomor:** aturan karakter/panjang/rename/reservasi, normalisasi negara, verifikasi nomor, nomor bersama/daur ulang, retensi pending/duplikat dan prosedur pembaruan kontak.
-3. **Identitas/approval:** siapa reviewer link Mentor dan klaim akun lama; batas PIC menyetujui membership/eligibility dan memberi peran operasional; pemberian kemampuan PIC administratif tetap keputusan tersendiri. Kelayakan tidak bergantung employment.
+2. **Username dan nomor:** gunakan rekomendasi grammar/3–32 dan normalisasi +62 bagian 2.1 sebagai kontrak kandidat; pengesahan grammar final, reserved names/rename/retensi, validator/metadata nomor, verifikasi, nomor bersama/daur ulang dan pembaruan kontak masih gate implementasi. Case-insensitive uniqueness dan pemisahan supplied/verified sudah merupakan kebutuhan target.
+3. **Identitas/approval:** otoritas PIC approve/link dalam scope dan larangan eskalasi sudah ditetapkan sebagai kebutuhan. Tentukan reviewer, bukti, kemampuan delegasi dan siapa yang mengelola konflik lintas scope/UID; promosi administratif memerlukan Superadmin/delegasi eksplisit. Kelayakan dapat dikonfigurasi dan tidak bergantung employment.
 4. **Realm dan privasi:** satu akun dalam realm MSA dengan membership per organisasi direkomendasikan; isolasi organisasi/penanggung jawab data, penautan lintas realm/tenant dan akses reviewer masih perlu persetujuan. Jangan membuat Firebase tenant per organisasi bila target satu login belum dirancang kompatibel.
 5. **Gate perangkat:** pertahankan kode/proof Stage 4–6 saat transisi direkomendasikan. Apakah kelak akun boleh mengotorisasi perangkat tanpa kode, masa coexistence, dan penanganan device lama/pending code memerlukan keputusan eksplisit.
 6. **Recovery/step-up:** OTP atau verifikasi manusia, penyedia/biaya/TTL/attempt limit, recovery pemilik tanpa reviewer kedua, MFA untuk hak istimewa dan kebijakan sesi/perangkat/grant terbitan PIC sesudah reset.
-7. **Sesi/cutover:** durasi sesi/refresh, media sesi browser, global versus scoped suspension, rekonsiliasi kasus duplikat existing UID, urutan pilot dan gate rollback.
+7. **Sesi/cutover:** durasi sesi/refresh, media sesi browser, operator yang berwenang suspend global/per-scope, rekonsiliasi duplikat existing UID, urutan pilot dan gate rollback. Kewajiban deny akun suspended termasuk legacy device sudah tetap; mekanisme epoch/asosiasi perangkat belum diimplementasikan.
 
-**Hasil kajian:** reuse Firebase dengan broker username merupakan usulan minimal yang layak ditindaklanjuti; keputusan di atas menghalangi implementasi terkait sampai disepakati. Tidak ada perubahan runtime, migrasi atau tes perilaku baru yang dilakukan dalam kajian ini.
+**Hasil penyempurnaan:** kontrak kandidat bagian 2.1 menjadi acuan fase broker berikutnya; blocker operasional di atas tetap harus disepakati. Yang diimplementasikan sekarang hanya perapian/validasi UI PIC dengan API lama. Tidak melakukan migrasi akun, perubahan autentikasi, rules, schema atau grant Mentor. Hasil tes UI/regresi aktual ada di PROJECT_STATUS.md.

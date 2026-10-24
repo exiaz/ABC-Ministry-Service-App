@@ -50,3 +50,33 @@ body[data-mentor-mode=paired-local] #toast:not(.show){visibility:hidden}
 
 /* Temporary backup uses the existing Admin/Mentor panels. */
 #admin-backup{padding:20px;min-width:0}#admin-backup>.panel{padding:18px;margin-top:18px}#admin-backup p{font-size:13px;line-height:1.7;margin:12px 0;overflow-wrap:anywhere}#admin-backup select{width:100%;min-width:0}#admin-backup .device-card{padding:16px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}#admin-backup .device-card .btn{margin-top:8px}#admin-backup .schedule-groups{margin:18px 0}.backup-groups{padding:18px;margin-bottom:20px}.backup-groups h3{margin:16px 0 8px}.backup-groups .btn{margin:4px 8px 4px 0}.backup-groups .calendar-hint{margin-top:12px}
+
+/* PIC account management: scoped spacing and accessible form controls. */
+#admin-accounts{display:grid;gap:24px;min-width:0}
+#admin-accounts .account-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;min-width:0}
+#admin-accounts h2{font-size:22px;line-height:1.35}#admin-accounts h3{font-size:18px;line-height:1.4}
+#admin-accounts p{line-height:1.65;overflow-wrap:anywhere}#admin-accounts .account-section-head p{margin-top:8px;color:#52627a;font-size:14px}
+#admin-accounts .account-help{font-size:13px;color:#52627a;line-height:1.6}#admin-accounts .account-feedback{padding:14px 18px;border:1px solid #d4e3f8;border-radius:12px;background:#edf4ff;color:#354e71;font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+#admin-accounts .account-error{background:#fff2ef;border-color:#efb6ab;color:#8d3027}#admin-accounts .account-field-error{color:#a02d24;font-size:14px;margin:10px 0;line-height:1.6}#admin-accounts [hidden]{display:none}
+#admin-accounts #account-form{display:grid;gap:24px}#admin-accounts .account-form-heading p{margin-top:6px;font-size:14px;color:#52627a}
+#admin-accounts .account-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+#admin-accounts .account-card{margin:0;padding:20px 24px 24px;min-width:0;border:1px solid var(--line);border-radius:14px;background:#fff}
+#admin-accounts legend{font-weight:700;font-size:16px;line-height:1.5;padding:0 6px;color:var(--ink,#243752)}
+#admin-accounts .form-row{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:0 0 22px}#admin-accounts .form-row:last-child{margin-bottom:0}
+#admin-accounts .form-row>label{display:block;margin:0;font-size:14px;font-weight:650;line-height:1.5;color:#35465f}
+#admin-accounts input:not([type=checkbox]),#admin-accounts select{width:100%;min-width:0;min-height:48px;padding:11px 13px;font-size:16px;line-height:1.5}
+#admin-accounts .account-options{display:grid;gap:10px;margin-top:16px}
+#admin-accounts .account-option{display:flex;align-items:flex-start;gap:12px;padding:12px;min-height:48px;margin:0;border:1px solid var(--line);border-radius:10px;line-height:1.5;font-size:14px;cursor:pointer;color:#35465f;background:#fff}
+#admin-accounts .account-option:hover{background:#f5f8fe}#admin-accounts .account-option:has(input:checked){background:#edf4ff;border-color:#a3c3f2}
+#admin-accounts input[type=checkbox]{appearance:auto;flex:0 0 20px;width:20px;height:20px;min-height:0;margin:1px 0 0;padding:0;accent-color:var(--blue);border-radius:3px}
+#admin-accounts .account-option span{min-width:0;overflow-wrap:anywhere}#admin-accounts .account-option strong{font-weight:650}#admin-accounts .account-option small{display:block;color:#52627a;font-size:13px;margin-top:3px}
+#admin-accounts .account-scopes{grid-column:1/-1}#admin-accounts .account-scope-list{display:grid;gap:20px;margin-top:20px}
+#admin-accounts .account-scope-set{min-width:0;margin:0;padding:14px 16px 16px;border:1px solid var(--line);border-radius:10px}#admin-accounts .account-scope-set legend{font-size:14px;font-weight:650}
+#admin-accounts .account-scope-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+#admin-accounts .account-form-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}#admin-accounts .btn{min-height:44px;white-space:normal;line-height:1.4}
+#admin-accounts .account-list{display:grid;gap:16px;padding-top:8px}#admin-accounts .account-list-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#admin-accounts .account-row{display:flex;align-items:flex-start;flex-direction:column;gap:16px;padding:20px;border:1px solid var(--line);border-radius:14px;background:#fff;min-width:0}
+#admin-accounts .account-row p{font-size:13px;margin-top:8px;color:#52627a}#admin-accounts .account-identity{display:block;overflow-wrap:anywhere;font-size:15px;line-height:1.6;margin:0 0 20px}#admin-accounts .account-row .account-identity{margin:0}
+#admin-accounts .account-state{font-weight:650;color:#35465f}#admin-accounts :focus-visible{outline:3px solid #2363bd;outline-offset:3px}#admin-accounts [aria-invalid=true]{border-color:#b33c2d}
+@media(max-width:900px){#admin-accounts .account-form-grid{grid-template-columns:minmax(0,1fr)}#admin-accounts .account-list-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){#admin-accounts{gap:20px}#admin-accounts .account-section-head{flex-direction:column;align-items:stretch;gap:12px}#admin-accounts .account-section-head>.btn{align-self:flex-start}#admin-accounts .account-card{padding:16px 16px 20px}#admin-accounts .account-scope-options{grid-template-columns:minmax(0,1fr)}#admin-accounts .account-scope-set{padding:12px}#admin-accounts .account-form-actions{align-items:stretch;flex-direction:column}}

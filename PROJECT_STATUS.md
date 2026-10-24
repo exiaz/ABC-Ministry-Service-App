@@ -1,6 +1,29 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · Stage 6 backup Mentor sementara · Auth/Firestore Emulator lokal · tidak dipublikasikan**
+**24 Oktober 2026 · Stage 6 tetap berlaku · kontrak akun MSA dan perapian UI PIC · lokal/emulator**
+
+## Kontrak akun dan UI PIC — 24 Oktober 2026
+
+**UI PIC diimplementasikan; autentikasi personal/username, approval/linking dan suspension lintas perangkat NOT IMPLEMENTED.** Kontrak kandidat menjadi acuan fase broker berikutnya; tidak memigrasikan autentikasi atau memulai Stage 7/modul MSA.
+
+- [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) bagian 2.1–2.2 menjadi rincian tunggal kebijakan dan batas UI. MASTER_BRIEF/visi hanya merujuk ringkasannya. CONFIRMED target: akun tunggal lintas peran, username case-insensitive, normalisasi nomor Indonesia +62 dengan supplied/verified terpisah, pending tanpa hak istimewa, inheritance sesudah explicit identity linking, PIC approve/link dalam scope, promosi melalui Superadmin/delegasi, eligibility konfigurabel dan suspension yang menolak personal/legacy device. PROPOSED: grammar ASCII/panjang 3–32, pola broker/registry/alias, validator/recovery/epoch/cutover. Semua fungsi akun baru tetap belum tersedia.
+- Rekomendasi tetap Firebase password provider melalui broker username, mempertahankan UID/password lama dan gate kode/proof/expiry Stage 4–6. Namespace alias, pengesahan grammar/validator, reviewer/delegasi, kanal recovery/step-up dan sesi/cutover masih blocker implementasi. Tidak menampilkan form username/Nama lengkap/Nomor HP seolah tersimpan melalui API lama yang menolak field tersebut.
+- UI Akun PIC kini memakai header/reload yang sejajar, kartu detail/tindakan, cakupan dikelompokkan per sekolah dan ID sesi, serta kartu akun terdaftar. Label eksplisit `for/id`, helper `aria-describedby`, focus visible, input 16 piksel dan area label minimal 44 piksel; error pilihan izin muncul sebagai feedback/inline tanpa menghapus input. Email akun tetap dipakai untuk login dan helper domain fiktif tetap terlihat. Nonaktif/Dicabut mempertahankan cakupan tersimpan sesuai backend, termasuk ketika daftar cakupan tidak tersedia; tidak mengubah RBAC atau memperkenalkan suspension global.
+- Seluruh CSS baru dibatasi `#admin-accounts`; tidak merancang ulang halaman lain. Prinsip grouping/feedback/hint ditinjau dari W3C WAI dan GOV.UK, ditautkan dalam kontrak. Lampiran screenshot PIC spesifik tidak tersedia pada konteks berkas yang ditemukan; baseline direproduksi dari aplikasi lokal dengan respons API fiktif, lalu hasil akhir juga diverifikasi melalui Auth/Firestore Emulator nyata dengan data fiktif. Screenshot lama tidak ditimpa.
+
+Validasi yang benar-benar dijalankan:
+
+- `npm.cmd run check`: **PASS, 130 modul** sintaks dan impor lokal. `npm.cmd test`: **PASS, 164/164**. Proyek buildless JavaScript; tidak ada script build, TypeScript compiler/tsconfig atau lint terpisah yang dikonfigurasi, sehingga ketiganya **N/A**, bukan diklaim lulus.
+- `npm.cmd run test:stage6`: **PASS/exit 0**, integrasi **91/91**, Chrome **22/22**, kalender demo/laporan/offline **PASS**, cold recovery/startup-shutdown **2/2**. Tes form diperluas: tidak ada field username/profil semu, asosiasi label/helper, layout kartu, font input, target sentuh/focus keyboard, email domain salah, password pendek, action/scope kosong dengan input tetap, create/login PIC, akses scope, status dan error koneksi. Emulator tes ditutup dengan benar dan snapshot operasional tidak dipakai sebagai fixture.
+- Chrome memeriksa 360/390/768/1365 piksel tanpa overflow; screenshot create/edit dan baseline/hasil akhir ditinjau untuk keterbacaan/jarak/alignment. Bukti layout mock hanya bukti tampilan; smoke autentikasi/RBAC berasal dari suite emulator. Tidak menggunakan credential atau data produksi.
+
+**Penerimaan lingkup fase ini: PASS.** Markdown/fence/encoding dan tabel empat dokumen, tujuh tautan lokal baru/diubah beserta anchor, `git diff --check`, batas delapan berkas serta HEAD/branch tetap **PASS**. Kontrak target konsisten, UI PIC terlihat lebih terbaca dan create/login lama terverifikasi; ini tidak menyatakan autentikasi username sudah tersedia.
+
+Bukti diabaikan Git: `.emulator-data/pic-ui-qa/{before,after}-{390,1365}.png`, `check.log`, `unit.log`, `regression.log`; bukti emulator/Chrome pada `.emulator-data/stage3-tests/run-lyT0rI/`, khususnya `screenshots/pic-account-create-{360,390,768,1365}.png` dan `pic-account-edit-mobile.png`.
+
+Berkas diubah: `admin-accounts.js`, `secure-admin.js`, `styles.css`, `tests/emulator/admin-accounts-ui.mjs`, `MASTER_BRIEF.md`, `MSA_ACCOUNT_ARCHITECTURE.md`, `MSA_PRODUCT_VISION.md`, `PROJECT_STATUS.md`. Tidak menambah dependency, migrasi database, perubahan Firebase/config/rules, backend autentikasi/absensi atau modul Stage 6. AGENTS.md dan skill tetap. `ABC-MSA-Audit/` tidak ditemukan pada cek awal dan tidak dibuat/dihapus/disunting. Branch/HEAD tetap; tidak commit, push atau deploy.
+
+Batas: Chrome viewport, bukan Android fisik/Safari/Firefox; belum audit aksesibilitas formal. UI tetap email/password emulator. Approval/linking PIC, akun personal, recovery dan suspension global baru kontrak target. Langkah berikutnya: tetapkan blocker A0 lalu implementasi A1 broker/registry akun secara terbatas pada data fiktif, dengan gate recovery/suspension dan kompatibilitas device sebelum cutover/onboarding luas.
 
 ## Kajian autentikasi MSA — 24 Oktober 2026 · dokumentasi saja
 
