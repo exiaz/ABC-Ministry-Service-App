@@ -1,8 +1,12 @@
 # ABC | Ministry Service App — visi produk dan rencana arsitektur
 
-**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1/A2.1 akun fiktif/emulator di balik flag mati secara default serta branding dasar sudah IMPLEMENTED.** Kontrak aktual A1/A2.1 ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
+**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1/A2.1/A2.2/A2.3 akun fiktif/emulator di balik flag mati secara default serta branding dasar sudah IMPLEMENTED.** Kontrak aktual autentikasi ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** kini diverifikasi pada lingkup lokal/emulator (hasil dan batasnya di PROJECT_STATUS.md); kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
+
+## AUTH A2.3 — pembaruan status terbatas
+
+Alur personal Mentor dengan link A2.2 dan asosiasi perangkat Stage 4–6 kini diimplementasikan hanya pada namespace fiktif `test-*`, di balik flag A1/A2.2/A2.3 yang tetap mati default. Login bukan grant absensi; perangkat tertaut memerlukan sesi/link/akun/proof sah dan pemeriksaan transaksi. Perangkat legacy yang belum tertaut tetap terpisah. Tidak ada public registration, linking operasional, recovery atau cutover; modul MSA lain tetap PLANNED. Kontrak dan hasil aktual: MSA_ACCOUNT_ARCHITECTURE.md dan PROJECT_STATUS.md.
 
 ## AUTH A2.2 — pembaruan status terbatas
 

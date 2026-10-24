@@ -1,5 +1,15 @@
 # ABC | Ministry Service App — Prototipe lokal
 
+## AUTH A2.3 — pengujian akun Mentor dan perangkat
+
+Jalankan `npm.cmd run test:msa-a2-3` untuk login Mentor personal, asosiasi perangkat, penolakan akun/link/sesi tidak sah, backup, transaksi revoke/write dan browser responsif. Runner menyiapkan port/namespace `test-*` dan data fiktif sendiri, tanpa snapshot operasional. `npm.cmd run test:stage6` tetap menjalankan regresi penuh termasuk A2.3. Hasil aktual ada di PROJECT_STATUS.md.
+
+Halaman `/mentor-account.html` pada shell Mentor hanya tersedia bila A1, A2.2 dan `ABC_MSA_A2_3=1` diaktifkan pada lingkungan tes demo yang valid. Flag tidak ditambahkan ke launcher dan login utama tetap. Masuk memakai username/password akun yang sudah ditinjau dan ditautkan. Kelompok utama ditentukan server. Jika perangkat belum aktif, minta kode sekali pakai kepada PIC; sesudah verifikasi perangkat, konfirmasikan **Gunakan perangkat ini**. Login sendiri tidak memberikan akses absensi.
+
+Kelompok utama dan backup tampil terpisah. Simpan/tinjau/selesaikan/koreksi tetap menunggu konfirmasi server. Saat offline, periksa akses kembali setelah jaringan tersambung; tidak ada simpan offline otomatis. Keluar menutup sesi personal, tanpa mencabut atau menyalin izin perangkat. Perangkat tertaut tidak dapat dipakai melalui alur legacy tanpa sesi akun sah. Akun/link/revisi stale memerlukan pemeriksaan PIC dan aktivasi baru; tombol hapus izin lokal tidak menghapus revokasi server.
+
+Gunakan akun, kode, bukti dan siswa fiktif saja. Tidak ada recovery, registrasi publik, migrasi akun/device atau aktivasi produksi. Rincian boundary legacy dan dependensi A2.4: MSA_ACCOUNT_ARCHITECTURE.md.
+
 ## AUTH A2.2 — pengujian pendaftaran dan tinjauan identitas
 
 Jalankan `npm.cmd run test:msa-a2-2` untuk pendaftaran, review, delegasi PIC, link Mentor, kegagalan parsial dan UI responsif dengan data fiktif. Runner menyiapkan port/emulator/namespace sementara sendiri dan menutupnya sesudah tes. `npm.cmd run test:stage6` mencakup regresi penuh Stage 1–6, A1/A2.1/A2.2, browser, offline dan lifecycle. Hasil eksekusi ada di PROJECT_STATUS.md.

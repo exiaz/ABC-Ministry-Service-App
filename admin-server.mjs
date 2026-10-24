@@ -59,7 +59,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     const port=Number(process.env.ABC_ADMIN_PORT||4177);
     if(!Number.isSafeInteger(port)||port<1||port>65535||[4173,4175,4176].includes(port))throw Error();
     adapters=await createConfiguredRepositories();
-    adminAuthentication=await createLocalAdminAuthentication({repository:adapters.repository});
+    adminAuthentication=await createLocalAdminAuthentication(adapters);
     server=createAdminServer({adminAuthentication,pairing:adapters.pairing});
     const stop=async()=>{await new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();});await adapters.close();await adminAuthentication.close();await lifecycle?.close();process.exit(0);};
     process.once('SIGINT',stop);process.once('SIGTERM',stop);

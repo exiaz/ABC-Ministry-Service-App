@@ -1,5 +1,11 @@
 # Pemeriksaan prototipe
 
+## AUTH A2.3 — verifikasi terisolasi · 24 Oktober 2026
+
+`npm.cmd run test:msa-a2-3` menguji akun/link aktif, pending/rejected/unlinked, scope lintas Mentor, aktivasi dan proof, asosiasi idempoten, suspension/revocation akun/link/session/association, revisi stale, flag off tanpa fallback legacy, backup terpisah/session-scoped, expiry, history, dan revoke/write dengan pemeriksaan transaksi. Akun uji dibuat melalui registrasi/review/link A2.2; semua source siswa dan data fiktif di namespace/port terpisah. `npm.cmd run test:stage6` mencakup regresi penuh Stage 1–6 dan AUTH A1/A2.1/A2.2/A2.3.
+
+Browser A2.3 menjalankan alur nyata dari login, aktivasi wajib, konfirmasi asosiasi, kelompok utama/backup, absensi terpisah, offline, keluar/login ulang dan suspension. Target viewport 360/390/768/1365 px, input/touch/focus, labels/status, tanpa overflow dan screenshot untuk inspeksi visual. Hasil yang benar-benar dijalankan, kegagalan awal/perbaikan, artefak dan batas perangkat fisik dicatat pada PROJECT_STATUS.md; bagian tahap sebelumnya berikut adalah riwayat.
+
 ## AUTH A2.2 — verifikasi terisolasi · 24 Oktober 2026
 
 Lingkup terbaru menambahkan pendaftaran empat field, queue/detail review, pending/reject/approve dengan bukti, delegasi PIC per akun/tuple, claim Mentor unik, retry provisioning dan pratinjau default tanpa grant operasi. Jalankan `npm.cmd run test:msa-a2-2`; runner memakai Auth/Firestore Emulator, port/namespace `test-*` dan akun fiktif baru. `npm.cmd run test:stage6` tetap regresi penuh dan kini menyertakan suite A2.2. Hasil aktual/angka/log ada pada revisi terbaru PROJECT_STATUS.md; bagian Stage 7 berikut adalah bukti sebelum A2.2.

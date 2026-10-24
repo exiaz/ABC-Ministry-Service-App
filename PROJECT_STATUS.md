@@ -1,6 +1,43 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · AUTH A2.2 lokal/emulator · Stage 1–7 dan AUTH A1/A2.1 dipertahankan**
+**24 Oktober 2026 · AUTH A2.3 lokal/emulator · Stage 1–7 dan AUTH A1/A2.1/A2.2 dipertahankan**
+
+## AUTH A2.3 — integrasi akun Mentor dan perangkat
+
+**IMPLEMENTED dan TESTED; acceptance A2.3 PASS dalam lingkup fiktif/lokal/emulator terisolasi.** Default A2.3 tetap nonaktif dan hanya namespace `test-*` dengan A1 + A2.2 + `ABC_MSA_A2_3=1` serta konfigurasi Auth/Firestore demo yang valid. Tidak ada public registration, linking operasional, migrasi, cutover, recovery atau perubahan login default. Bagian A2.2 dan Stage 7 di bawah merupakan bukti fase sebelumnya, bukan status A2.3 terbaru. Tidak ada blocker tersisa pada cakupan yang diuji; batas migrasi/produksi di bawah tetap berlaku.
+
+Implementasi:
+
+- Broker A1 dipakai untuk login username/password khusus Mentor. Alur menolak akun pending/rejected/unlinked dan sesi legacy Admin/PIC. Nama sendiri/mentorId/primary berasal dari link terverifikasi berscope dan resolver session-aware lama; bukan pencocokan username/nama/HP. A2.2 masih satu tuple link per UID, tidak otomatis diperluas.
+- Admission sesi personal privat menyimpan hash handle, UID, revisi dan expiry. Asosiasi perangkat memerlukan sesi valid, link/scope/revisi yang sama, aktivasi-v1 + credential/P-256 proof lama, primary Mentor yang cocok dan konfirmasi server. Transaksi menulis marker perangkat, association serta audit tanpa mengganti credential/grant/ID. Retry identik tidak menggandakan audit.
+- Perangkat tertaut selalu memerlukan sesi personal tambahan pada status, konteks, roster dan absensi, termasuk saat credential lama dikirim tanpa header akun. Marker/association yang tidak konsisten, account/link/session/revision stale atau flag off menolak akses, tanpa konversi balik ke legacy. Perangkat legacy yang belum tertaut tetap memakai kontrak lama. Setelah revisi akun/link berubah, asosiasi lama tidak diaktifkan otomatis; fase ini memerlukan aktivasi perangkat baru, bukan transfer/rebind credential.
+- Akun/link/admission/association dibaca dalam transaksi absensi beserta device/credential/backup sebelum write dan retry receipt. Histori personal baru menambahkan actorUid dan revisi akun/link/asosiasi; histori lama, primary/default/override/snapshot, batch dan ID dipertahankan. Stage 6 tetap session-scoped dan per kelompok; kandidat perangkat personal yang suspended/stale tidak diberi backup baru.
+- UI `/mentor-account.html` terpisah, mobile-first tanpa redesign Admin. Username/kata sandi → identitas/kelompok otomatis → aktivasi bila diperlukan → konfirmasi gunakan perangkat → absensi utama/backup. Memakai controller absensi, pairing/proof dan penyimpanan key lama. Token akun hanya di memori; key non-exportable dan bearer perangkat tetap terenkripsi dalam IndexedDB. Offline menutup roster editable dan tidak membuat antrean write.
+
+Verifikasi yang benar-benar dijalankan:
+
+| Pemeriksaan | Hasil aktual |
+|---|---|
+| `npm.cmd run check` dan ulang `check-final.log` | PASS, 157 modul sintaks/impor lokal |
+| `npm.cmd test` dan unit di runner | PASS, 171/171 |
+| Integrasi A2.3 | PASS 6/6 pada putaran terakhir yang selesai, termasuk real Auth/Firestore, preflight/origin, proof, scope, revocation, backup, actor audit dan revoke/write |
+| Chrome A2.3 terarah dan dalam regresi penuh | PASS 1/1 rangkaian A2.3 pada masing-masing run yang selesai; 360/390/768/1365 px, aktivasi/asosiasi/backup/offline/login ulang/suspension. Screenshot menunggu roster selesai; kartu personal ringkas dipakai dalam regresi penuh tanpa mengubah markup legacy |
+| `node --test tests/mentor-ui.test.mjs tests/mentor-attendance.test.mjs tests/flexible-calendar.test.mjs` setelah pemadatan UI | PASS 11/11 pada pengulangan dengan akses loopback; percobaan sandbox sebelumnya 9 PASS / 2 terhalang koneksi localhost EACCES |
+| `npm.cmd run test:stage6` | PASS/exit 0: unit 171/171, integrasi 109/109, Chrome 26/26, kalender/laporan/offline PASS, cold recovery/startup-shutdown 2/2. Emulator tes ditutup |
+| `npm.cmd run test:msa-a2-3` sesudah perbaikan padding pencarian dari inspeksi screenshot final | PASS/exit 0: sintaks/impor 157 modul, unit 171/171, integrasi A2.3 6/6 dan Chrome 1/1; assertion geometri memastikan teks pencarian terpisah dari ikon, input >=16 px/44 px dan tanpa overflow pada empat viewport. Emulator tes ditutup. Perubahan terakhir hanya CSS halaman personal + assertion browser, tanpa perubahan backend sesudah regresi penuh |
+
+Kegagalan awal disimpan: satu assertion fixture mengharapkan `accessKind:primary` eksplisit padahal kontrak legacy tidak mengisi field untuk primary; assertion memakai default yang sama dengan UI tanpa mengubah API lama. Browser pertama berhenti karena handler baru memakai selector CSS pada helper `getElementById`, sehingga fetch belum terkirim dan pesan koneksi generik muncul. Handler diperbaiki menjadi `form.querySelector('button')`; bukan melonggarkan CORS/otorisasi. Putaran terarah berikutnya PASS 6/6 + Chrome 1/1. Inspeksi screenshot awal menemukan bukti masih pada loading roster dan informasi kelompok berulang; tes kini menunggu roster selesai dan mode personal pada controller lama memakai kartu primary/backup ringkas dengan nama Mentor sebagai subtitle, tanpa mengubah markup/alur legacy. Screenshot roster final 360/1365 px ditinjau; benturan ikon/teks pencarian yang ditemukan diperbaiki lewat padding, diuji ulang dengan geometri browser dan screenshot 360 px ditinjau kembali. Login/aktivasi dan kelompok juga diassert/difoto pada 390/768 px. Seluruh putaran final PASS; tidak menghapus catatan kegagalan awal.
+
+Berkas perubahan (33):
+
+- Backend/server (12): baru `backend/msa-mentor-devices.mjs`, `backend/msa-mentor-http.mjs`; `backend/admin-auth.mjs`, `backend/msa-auth.mjs`, `backend/firestore-emulator.mjs`, `backend/attendance.mjs`, `backend/attendance-http.mjs`, `backend/backup-assignments.mjs`, `backend/mentor-origin.mjs`, `backend/server.mjs`, `admin-server.mjs`, `server.mjs`.
+- UI (5): baru `mentor-account.html`, `mentor-account.js`, `mentor-account.css`; `pairing-client.js`, `secure-mentor.js`.
+- Lifecycle/tes/runner (10): `local-service.mjs`, `package.json`, `tests/stage3.mjs`, `tests/local-service.test.mjs`, `tests/emulator/admin-login-fixture.mjs`, `tests/emulator/msa-a1-fixture.mjs`, `tests/emulator/msa-a2-2-fixture.mjs`; baru `tests/emulator/msa-a2-3-fixture.mjs`, `tests/emulator/msa-a2-3.test.mjs`, `tests/emulator/msa-a2-3-ui.mjs`.
+- Spesifikasi/status (6): `MASTER_BRIEF.md`, `MSA_ACCOUNT_ARCHITECTURE.md`, `MSA_PRODUCT_VISION.md`, `README.md`, `QA.md`, `PROJECT_STATUS.md`.
+
+Batas dan dependensi **AUTH A2.4**: tidak ada izin produksi/cutover. Perangkat legacy yang belum diasosiasikan belum dapat diatribusikan ke UID dan tetap harus direkonsiliasi sebelum suspension global/migrasi. Rebind/transfer/revoke asosiasi operasional, perluasan scope organisasi/program/multi-penugasan, UI pengelolaan link/revisi, recovery/phone verification/step-up, retensi admission/audit/pagination, TLS/provider dan abuse controls produksi belum diimplementasikan. Mutasi Auth provider langsung tidak satu transaksi dengan Firestore; state/revision aplikasi menjadi otoritas penolakan domain atomik. Android fisik/Safari/Firefox, instalasi PWA native dan audit pembaca layar formal belum diuji. Tidak mengikat `momor1n` operasional atau menampilkan kredensial/alias/profil privat anak.
+
+Bukti diabaikan Git: `.emulator-data/a2-3-qa/{focused,focused-final,focused-ui,focused-network,focused-browser-fix,check,check-final,unit,ui-unit-final,ui-unit-final-local,regression,visual-final}.log`; focused PASS di `.emulator-data/stage3-tests/run-2SItt0/`; regresi penuh `run-1nQFWr/`; visual akhir `run-zO6PEt/`. Hanya fixture fiktif baru; tidak mengimpor snapshot operasional. Diff akhir ditinjau; `git diff --check` PASS. Lockfile/rules, kontrak aktivasi/proof, device storage, data/assignment historis, logo, manifest/cache tetap tanpa diff. HEAD awal/akhir `0aad8814b198ddc8b2c6ad75af0d3ed6f985ec15`, working tree awal bersih; branch `development` tetap. Tidak commit, push, deploy, ubah branch/billing/dependency/lockfile/rules atau data operasional; file tak terkait tidak disentuh. Berhenti sebelum aktivasi produksi atau account/device cutover.
 
 ## AUTH A2.2 — pendaftaran relawan dan penautan identitas terverifikasi
 

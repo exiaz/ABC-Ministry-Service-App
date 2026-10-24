@@ -16,7 +16,7 @@ const permitted=(p,grants)=>p?.active===true&&Array.isArray(p.grants)&&grants.ev
 
 // Additive delegation only. Primary credentials, enrollment and mentor defaults
 // are never rewritten. Reads join the same transaction as attendance writes.
-export function createBackupAssignments({db,root,repository,now,config}){
+export function createBackupAssignments({db,root,repository,now,config,linkedDeviceEligible=async()=>true}){
   const col=name=>root.collection(name);
   const read=(tx,ref)=>tx?tx.get(ref):ref.get();
   const operator=async(uid,action,tx)=>{
@@ -34,6 +34,7 @@ export function createBackupAssignments({db,root,repository,now,config}){
     const rows=await read(tx,col('credentials').where('deviceId','==',deviceId));
     const credentials=rows.docs.filter(row=>{const c=row.data();return c.binding==='p256-v1'&&c.revokedAt===null&&c.expiresAt===d.expiresAt&&Array.isArray(c.grants)&&c.grants.length===1&&key(c.grants[0])===key(primary);});
     if(credentials.length!==1)return null;
+    if(!await linkedDeviceEligible(d,credentials[0].data(),credentials[0].id,tx))return null;
     return {deviceId,primary,expiresAt:d.expiresAt,credentialId:credentials[0].id};
   }
   async function valid(tx,row,device){

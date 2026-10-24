@@ -39,20 +39,21 @@ function response(scope,batch,records){
 export function createEmulatorAttendance({db,root,credentials,now}){
   const col=name=>root.collection(name);
   return {
-    async executeAuthorized({authorization,proof,scope:requested,action,body}){
+    async executeAuthorized({authorization,proof,scope:requested,action,body,personal}){
       const scope=validRosterScope(requested)?Object.fromEntries(SCOPE_KEYS.map(k=>[k,requested[k]])):null;
       // Capture all caller data before awaiting storage.
       const input=body===undefined?undefined:structuredClone(body);
       return db.runTransaction(async tx=>{
-        let backupOperator;
+        let backupOperator,personalOperator;
         const authorize=async()=>{
-          const principal=await credentials.authenticate(authorization,proof,tx);
+          const principal=await credentials.authenticate(authorization,proof,tx,personal);
           // Attendance requires the existing verified paired-device capability,
           // including when a trusted legacy credential exists in the emulator.
           if(!principal||!proof?.deviceId)throw new AttendanceError(401,'Kredensial perangkat tidak valid atau tidak berlaku.');
           if(!scope)invalid();
           if(!canReadRoster(principal,scope))deny();
           backupOperator=principal.backupGrants?.find(g=>SCOPE_KEYS.every(k=>g[k]===scope[k]));
+          personalOperator=principal.personalIdentity;
         };
         await authorize();
         if(!['read','save','finalize','correct'].includes(action))invalid();
@@ -112,7 +113,7 @@ export function createEmulatorAttendance({db,root,credentials,now}){
         await authorize();
         const history=rev=>col('attendanceHistory').doc(hash(JSON.stringify([batchId,rev])));
         if(batch&&revision===0)tx.create(history(0),{batchId,revision:0,action:'baseline',at,previousUpdatedAt:batch.updatedAt??null,snapshot:batch});
-        tx.create(history(next.revision),{batchId,revision:next.revision,action,at,deviceId:proof.deviceId,credentialId:hash(authorization.slice(7)),reason:command.reason??null,...(backupOperator?{backupAssignmentId:backupOperator.assignmentId,backupMentorId:backupOperator.mentorId}:{}),snapshot:next});
+        tx.create(history(next.revision),{batchId,revision:next.revision,action,at,deviceId:proof.deviceId,credentialId:hash(authorization.slice(7)),reason:command.reason??null,...(backupOperator?{backupAssignmentId:backupOperator.assignmentId,backupMentorId:backupOperator.mentorId}:{}),...(personalOperator?{actorUid:personalOperator.uid,accountRevision:personalOperator.accountRevision,identityLinkRevision:personalOperator.linkRevision,deviceAssociationRevision:personalOperator.associationRevision}:{}),snapshot:next});
         tx.set(stored?.ref??col('sessions').doc(batchId),next);
         // All group mutations for a service share this guard. It prevents a
         // moved student from being claimed twice by concurrent first writers.

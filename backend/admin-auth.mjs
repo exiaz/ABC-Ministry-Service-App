@@ -22,9 +22,9 @@ export function adminAuthConfig(env=process.env){
   return Object.freeze({projectId:DEMO_PROJECT_ID,host,uids:Object.freeze([...uids])});
 }
 
-export async function createConfiguredAdminAuthentication(){
+export async function createConfiguredAdminAuthentication(options){
   if(process.env.ABC_ADMIN_AUTH_MODE===undefined&&process.env.FIREBASE_AUTH_EMULATOR_HOST===undefined)return undefined;
-  return createLocalAdminAuthentication();
+  return createLocalAdminAuthentication(options);
 }
 
 // Emulator tokens are unsigned. Only login handles issued by this trusted
@@ -33,7 +33,7 @@ export async function createConfiguredAdminAuthentication(){
 // This core helper exposes no HTTP route. The opt-in M2B.5A same-origin login
 // calls this exact signIn path. UID claims alone cannot establish provenance,
 // even after Admin SDK verification in emulator mode.
-export async function createLocalAdminAuthentication({repository}={}){
+export async function createLocalAdminAuthentication({repository,mentorAccounts}={}){
   const config=adminAuthConfig(),admitted=new Map();
   const {initializeApp,deleteApp}=await import('firebase-admin/app');
   const {getAuth}=await import('firebase-admin/auth');
@@ -74,7 +74,7 @@ export async function createLocalAdminAuthentication({repository}={}){
       return {kind:'ok',...policy};
     }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
   };
-  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,repository,emailActor:authorizeEmail,registrationEnabled:process.env.ABC_MSA_A2_2==='1'&&store.namespace.startsWith('test-'),pilotEnabled:process.env.ABC_MSA_USERNAME_PILOT==='1'&&store.namespace.startsWith('test-'),assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
+  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,repository,mentorAccounts,emailActor:authorizeEmail,registrationEnabled:process.env.ABC_MSA_A2_2==='1'&&store.namespace.startsWith('test-'),pilotEnabled:process.env.ABC_MSA_USERNAME_PILOT==='1'&&store.namespace.startsWith('test-'),assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
   return {
     a1,
     accounts:createAdminAccounts({db,root,auth}),

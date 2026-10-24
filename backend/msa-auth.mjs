@@ -3,8 +3,9 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {createMsaAccounts,normalizeUsername,hash,fail} from './msa-accounts.mjs';
 import {createLegacyUsernamePilot} from './msa-legacy-usernames.mjs';
 import {createMsaRegistration} from './msa-registration.mjs';
+import {createMsaMentorAuthentication} from './msa-mentor-devices.mjs';
 
-export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,now=Date.now}){
+export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,mentorAccounts,now=Date.now}){
   const sessions=new Map(),accounts=createMsaAccounts({db,root,auth,assertLocal,now});
   const prune=()=>{for(const [k,s] of sessions)if(s.expiresAt<=now())sessions.delete(k);};
   const checkToken=async token=>{
@@ -34,7 +35,7 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
   const assertPilot=()=>{assertLocal();if(!pilotEnabled||process.env.ABC_MSA_USERNAME_PILOT!=='1'||!root.id.startsWith('test-'))fail(503,'Pilot username hanya tersedia pada namespace tes terisolasi.');};
   const legacyPilot=pilotEnabled?createLegacyUsernamePilot({db,root,auth,assertPilot,emailActor,verifyPassword,consumeAttempt,now}):undefined;
   const registration=registrationEnabled?createMsaRegistration({db,root,auth,repository,verifyPassword,now,assertEnabled:()=>{assertLocal();if(process.env.ABC_MSA_A2_2!=='1'||!root.id.startsWith('test-'))fail(503,'Pendaftaran uji tidak aktif.');}}):undefined;
-  return {
+  const api={
     accounts,legacyPilot,registration,
     async login({username,password}){
       assertLocal();prune();
@@ -71,10 +72,12 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
           return {kind:'legacy-username',uid:s.uid,revision:s.revision,policy:bound.policy,username:bound.username};
         }
         const profile=await accounts.profile(s.uid,s.revision);
-        return {kind:'msa',uid:s.uid,revision:s.revision,profile};
+        return {kind:'msa',uid:s.uid,revision:s.revision,profile,expiresAt:s.expiresAt};
       }catch{fail(401,'Sesi akun tidak berlaku. Masuk kembali.');}
     },
     logout(header){const token=typeof header==='string'&&/^Bearer ([A-Za-z0-9_-]{43})$/.exec(header)?.[1];return !!token&&sessions.delete(hash(token));},
     close(){sessions.clear();}
   };
+  if(mentorAccounts&&process.env.ABC_MSA_A2_3==='1'&&process.env.ABC_MSA_A2_2==='1'&&root.id.startsWith('test-'))api.mentor=createMsaMentorAuthentication({a1:api,devices:mentorAccounts});
+  return api;
 }

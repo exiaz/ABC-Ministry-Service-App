@@ -7,7 +7,7 @@ export async function deviceHeaders(keys,token,method,target,body=''){
   const signature=bytes64(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},keys.privateKey,encoder.encode(message)));
   return {'X-Device-Timestamp':timestamp,'X-Device-Nonce':nonce,'X-Device-Signature':signature};
 }
-export function createPairingClient(apiOrigin,onChange){
+export function createPairingClient(apiOrigin,onChange,{personalSession}={}){
   if(!/^http:\/\/127\.0\.0\.1:([1-9]\d{0,4})$/.test(apiOrigin)||Number(new URL(apiOrigin).port)>65535)throw Error('Alamat API emulator lokal tidak valid.');
   let state={phase:'checking',message:'Memeriksa izin perangkat…'},busy=false,generation=0;
   const publish=next=>{state=next;onChange({...state});};
@@ -26,6 +26,7 @@ export function createPairingClient(apiOrigin,onChange){
     if(!scope||!keys.every(k=>typeof scope[k]==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(scope[k])))throw Error('Pilihan pelayanan tidak valid.');
     return path+'?'+new URLSearchParams(Object.fromEntries(keys.map(k=>[k,scope[k]])));
   };
+  const personalHeaders=()=>personalSession?{'X-MSA-Session':'Bearer '+personalSession()}:{};
   async function protectedRead(target,method='GET',values){
     const current=generation;
     try{
@@ -36,7 +37,7 @@ export function createPairingClient(apiOrigin,onChange){
         deny('Masa akses perangkat telah berakhir. Minta kode aktivasi baru kepada admin.');throw Error();
       }
       const body=values===undefined?'':JSON.stringify(values);
-      const response=await request(target,{method,...(method==='GET'?{}:{body}),headers:{Authorization:'Bearer '+record.session.credential,...(method==='GET'?{}:{'Content-Type':'application/json'}),...await deviceHeaders(record.keys,record.session.credential,method,target,body)}});
+      const response=await request(target,{method,...(method==='GET'?{}:{body}),headers:{Authorization:'Bearer '+record.session.credential,...personalHeaders(),...(method==='GET'?{}:{'Content-Type':'application/json'}),...await deviceHeaders(record.keys,record.session.credential,method,target,body)}});
       if(current!==generation||state.phase!=='active')throw Error();
       if(response.status===401){deny('Akses perangkat dicabut, tidak valid, atau telah berakhir. Hubungi admin.');throw Error();}
       if(!response.ok){const error=Error(response.status===403?'Cakupan sekolah, kelompok, atau pelayanan tidak diizinkan.':response.status===409?'Data atau ketentuan absensi berubah. Muat ulang data server sebelum melanjutkan.':'Permintaan API belum berhasil. Periksa koneksi lalu coba lagi.');error.status=response.status;throw error;}
@@ -52,18 +53,31 @@ export function createPairingClient(apiOrigin,onChange){
     if(!validSession(record.session))throw Error('Izin perangkat tidak dapat dibaca. Hapus izin lokal lalu aktivasi ulang.');
     const {keys,session}=record;
     if(session.expiresAt<=Date.now()){deny('Masa akses perangkat telah berakhir. Minta kode aktivasi baru kepada admin.');return;}
-    const target='/api/device/status';
-    const response=await request(target,{headers:{Authorization:'Bearer '+session.credential,...await deviceHeaders(keys,session.credential,'GET',target)}});
+    const target=personalSession?'/api/a2-3/device-status':'/api/device/status';
+    const response=await request(target,{headers:{Authorization:'Bearer '+session.credential,...personalHeaders(),...await deviceHeaders(keys,session.credential,'GET',target)}});
     if(current!==generation)return;
     if(response.status===401||response.status===403){deny('Akses perangkat dicabut atau telah berakhir. Hubungi admin untuk aktivasi ulang.');return;}
     if(!response.ok)throw Error('API lokal belum dapat memeriksa izin. Pastikan emulator dan server API aktif, lalu coba lagi.');
     const status=await response.json();
     if(current!==generation)return;
     if(status.deviceId!==session.deviceId||status.state!=='active'||status.expiresAt!==session.expiresAt)throw Error('Status perangkat tidak sesuai. Hubungi admin.');
+    if(personalSession&&status.associated!==true){publish({phase:'association-required',message:'Perangkat berizin tersedia. Konfirmasikan untuk memakainya dengan akun ini.',expiresAt:status.expiresAt,assignment:assignmentFrom(status.assignment)});return;}
     publish({phase:'active',message:'Perangkat aktif · API emulator lokal',expiresAt:status.expiresAt,...(status.assignment?{assignment:assignmentFrom(status.assignment)}:{})});
   }
   return {
     get state(){return {...state};},
+    resetAccount(){generation++;publish({phase:'inactive',message:'Masuk kembali untuk memeriksa izin perangkat.'});},
+    async associate(){
+      if(!personalSession||busy||state.phase!=='association-required')return;busy=true;const current=generation,previous=state;
+      publish({...previous,phase:'associating',message:'Memastikan akun dan perangkat…'});
+      try{
+        const record=await loadDevice(apiOrigin);if(!validSession(record?.session)||current!==generation)throw Error();
+        const target='/api/a2-3/associate',body=JSON.stringify({requestId:crypto.randomUUID()});
+        const response=await request(target,{method:'POST',body,headers:{Authorization:'Bearer '+record.session.credential,...personalHeaders(),'Content-Type':'application/json',...await deviceHeaders(record.keys,record.session.credential,'POST',target,body)}});
+        if(!response.ok)throw Error();if(current===generation)await verify(record,current);
+      }catch{if(current===generation)publish({...previous,message:'Pemakaian perangkat belum dapat dikonfirmasi. Periksa akses atau coba lagi; absensi belum dibuka.'});}
+      finally{busy=false;}
+    },
     readContexts(){return protectedRead('/api/roster-context');},
     readRoster(scope){
       return protectedRead(scopedTarget('/api/roster',scope));

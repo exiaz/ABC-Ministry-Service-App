@@ -20,7 +20,7 @@ async function jsonBody(req,mentorOrigin){
   return {body,raw};
 }
 
-export async function attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send}){
+export async function attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send,personal}){
   const base=url.pathname==='/api/attendance',finalize=url.pathname==='/api/attendance/finalize',correct=url.pathname==='/api/attendance/corrections';
   if(!base&&!finalize&&!correct)return false;
   const methods=base?['GET','PUT']:['POST'];
@@ -32,6 +32,6 @@ export async function attendanceRoute({req,url,authorization,local,pairing,atten
   const proof=await pairing.verifyRequest(authorization,requestProof(req,raw));
   const validParameters=[...url.searchParams.keys()].every(k=>SCOPE_KEYS.includes(k))&&SCOPE_KEYS.every(k=>url.searchParams.getAll(k).length===1);
   const scope=validParameters?Object.fromEntries(SCOPE_KEYS.map(k=>[k,url.searchParams.get(k)])):null;
-  const result=await attendance.executeAuthorized({authorization,proof,scope,action,body});
+  const result=await attendance.executeAuthorized({authorization,proof,scope,action,body,personal});
   send(200,result);return true;
 }

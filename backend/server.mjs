@@ -14,6 +14,7 @@ import {AttendanceError} from './attendance.mjs';
 import {AdminSessionError,createAdminSessionRoutes} from './admin-session-http.mjs';
 import {accountRoute} from './admin-accounts-http.mjs';
 import {msaRoute} from './msa-http.mjs';
+import {msaMentorRoute,mentorSessionHeader} from './msa-mentor-http.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
@@ -31,10 +32,11 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       const authCount=req.rawHeaders.filter((_,i)=>i%2===0&&req.rawHeaders[i].toLowerCase()==='authorization').length;
       const authorization=authCount===1?req.headers.authorization:undefined;
       const local=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
-      const cors=mentorCors(req,url,mentorOrigin);
+      const cors=mentorCors(req,url,mentorOrigin,!!adminAuthentication?.a1?.mentor);
       if(cors?.denied||cors&&!local){send(403,{error:'Origin mentor tidak diizinkan.'});return;}
       if(cors){corsHeaders=cors.headers;if(req.method==='OPTIONS'){send(204,{});return;}}
       if(await msaRoute({req,url,authorization,local,adminAuthentication,send}))return;
+      if(await msaMentorRoute({req,url,authorization,local,adminAuthentication,pairing,mentorOrigin,send}))return;
       // Every administrative operation must remain inside this guarded branch.
       // Unknown routes/methods never dispatch an administrative action.
       if(url.pathname==='/api/admin'||url.pathname.startsWith('/api/admin/')){
@@ -57,13 +59,16 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
         if(!local){send(503,{error:'Pairing emulator lokal tidak tersedia.'});return;}
         await redeemPairingRoute({req,url,pairing,send,mentorOrigin});return;
       }
-      if(await attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send}))return;
+      const personalHeader=mentorSessionHeader(req);
+      if(personalHeader&&!adminAuthentication?.a1?.mentor)throw new AttendanceError(401,'Sesi akun Mentor tidak tersedia.');
+      const personal=personalHeader?await adminAuthentication.a1.mentor.resolve(personalHeader):undefined;
+      if(await attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send,personal}))return;
       const deviceStatus=url.pathname==='/api/device/status';
       const rosterContext=url.pathname==='/api/roster-context';
       if(url.pathname!=='/api/roster'&&!deviceStatus&&!rosterContext){send(404,{error:'Tidak ditemukan.'});return;}
       if(req.method!=='GET'){send(405,{error:'Metode tidak diizinkan.'},{Allow:'GET'});return;}
       const proof=local&&pairing?await pairing.verifyRequest(authorization,requestProof(req)):null;
-      const requestCredentials={authenticate:header=>credentials.authenticate(header,proof)};
+      const requestCredentials={authenticate:header=>credentials.authenticate(header,proof,undefined,personal)};
       if(deviceStatus){
         const principal=await requestCredentials.authenticate(authorization);
         const status=principal&&pairing?await pairing.status(authorization,proof):null;
@@ -103,8 +108,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const port=Number(process.env.ABC_ROSTER_PORT||4175);
   let adapters,adminAuthentication,server,lifecycle;
   try{
-    adminAuthentication=await createConfiguredAdminAuthentication();
     adapters=await createConfiguredRepositories();
+    adminAuthentication=await createConfiguredAdminAuthentication(adapters);
     server=createRosterServer({...adapters,adminAuthentication,mentorOrigin:process.env.ABC_MENTOR_ORIGIN});
     const stop=async()=>{await new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();});await adminAuthentication?.close();await adapters.close();await lifecycle?.close();process.exit(0);};
     process.once('SIGINT',stop);process.once('SIGTERM',stop);

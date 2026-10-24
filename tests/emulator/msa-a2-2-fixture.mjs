@@ -3,9 +3,9 @@ import {msaFixture} from './msa-a1-fixture.mjs';
 import {fictionalRosterData,scope} from '../fixtures/roster.mjs';
 export {scope};
 export const proof={method:'in-person',reference:'Pemeriksaan langsung fiktif oleh penanggung jawab',confirmed:true};
-export async function registrationFixture(t){
+export async function registrationFixture(t,{source=fictionalRosterData()}={}){
   const previous=process.env.ABC_MSA_A2_2;process.env.ABC_MSA_A2_2='1';
-  const f=await msaFixture(t,{source:fictionalRosterData(),usernamePilot:true});
+  const f=await msaFixture(t,{source,usernamePilot:true});
   t.after(()=>{if(previous===undefined)delete process.env.ABC_MSA_A2_2;else process.env.ABC_MSA_A2_2=previous;});
   const value=()=>({requestId:randomUUID(),fullName:'Relawan Fiktif',phone:'081234567890',username:'reg-'+randomUUID().slice(0,8),password:randomBytes(24).toString('base64url')});
   const register=async(v=value())=>{

@@ -7,6 +7,7 @@ import {effectiveMentor,defaultMentorAt} from '../assignments.js';
 import {createBackupAssignments} from './backup-assignments.mjs';
 import {createEmulatorDevicePairing,sameActivationAssignment} from './device-pairing.mjs';
 import {createEmulatorAttendance} from './attendance.mjs';
+import {createMsaMentorDevices} from './msa-mentor-devices.mjs';
 
 const digest=token=>createHash('sha256').update(token).digest('hex');
 const tokenValid=token=>typeof token==='string'&&/^[A-Za-z0-9_-]{43}$/.test(token);
@@ -82,7 +83,7 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
         return true;
       });
     },
-    async authenticate(authorization,requestProof,transaction){
+    async authenticate(authorization,requestProof,transaction,personal){
       // Internal transaction context lets attendance share these exact checks
       // and conflict atomically with credential/device revocation.
       const read=ref=>transaction?transaction.get(ref):ref.get();
@@ -97,9 +98,10 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       if(device.kind==='activation-v1'){
         if(entry.grants.length!==1||!sameActivationAssignment(device.assignment,await repository.describe(entry.grants[0],{transaction,mentorIdentity:true}))||device.expiresAt!==entry.expiresAt)return null;
       }
+      const accountBinding=await mentorAccounts.check({transaction,device,entry,credentialId:snapshot.id,personal});if(!accountBinding)return null;
       const backupGrants=await backups.resolve(device,{...entry,credentialId:snapshot.id},transaction);
       if(entry.expiresAt<=now())return null;
-      return {expiresAt:entry.expiresAt,grants:[...copyGrants(entry.grants),...copyGrants(backupGrants)],...(backupGrants.length?{backupGrants}:{})};
+      return {expiresAt:entry.expiresAt,grants:[...copyGrants(entry.grants),...copyGrants(backupGrants)],...(backupGrants.length?{backupGrants}:{}),...(accountBinding!==true?{personalIdentity:accountBinding}:{})};
     }
   };
 
@@ -163,8 +165,9 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
     }
   };
   // db/root are trusted test-fixture hooks only; never exposed by the API.
-  const backups=createBackupAssignments({db,root,repository,now,config});
+  const backups=createBackupAssignments({db,root,repository,now,config,linkedDeviceEligible:(...args)=>mentorAccounts.eligible(...args)});
+  const mentorAccounts=createMsaMentorDevices({db,root,config,repository,credentials,now});
   const pairing={...createEmulatorDevicePairing({db,root,config,repository,now,prepareCredential,stageCredential,stageDeviceRevoke}),listBackups:backups.listBackups,saveBackup:backups.saveBackup,closeBackup:backups.closeBackup};
   const attendance=createEmulatorAttendance({db,root,credentials,now});
-  return {credentials,repository,deviceAuthorization,pairing,attendance,close,db,root,config};
+  return {credentials,repository,deviceAuthorization,pairing,attendance,mentorAccounts,close,db,root,config};
 }
