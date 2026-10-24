@@ -14,3 +14,9 @@ test('A1 phone normalization never marks supplied contact verified',()=>{
   for(const number of ['81234567890','+62081234567890','+19876543210','0812abc','081234567890 ext1','+62812','+628'+'1'.repeat(13)])assert.throws(()=>normalizePhone(number));
   assert.equal(normalizePhone(''),null);
 });
+
+test('A1 rejects non-ASCII characters before Unicode lowercase can turn Kelvin sign into ASCII k',()=>{
+  assert.throws(()=>normalizeUsername('\u212Aak.Fiktif'),e=>e.status===400);
+  assert.throws(()=>normalizeUsername('ka\u212A.fiktif'),e=>e.status===400);
+  assert.deepEqual(normalizeUsername(' KAK.Fiktif '),{display:'KAK.Fiktif',canonical:'kak.fiktif'});
+});

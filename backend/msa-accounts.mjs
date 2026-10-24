@@ -10,7 +10,7 @@ const reserved=new Set(['admin','administrator','superadmin','root','system','su
 export function normalizeUsername(value){
   if(typeof value!=='string')fail(400,'Username tidak valid.');
   const display=value.trim(),canonical=display.toLowerCase();
-  if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(canonical)||reserved.has(canonical))fail(400,'Username harus 3–32 karakter huruf ASCII, angka, titik, garis bawah atau tanda hubung; nama sistem dicadangkan.');
+  if(!/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/.test(display)||reserved.has(canonical))fail(400,'Username harus 3–32 karakter huruf ASCII, angka, titik, garis bawah atau tanda hubung; nama sistem dicadangkan.');
   return {display,canonical};
 }
 export function normalizePhone(value){

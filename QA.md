@@ -1,5 +1,21 @@
 # Pemeriksaan prototipe
 
+## Stage 7 — Regresi penuh, keamanan dan dokumentasi · 24 Oktober 2026
+
+Lingkup terkini mencakup Stage 1–6, AUTH A1 dan AUTH A2.1 pada data fiktif/emulator. Perintah yang digunakan tetap `npm.cmd run check`, `npm.cmd test` dan `npm.cmd run test:stage6`; nama script terakhir dipertahankan karena runner tersebut sudah memuat seluruh suite A1/A2.1, browser, offline dan cold recovery. Tidak menambahkan fitur atau runner baru. Hasil eksekusi, temuan dengan severity, bukti kegagalan/perbaikan dan verdict AUTH A2.2 ada pada revisi Stage 7 di [PROJECT_STATUS.md](PROJECT_STATUS.md). Angka Stage 6 dan bagian berikut merupakan riwayat, bukan hasil terkini.
+
+- Runner lengkap membuat Auth/Firestore Emulator dengan lima port loopback, namespace `test-*` untuk fixture akun, dan direktori TEMP/screenshot terpisah. Tidak mengimpor snapshot operasional. Emulator dan server milik tes ditutup setelah pengujian; instance manual tidak diambil alih.
+- Autentikasi/otorisasi: login email pemilik/PIC, broker username A1, collision canonical/race dan UID binding, role/scope/status/revocation server, last-Superadmin, pilot `momor1n` fiktif tanpa migrasi operasional dan tanpa privilege dari nama. Raw ID token, flag browser/localStorage dan request lintas scope tidak menjadi otoritas.
+- Mentor/absensi: kode single-use 48 jam, proof/nonce/replay, default/override efektif, batas satu jam/akhir tanggal WIB, backup multi-kelompok/revoke, write/finalize/correct, idempotensi/konkurensi, snapshot/history dan filter data privat.
+- UI: MSA pada judul/header, logo asli dan nama program Goes to School; Chrome 360/390/768/1365 px, form PIC, navigasi/login lama, field pilot yang terhubung backend, focus/label/dialog dan tanpa overflow sesuai assertion suite. Ini bukan audit aksesibilitas formal atau bukti perangkat fisik.
+- Operasi: prasyarat gagal, startup/shutdown, IPC/lifecycle, checksum/snapshot/recovery dan gagal export, konfigurasi proyek demo/loopback serta penolakan cloud credentials. Tes no-cloud menginstrumentasi koneksi repository/SDK; bukan pemantauan jaringan seluruh komputer.
+
+Temuan terkonfirmasi Stage 7: validasi ASCII username sebelumnya dilakukan setelah Unicode lowercase, sehingga Kelvin sign `K` berubah menjadi `k` dan lolos. Tes regresi unit direproduksi gagal, kemudian validator diperbaiki untuk memeriksa karakter input yang sudah di-trim sebelum canonical dipakai. Tes unit dan login emulator memastikan karakter itu ditolak; tidak mengubah UID, registry, password atau default login. Tidak ada bukti bypass password atau takeover dari temuan ini.
+
+Pengujian Windows menggunakan runtime launcher dan proses emulator/server nyata dengan callback readiness terkontrol. Double-click Explorer, jendela prompt manusia/default browser, pemasangan PWA native, Android fisik, Safari/Firefox, pembaca layar lengkap dan credential/provider produksi tidak diverifikasi. Jangan menguji operasi tersebut dengan data anak nyata atau mengubah jam sistem.
+
+Stage 7 tidak mengizinkan AUTH A2.2. Fondasi yang lulus hanya mendukung fase berikutnya yang disetujui secara terpisah. Registrasi publik, verifikasi identitas/duplikat manusia, reviewer berscope, pengaitan akun-perangkat, suspension lintas legacy device, recovery dan cutover tetap gate migrasi; gunakan [kontrak akun](MSA_ACCOUNT_ARCHITECTURE.md) dan hasil kesiapan di PROJECT_STATUS.md.
+
 ## Stage 6 — Backup sementara · 24 Oktober 2026
 
 Jalankan `npm.cmd run test:stage6` atau **Test ABC Attendance.cmd**. Emulator Auth/Firestore, port, namespace dan screenshot terpisah dari data operasional. Gunakan hanya siswa fiktif. Hasil aktual dan lokasi log ada di [PROJECT_STATUS.md](PROJECT_STATUS.md).

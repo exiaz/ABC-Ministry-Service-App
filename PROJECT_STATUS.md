@@ -1,6 +1,69 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · AUTH A2.1 branding MSA dan pilot username terverifikasi · Stage 1–6/A1 tetap berlaku · lokal/emulator**
+**24 Oktober 2026 · Stage 7 terverifikasi · Stage 1–6, AUTH A1/A2.1 tetap berlaku · lokal/emulator**
+
+## Stage 7 — Regresi penuh, keamanan dan dokumentasi
+
+**PASS dalam lingkup fiktif/lokal/emulator yang diuji, setelah satu perbaikan validator username.** Seluruh suite selesai dengan exit 0 dan emulator milik tes ditutup. Tidak ada fitur baru, AUTH A2.2, perubahan default login, enrollment akun nyata, migrasi identitas/perangkat atau perubahan Firebase produksi. Angka pada bagian A2.1/riwayat di bawah adalah bukti fase sebelumnya, bukan hasil Stage 7.
+
+### Hasil per area
+
+| Area | Verdict Stage 7 dan bukti |
+|---|---|
+| Autentikasi/otorisasi | PASS: email Superadmin/PIC, username A1 di balik flag emulator, collision/race canonical, pengikatan UID A2.1, role/scopes/status/revocation server, stale session, penolakan eskalasi dan last-Superadmin. UID/izin legacy tetap; `momor1n` hanya fixture, registry/akun operasional tidak diperiksa atau diikat. |
+| Mentor/absensi/integritas | PASS: aktivasi single-use/proof/nonce, default/override efektif, batas akses, Stage 6 backup/revoke dan multi-kelompok, roster scoped, save/finalize/correct, history append-only, idempotensi/konkurensi/409 dan isolasi ID. Tes menolak request tak sah dan menyaring profil privat siswa; tidak memakai data anak nyata. |
+| Branding/UI | PASS pada Chrome yang diuji: MINISTRY SERVICE APP, logo ABC asli identik byte, Goes to School tetap program, PIC UI dan pilot/backend berfungsi, desktop/mobile 360/390/768/1365 px tanpa overflow sesuai assertions. Label/helper/focus/dialog dan target input tercakup suite; bukan audit aksesibilitas formal. |
+| Operasi lokal | PASS otomatis: runtime launcher Windows/IPC, prasyarat/startup gagal, graceful stop, server manual tidak dihentikan, snapshot/checksum/persistence/recovery dan kegagalan export. Emulator/namespace/port/TEMP tes terpisah, konfigurasi demo/loopback menolak cloud credential/project lain, flag default tetap mati. Double-click Explorer/prompt manusia/default browser tidak diuji secara manual. |
+| Keamanan fondasi | PASS untuk kontrol aktif yang diuji setelah perbaikan S7-01. Tidak direproduksi bypass password, eskalasi PIC/Admin, raw-token admission atau akses siswa tanpa scope. Ini bukan pembuktian bahwa semua kerentanan tidak ada, pentest produksi, atau izin onboarding/migrasi. Gate arsitektur migrasi di bawah tetap belum selesai. |
+
+### Perintah dan hasil aktual
+
+| Eksekusi | Hasil |
+|---|---|
+| `npm.cmd run check` awal dan sesudah perbaikan | PASS, 145 modul JS/MJS: sintaks/impor lokal |
+| `npm.cmd test` awal | PASS, 168/168; suite awal belum mencakup kasus Kelvin sign |
+| `node --test tests/msa-accounts.test.mjs` dengan tes regresi baru, sebelum fix | FAIL yang disengaja untuk reproduksi: 2 PASS / 1 FAIL, `Missing expected exception` pada Unicode `\u212A` |
+| Perintah unit terarah yang sama setelah fix | PASS, 3/3 |
+| `npm.cmd test` akhir setelah fix | PASS, 169/169 |
+| `npm.cmd run test:stage6` (runner penuh yang sudah mencakup A1/A2.1) | PASS/exit 0: unit 168/168 pada awal run; integrasi Auth/Firestore 96/96, Chrome 24/24, kalender demo/laporan/offline PASS dan cold recovery/startup-shutdown 2/2. Tes A1 emulator beserta assertion Unicode baru serta browser dijalankan sesudah fix. Unit akhir 169/169 berasal dari perintah terpisah di atas, bukan mengubah angka log runner. |
+
+Tidak ada suite tambahan yang diklaim dijalankan. Proyek tetap buildless; build, TypeScript compiler dan lint terpisah tidak dikonfigurasi (N/A). Perubahan runtime hanya validator satu baris dan dua berkas tes terkait. Tidak ada dependency/lockfile/rules/kontrak perangkat atau backend absensi/backup yang diubah.
+
+### Temuan dan risiko dengan severity
+
+Severity gate migrasi menilai dampak **bila fitur operasional kelak dibuka**. Gate yang belum diimplementasikan tidak otomatis menjadi kerentanan pada fitur aktif sekarang.
+
+| ID / severity | Klasifikasi, bukti dan penanganan |
+|---|---|
+| S7-01 · Rendah · DIPERBAIKI | Ketidaksesuaian kebijakan yang terbukti: `normalizeUsername('\u212Aak.Fiktif')` sebelumnya menghasilkan display non-ASCII dan canonical `kak.fiktif` karena validasi dilakukan pada hasil lowercase. Registry tetap unik dan password tetap wajib; tidak ada bukti takeover atau bypass otorisasi. Validator kini memeriksa karakter **display yang di-trim** memakai allowlist ASCII huruf besar/kecil sebelum canonical digunakan. Unit sebelum fix gagal, sesudah fix 3/3; login emulator dengan karakter itu dan password benar tetap ditolak 401. Tidak me-rename atau menulis ulang registry/UID lama. Sumber: `backend/msa-accounts.mjs:13`, `tests/msa-accounts.test.mjs:18`, `tests/emulator/msa-a1.test.mjs:13`. |
+| MIG-01 · Tinggi · GATE, belum ada exploit aktif yang direproduksi | Suspension akun A1 belum terhubung ke device legacy. `credentials.authenticate` memeriksa credential/device/expiry/proof dan backup, bukan akun personal; backup memeriksa kebijakan penerbit legacy. Saat ini tidak ada linking akun-perangkat dan sesi personal A1 tidak diterima API absensi, sehingga tidak mengklaim suspension global sudah tersedia. Sebelum cutover: asosiasi akun-device terverifikasi, pemeriksaan state/epoch dalam transaksi roster/attendance/backup/receipt dan uji race suspend/revoke/write wajib; jangan menambah fallback legacy. Sumber: `backend/firestore-emulator.mjs:85`, `backend/attendance.mjs:49`, `backend/backup-assignments.mjs:51`. |
+| MIG-02 · Tinggi · GATE desain identitas | Username unik tidak menjamin satu manusia satu akun. Nama/nomor supplied/kode perangkat tidak boleh menjadi bukti ownership Mentor. Public registration, reviewer/approval berscope, duplicate-person reconciliation dan unique identity claim belum tersedia; helper provisioning/claim saat ini trusted/fiktif, bukan endpoint publik. Sebelum linking operasional perlu bukti independen, matriks reviewer/delegasi, transaksi satu pemenang untuk link UID–mentor dan denial lintas scope/self-approval. Tidak mengimplementasikan A2.2 dalam Stage 7. |
+| MIG-03 · Tinggi · GATE recovery/cutover | Alias internal `.invalid` tidak menjadi kanal reset email; phone supplied tidak verified. Recovery personal/step-up, penanganan nomor daur ulang/akun ganda, epoch/revocation serta rollback/cutover belum tersedia. Reset pemilik demo lokal yang lulus tes bukan recovery relawan. Jangan membuka onboarding luas sebelum kanal/verifier dan pencabutan sesi/device sesudah recovery disetujui/diuji. Tidak ada takeover recovery yang direproduksi karena jalur personal tersebut belum dibuka. |
+| MIG-04 · Sedang · batas implementasi terkonfirmasi | Auth dan Firestore bukan transaksi bersama. Provisioning gagal mempertahankan reserved/failed dan ditolak (PASS fixture failure), tetapi rekonsiliasi/resume operasional belum ada. Pendaftaran umum kelak memerlukan state machine, idempotensi, retry/outbox/reconciliation serta kebijakan duplikat; jangan menganggap helper fixture sebagai registrar siap publik. Sumber: `backend/msa-accounts.mjs:60`. |
+| OPS-01 · Sedang · risiko operasional bersyarat | Restore snapshot lama dapat membawa state izin lama. Checksum membuktikan integritas berkas, bukan bahwa revokasi bisnis masih terbaru. Restore/export trusted perlu peninjauan/revokasi ulang dan salinan tenang ketika server manual menulis; tidak direproduksi sebagai serangan lewat API. Tidak memulihkan snapshot operasional pada pekerjaan ini. |
+
+Hardening yang belum diuji untuk produksi: HTTPS/provider bertanda tangan di lingkungan nyata, MFA/step-up, mitigasi timing/DoS dan retensi limiter (A1 memakai budget canonical/global), audit skala besar/pagination, serta ancaman script same-origin terhadap key/perangkat. Tidak menemukan bukti kebocoran password/alias baru pada jalur yang diuji; tidak menjalankan audit CVE dependensi, packet capture seluruh host, atau mengklaim bebas kerentanan/XSS. Mode emulator unsigned/SDK trusted dan loopback tidak menjadi keamanan produksi terhadap proses lokal bermusuhan.
+
+### Boundary keamanan yang ditinjau
+
+- Registry/role: `msa-http` menerapkan host/origin/body/method dan identitas server; `msa-accounts` memeriksa manager, identity/eligibility/state/provider, scope, revision, receipt dan last-Superadmin di transaksi. Rules browser deny-all tetap. Klaim role browser/localStorage/Firebase custom claim tidak menjadi izin aplikasi.
+- Sesi: admission per-login email lama dan opaque A1 terpisah, verifikasi provider/revocation serta revision/state dibaca ulang. Pilot A2.1 legacy hanya menunjuk UID yang dibuktikan oleh sesi email asli + reautentikasi; subtype personal A1 tetap ditolak API Admin lama. Link/revision/flag nonaktif menolak sesi pilot berikutnya. Alias/refresh token tidak dikirim oleh broker ke UI, password tidak disimpan aplikasi; sesi berada di closure, device key non-exportable dan bearer terenkripsi di IndexedDB sesuai kontraknya.
+- Mentor/absensi: proof mengikat method/target/token/body/timestamp/nonce; scope server menjaga relasi sekolah/sesi/kelompok. Device, credential dan grant backup dibaca dalam transaksi absensi; revision/session lock/receipt/history mencegah overwrite dan duplikasi. Proyeksi roster/attendance mengizinkan hanya field yang dibutuhkan; private profile tidak dikirim.
+- Operasi: project `demo-abc-attendance`, host loopback eksplisit, larangan cloud credentials/project produksi dan tanpa fallback cloud. Tes no-cloud menginstrumentasi koneksi repository/SDK dan menolak metadata lookup; hasil tidak digeneralisasi sebagai pemantauan semua proses host. Snapshot diverifikasi struktur/checksum/path tanpa mengambil alih server/emulator manual.
+
+### Kesiapan AUTH A2.2
+
+**CONDITIONAL GO untuk pengembangan A2.2 yang dibatasi pada emulator/data fiktif dengan lingkup baru yang disetujui. NO-GO untuk aktivasi registrasi publik, identity linking operasional atau produksi.** Fondasi Stage 1–6/A1/A2.1 lulus dan tidak ada blocker regresi yang tersisa dari cakupan tes. Sebelum implementasi A2.2, tetapkan kontrak bukti identitas, reviewer/delegasi berscope, penanganan duplikat UID/orang, permission pending/verified dan acceptance test race/link/self-approval. Sebelum onboarding/cutover, selesaikan MIG-01–04, recovery/suspension dan rencana rollback sesuai kontrak akun. Stage 7 tidak memberi izin menjalankan fase berikutnya.
+
+### Bukti, perubahan dan batas verifikasi
+
+Bukti diabaikan Git: `.emulator-data/stage7-qa/{check,unit,check-final,unit-final,username-before-fix,username-after-fix,regression}.log`; run penuh `.emulator-data/stage3-tests/run-jesF4b/` beserta config/emulator log/screenshot fiktif. Screenshot username 360 px, PIC edit mobile, dan dashboard pemilik 1365 px ditinjau visual; assertions suite juga memeriksa 360/390/768/1365 px, label/helper/focus/input/dialog serta tanpa overflow. Kode/fixture yang diubah diverifikasi tanpa mengubah data/asset program; logo asli dibandingkan byte terhadap HEAD. Tidak membaca akun/registry/snapshot operasional untuk mengikat `momor1n`.
+
+Batas: Chrome headless/viewport, bukan Android fisik/Safari/Firefox, instalasi PWA native atau pembaca layar formal. Runtime launcher dan proses nyata diuji otomatis; double-click Explorer, prompt manusia serta pembukaan aplikasi browser default belum diverifikasi langsung. Dataset, credential dan snapshot khusus tes saja; tidak ada pengujian produksi atau data anak nyata. Gate migrasi tetap dijelaskan dalam MSA_ACCOUNT_ARCHITECTURE.md.
+
+Berkas Stage 7 (6): `backend/msa-accounts.mjs`, `tests/msa-accounts.test.mjs`, `tests/emulator/msa-a1.test.mjs`, `PROJECT_STATUS.md`, `QA.md`, `MSA_PRODUCT_VISION.md`. QA diperbarui agar perintah/cakupan terkini tidak bercampur dengan angka historis; visi hanya membetulkan status Stage 7 yang sebelumnya tertulis belum dimulai. MASTER_BRIEF/kontrak akun tidak diubah karena persyaratannya tetap.
+
+HEAD awal/akhir tetap `b893c14aae1afa6405624123d34484a5aa9a3241`, branch `development`; working tree awal bersih. Tidak mengubah branch, commit, push, deploy, billing, dependensi, login default, UID/permission/data/riwayat nyata. Untracked di luar pekerjaan ini tidak disentuh; `ABC-MSA-Audit/` tidak ditemukan dan tidak dibuat/dihapus/disunting. Berhenti sesudah Stage 7, tanpa AUTH A2.2 atau migrasi produksi.
 
 ## AUTH A2.1 — Branding MSA dan integrasi username aman
 

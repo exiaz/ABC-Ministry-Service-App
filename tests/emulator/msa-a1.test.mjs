@@ -10,6 +10,7 @@ import {once} from 'node:events';
 test('A1 isolated username login, private registry, concurrent uniqueness and partial Auth setup fail closed',async t=>{
   const f=await msaFixture(t),user=await f.enroll({username:'Kak.Fiktif'});
   const login=await f.signIn({...user,username:' kak.FIKTIF '});assert.equal(login.response.status,200);assert.match(login.token,/^[A-Za-z0-9_-]{43}$/);
+  assert.equal((await f.signIn({...user,username:'\u212Aak.Fiktif'})).response.status,401);
   const session=await f.request('/api/a1/session',undefined,login.token);assert.equal(session.status,200);const profile=await session.json();assert.equal(profile.uid,user.uid);assert.equal(profile.phoneState,'supplied');
   assert.equal(JSON.stringify(profile).includes('@msa.example.invalid'),false);
   assert.equal((await f.request('/api/admin/session',undefined,login.token)).status,401);
