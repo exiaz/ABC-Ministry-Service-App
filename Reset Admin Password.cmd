@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Pulihkan Password Admin ABC Attendance
+title Pulihkan Password Admin ABC MSA
 where node >nul 2>nul
 if errorlevel 1 (
   echo Node.js belum ditemukan. Minta operator menyiapkan runtime proyek ini.

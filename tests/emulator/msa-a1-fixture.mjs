@@ -5,10 +5,11 @@ import {initializeOwner} from '../../backend/admin-accounts.mjs';
 import {initializeApp,deleteApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 
-export async function msaFixture(t){
-  const previous={flag:process.env.ABC_MSA_A1,namespace:process.env.ABC_FIRESTORE_NAMESPACE};
-  const c=await emulatorFixture();process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;process.env.ABC_MSA_A1='1';
-  const f=await adminLoginFixture(t),created=[];
+export async function msaFixture(t,{usernamePilot=false,source}={}){
+  const previous={flag:process.env.ABC_MSA_A1,pilot:process.env.ABC_MSA_USERNAME_PILOT,namespace:process.env.ABC_FIRESTORE_NAMESPACE};
+  const c=await emulatorFixture({source});process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;process.env.ABC_MSA_A1='1';
+  if(usernamePilot)process.env.ABC_MSA_USERNAME_PILOT='1';else delete process.env.ABC_MSA_USERNAME_PILOT;
+  const f=await adminLoginFixture(t,{pairing:c.pairing}),created=[];
   await initializeOwner({...c,auth:f.auth,uid:f.uid,email:f.email,confirmed:true});
   for(const organization of [{id:'org-a',name:'Organisasi Fiktif A'},{id:'org-b',name:'Organisasi Fiktif B'}])await c.root.collection('msaOrganizations').doc(organization.id).set({...organization,state:'active',programIds:['program-'+organization.id],events:[{id:'event-'+organization.id,programId:'program-'+organization.id}]});
   const response=await f.login(),{token}=await response.json();
@@ -22,6 +23,6 @@ export async function msaFixture(t){
   };
   const signIn=async user=>{const response=await request('/api/a1/login',{username:user.username,password:user.password},'');return {response,...await response.json()};};
   const change=(uid,options={},session=token)=>request('/api/a1/accounts/'+uid+'/change',{expectedRevision:1,requestId:randomUUID(),reason:'Penugasan fiktif untuk pengujian',role:'pic',scope:{organizationId:'org-a'},status:'active',...options},session);
-  t.after(async()=>{const app=initializeApp({projectId:'demo-abc-attendance'},'msa-cleanup-'+randomUUID());try{if(created.length)await getAuth(app).deleteUsers(created);}finally{await deleteApp(app);await c.close();for(const [key,value] of [['ABC_MSA_A1',previous.flag],['ABC_FIRESTORE_NAMESPACE',previous.namespace]])if(value===undefined)delete process.env[key];else process.env[key]=value;}});
+  t.after(async()=>{const app=initializeApp({projectId:'demo-abc-attendance'},'msa-cleanup-'+randomUUID());try{if(created.length)await getAuth(app).deleteUsers(created);}finally{await deleteApp(app);await c.close();for(const [key,value] of [['ABC_MSA_A1',previous.flag],['ABC_MSA_USERNAME_PILOT',previous.pilot],['ABC_FIRESTORE_NAMESPACE',previous.namespace]])if(value===undefined)delete process.env[key];else process.env[key]=value;}});
   return {...c,...f,token,request,enroll,signIn,change,created};
 }

@@ -49,17 +49,17 @@ export function createAdminClient(onChange,{request=fetch}={}){
     readActivationCodes(){return deviceRequest('/api/admin/activation-codes');},
     revokeDevice(id){return deviceRequest('/api/admin/devices/'+deviceId(id)+'/revoke',{});},
     revokePairingCode(id){if(typeof id!=='string'||!/^[a-f0-9]{64}$/.test(id))throw Error('ID kode tidak valid.');return deviceRequest('/api/admin/pairing-codes/'+id+'/revoke',{});},
-    async login(email,password){
+    async login(email,password,{username=false}={}){
       if(['loading','checking','signing-out'].includes(state.phase)||token||logoutToken)return;
       const g=++generation;token=null;publish({phase:'loading',message:'Memeriksa akun dan izin admin…'});
       try{
-        const response=await call('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+        const response=await call(username?'/api/a1/login':'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(username?{username:email,password}:{email,password})});
         password='';
         if(g!==generation)return;
-        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.':response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start ABC Attendance.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
+        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?(username?'Username atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin.':'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.'):response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start ABC Attendance.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
         const result=await response.json();
         if(g!==generation)return;
-        if(typeof result?.token!=='string'||result.token.length>16384||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?$/.test(result.token))throw Error();
+        if(typeof result?.token!=='string'||result.token.length>16384||!(username?/^[A-Za-z0-9_-]{43}$/:/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?$/).test(result.token))throw Error();
         token=result.token;
         const identity=await session(token,g);
         if(g!==generation||!identity)return;

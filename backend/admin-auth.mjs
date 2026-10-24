@@ -62,7 +62,19 @@ export async function createLocalAdminAuthentication(){
     await auth.listUsers(1);
     assertLocal();
   }catch{closed=true;await db.terminate();await deleteApp(app);throw Error('Auth Emulator lokal tidak tersedia atau konfigurasi tidak valid.');}
-  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
+  const authorizeEmail=async header=>{
+    try{
+      assertLocal();prune();
+      const match=typeof header==='string'&&header.length<=16384&&/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?)$/.exec(header);
+      if(!match)return {kind:'unauthenticated'};
+      const principal=await verify(match[1].split('~')[0]);
+      const policy=await adminPolicy(root,principal.uid);
+      const entry=admitted.get(digest(match[1]));
+      if(!entry||entry.uid!==principal.uid||entry.exp!==principal.exp||entry.revision!==policy.revision)return {kind:'unauthenticated'};
+      return {kind:'ok',...policy};
+    }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
+  };
+  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,emailActor:authorizeEmail,pilotEnabled:process.env.ABC_MSA_USERNAME_PILOT==='1'&&store.namespace.startsWith('test-'),assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
   return {
     a1,
     accounts:createAdminAccounts({db,root,auth}),
@@ -89,18 +101,12 @@ export async function createLocalAdminAuthentication(){
       }
     },
     async authorize(header){
-      try{
-        assertLocal();prune();
-        const match=typeof header==='string'&&header.length<=16384&&/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?)$/.exec(header);
-        if(!match)return {kind:'unauthenticated'};
-        const principal=await verify(match[1].split('~')[0]);
-        const policy=await adminPolicy(root,principal.uid);
-        const entry=admitted.get(digest(match[1]));
-        if(!entry||entry.uid!==principal.uid||entry.exp!==principal.exp||entry.revision!==policy.revision)return {kind:'unauthenticated'};
-        return {kind:'ok',...policy};
-      }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
+      if(a1&&typeof header==='string'&&/^Bearer [A-Za-z0-9_-]{43}$/.test(header)){
+        try{const p=await a1.authorize(header);return p.kind==='legacy-username'?{kind:'ok',...p.policy}:{kind:'unauthenticated'};}catch{return {kind:'unauthenticated'};}
+      }
+      return authorizeEmail(header);
     },
-    revoke(token){return typeof token==='string'&&admitted.delete(digest(token));},
+    revoke(token){return typeof token==='string'&&(admitted.delete(digest(token))||a1?.logout('Bearer '+token)||false);},
     async close(){closed=true;admitted.clear();a1?.close();await db.terminate();await deleteApp(app);}
   };
 }

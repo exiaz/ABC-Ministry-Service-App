@@ -8,6 +8,7 @@ const port=Number(process.env.PORT||4173);
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
 const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
 // Legacy fictional prototype only. The protected roster API runs separately.
+allowed.add('msa-brand.js');
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175'}={}){
   if(mentorMode)localOrigin(apiOrigin);
   const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
@@ -21,5 +22,5 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
   }catch{res.writeHead(500);res.end('Halaman tidak dapat dibuka');}});
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  createPrototypeServer().listen(port,'127.0.0.1',()=>console.log(`ABC Goes to School: http://127.0.0.1:${port}`));
+  createPrototypeServer().listen(port,'127.0.0.1',()=>console.log(`ABC Ministry Service App: http://127.0.0.1:${port}`));
 }

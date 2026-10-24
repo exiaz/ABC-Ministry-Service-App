@@ -1,6 +1,40 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · AUTH A1 terverifikasi terbatas · Stage 1–6 tetap berlaku · lokal/emulator**
+**24 Oktober 2026 · AUTH A2.1 branding MSA dan pilot username terverifikasi · Stage 1–6/A1 tetap berlaku · lokal/emulator**
+
+## AUTH A2.1 — Branding MSA dan integrasi username aman
+
+**IMPLEMENTED dan TESTED; penerimaan A2.1 PASS dalam lingkup fiktif/emulator terisolasi. Login email masih default; A1 dan pilot username tidak diaktifkan global.** Tidak ada enrollment/migrasi akun nyata, perubahan Firebase produksi, linking Mentor, recovery/cutover, Stage 6 refactoring atau modul MSA baru. Stage 7 tetap milestone terpisah. Bagian A1/riwayat di bawah mendokumentasikan fase sebelumnya; kontrak A2.1 memperjelas pengecualian pilot untuk UID legacy.
+
+Perubahan:
+
+- Header aplikasi, page title, login, aktivasi Mentor, A1, manifest PWA serta judul jendela launcher memakai **ABC | Ministry Service App / MINISTRY SERVICE APP**. Modul `msa-brand.js` memakai asset ABC asli tanpa mengubah byte gambar; CSS label/logo tetap responsif. Goes to School pada hero program, laporan/ekspor, data dan riwayat dipertahankan. Manifest `id/start_url/scope`, icon, storage key, project dan seluruh ID tidak diganti; cache aset `abc-school-v14` memuat modul branding untuk offline. Nama file launcher tetap agar petunjuk lama berfungsi; perubahan `.cmd` hanya title.
+- Broker dan private registry A1 digunakan kembali. Helper trusted `legacyPilot.inspect/claim` hanya tersedia dengan `ABC_MSA_A1=1` + `ABC_MSA_USERNAME_PILOT=1` pada namespace `test-*`; bukan endpoint HTTP. Claim memerlukan sesi email Admin/PIC asli yang aktif, expected UID sama, konfirmasi/alasan dan verifikasi ulang password oleh Firebase dengan UID hasil sama. Canonical registry + link UID + audit ditulis atomik, satu username per UID, satu pemilik per canonical, retry idempoten; konflik/rename ditolak.
+- Binding menunjuk UID lama dan tidak membuat akun Auth/personal baru, menyalin role, mengganti password/email, owner marker, actions/scopes, audit lama atau data pelayanan. Subtype sesi opaque legacy terikat memakai `adminPolicy`/revision lama pada setiap request. Sesi personal A1 tetap ditolak API Admin lama; PIC tidak mendapat kemampuan promosi atau scope tambahan. Link/revision/izin/flag tidak aktif menolak sesi pilot berikutnya; logout menutup sesi itu saja.
+- `/` tetap form Email Admin dengan endpoint lama. `/username.html` adalah halaman pilot tersendiri yang dilayani hanya ketika pilot tersedia, menggunakan komponen username/password reusable (`username-login.js`) yang juga dipakai pilihan username A1. Form username memanggil broker sungguhan, lalu memeriksa sesi Admin sebelum menampilkan navigasi. Tidak mengganti label field email; tautan Masuk dengan email tersedia. Token hanya di closure, tidak dipindah melalui URL/storage; email/alias provider tidak ditampilkan pada login/dashboard username. Fingerprint lifecycle membedakan kedua flag.
+
+**Status username `momor1n`:** canonical valid, tersedia sebelum claim pada namespace tes baru, lalu berhasil diikat hanya ke UID Superadmin fixture yang telah ditetapkan owner marker dan diverifikasi ulang. UID, password, owner marker, role, scope dan history fixture tetap. **Registry operasional belum diperiksa dan Superadmin operasional belum diikat.** Tidak menyimpulkan ketersediaan lintas namespace atau memberi hak dari username. Prosedur binding operasional yang aman, belum dijalankan, didokumentasikan pada [kontrak A2.1](MSA_ACCOUNT_ARCHITECTURE.md#auth-a21--branding-dan-pilot-username-uid-lama); kode sengaja menolak namespace non-tes dan tidak boleh dibypass untuk enrollment nyata.
+
+Validasi yang benar-benar dijalankan:
+
+| Perintah/pemeriksaan | Hasil aktual |
+|---|---|
+| `npm.cmd run check` | PASS, 145 modul: sintaks/impor lokal |
+| `npm.cmd test` | PASS, 168/168 pada eksekusi akhir |
+| `npm.cmd run test:msa-a2-1` | PASS/exit 0: unit proyek 168/168; integrasi A1/A2.1 5/5 rangkaian; Chrome A1/A2.1 2/2 |
+| `npm.cmd run test:stage6` | PASS/exit 0: unit 168/168; integrasi 96/96; Chrome 24/24; kalender demo/laporan/offline PASS; cold recovery/startup-shutdown 2/2 |
+| Branding desktop/mobile | Chrome 360/390/768/1365 px pada login email, username pilot, aktivasi Mentor dan demo; title/brand, tanpa overflow, legacy email tetap ada, pilot tanpa field email, navigasi/sesi/PIC scope terverifikasi. Screenshot mobile/desktop ditinjau visual. |
+| Integritas | Logo identik byte dengan HEAD, SHA-256 `b86a4d8f5a17615c324864751e83c38be7bdaa08587eb7fd15edaef23c4f41d0`; source data/program/laporan/assignment, backend absensi/backup, rules dan lockfile tidak berubah. Snapshot 14 koleksi legacy sebelum/sesudah binding fixture identik, Auth UID/email/status/custom claims tetap; password asli sukses melalui broker. |
+
+Tes A2.1 memeriksa `momor1n` availability pada fixture, sesi palsu ditolak, salah password/expected UID/konfirmasi tidak menulis binding, collision dan concurrent claim satu pemenang, retry tidak menggandakan audit, rename/overwrite ditolak, UID owner/PIC dan exact permissions tetap, PIC baca-saja tidak menerbitkan kode/promosi, A1 personal tidak mendapat akses legacy, logout independen, link dicabut dan PIC nonaktif menolak sesi lama, helper tidak dipasang pada route publik, flag mati/non-test namespace menutup halaman pilot. A1 lama tetap menguji last-Superadmin, scope lintas organisasi, stale-session/revocation serta rate limiting. Regresi lengkap menguji pairing/proof, absensi/koreksi/konkurensi, kode/expiry, backup Stage 6, login email Superadmin/PIC/Mentor, offline dan recovery.
+
+Bukti diabaikan Git: `.emulator-data/a2-1-qa/{check,unit,pilot,regression}.log`; pilot pada `.emulator-data/stage3-tests/run-Ss9BD6/`, regresi penuh pada `run-S9Tg4p/`. Screenshot `msa-a2-1-{admin,mentor,demo,username}-{360,390,768,1365}.png` dan `msa-a2-1-owner-{390,1365}.png` di folder screenshots masing-masing run. Emulator tes memakai port/namespace/data fiktif sendiri, tidak mengimpor snapshot operasional, kemudian ditutup. Tidak ada database/account operasional yang dibaca atau dimutasi untuk binding.
+
+Berkas A2.1 (36): `msa-brand.js`, `username-login.js`, `backend/msa-legacy-usernames.mjs`, `backend/msa-auth.mjs`, `backend/admin-auth.mjs`, `admin-client.js`, `admin-server.mjs`, `secure-admin.js`, `msa-users.js`, `a1.html`, `admin.html`, `mentor.html`, `index.html`, `app.js`, `pairing-ui.js`, `server.mjs`, `styles.css`, `manifest.webmanifest`, `sw.js`, `local-service.mjs`, `Start ABC Attendance.cmd`, `Stop ABC Attendance.cmd`, `Reset Admin Password.cmd`, `package.json`, `tests/msa-branding.test.mjs`, `tests/local-service.test.mjs`, `tests/stage3.mjs`, `tests/emulator/msa-a1-fixture.mjs`, `tests/emulator/msa-a2-1-fixture.mjs`, `tests/emulator/msa-a2-1.test.mjs`, `tests/emulator/msa-a2-1-ui.mjs`, `MASTER_BRIEF.md`, `MSA_ACCOUNT_ARCHITECTURE.md`, `MSA_PRODUCT_VISION.md`, `README.md`, `PROJECT_STATUS.md`.
+
+**Batas/PLANNED:** binding/enrollment operasional dan pemeriksaan availability di sana belum dijalankan. Approval/identity linking Mentor, inheritance, recovery/suspension migration, default-login cutover, provider/HTTPS produksi dan modul MSA belum tersedia. Verifikasi browser terbatas Chrome headless/viewport, bukan Android fisik/Safari/Firefox atau pemasangan PWA native. Binding membuktikan kontrol akun lama, bukan identitas Mentor. Mutasi manual provider/registry di luar backend tidak diklaim atomik dengan transaksi domain lama. Proyek tetap buildless; tidak ada build/TypeScript/lint terpisah yang dikonfigurasi.
+
+Berhenti setelah A2.1; tidak mengubah default login. Tidak ada commit, push, deploy, branch change, instalasi/dependency atau billing. HEAD tetap `478e8028080d2b555f68dead87a70950d331361e`, branch `development`; working tree awal bersih, file untracked lain tidak disentuh. `ABC-MSA-Audit/` tidak ditemukan dan tidak dibuat/dihapus/disunting. Detail diff/dokumentasi diperiksa sebelum handoff.
 
 ## AUTH A1 — Username, registry akun dan pengelolaan role
 

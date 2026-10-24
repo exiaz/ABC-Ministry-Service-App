@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title ABC Attendance - Demo Lokal
+title ABC Ministry Service App - Demo Lokal
 echo Menyiapkan demo secara otomatis. Biarkan jendela ini terbuka.
 echo Jika diminta password, ketik meskipun tulisannya tidak terlihat.
 echo Server yang cocok digunakan kembali. Jika ada konflik, ikuti pilihan di jendela ini.

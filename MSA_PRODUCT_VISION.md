@@ -1,8 +1,12 @@
 # ABC | Ministry Service App — visi produk dan rencana arsitektur
 
-**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1 akun fiktif/emulator di balik flag mati secara default sudah IMPLEMENTED.** Kontrak aktual A1 ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
+**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1/A2.1 akun fiktif/emulator di balik flag mati secara default serta branding dasar sudah IMPLEMENTED.** Kontrak aktual A1/A2.1 ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** belum dimulai; kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
+
+## AUTH A2.1 — pembaruan status terbatas
+
+Identitas aplikasi/header/login/PWA **ABC | Ministry Service App** sudah diimplementasikan dengan logo ABC asli; Goes to School tetap nama program. Pilot pengikatan username ke UID Admin/PIC lama tersedia hanya pada namespace tes `test-*`, melalui helper trusted dan reautentikasi, dengan flag A1 + pilot eksplisit. Login email tetap default; akun/registry operasional tidak diikat atau diperiksa. Kontrak dan prosedur binding nyata yang belum dijalankan ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a21--branding-dan-pilot-username-uid-lama); bukti aktual di PROJECT_STATUS.md. Bagian visi merek di bawah kini merujuk rencana UX/modul lanjutan, bukan menyatakan branding dasar masih belum tersedia. Modul pelayanan, registrasi umum, linking Mentor, recovery, cutover dan Stage 7 tetap belum diimplementasikan.
 
 ## 1. Kondisi yang diperiksa
 

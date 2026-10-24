@@ -17,6 +17,8 @@ assets.set('/admin-calendar.js','admin-calendar.js');
 assets.set('/admin-backup.js','admin-backup.js');
 assets.set('/a1.html','a1.html');
 assets.set('/msa-users.js','msa-users.js');
+assets.set('/msa-brand.js','msa-brand.js');
+assets.set('/username-login.js','username-login.js');
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
 apiPaths.add('/api/admin/backup-assignments');
 // Same-origin admin shell + existing protected API handler/context. No CORS,
@@ -28,15 +30,18 @@ export function createAdminServer({adminAuthentication,pairing}){
     try{
       requireAdminOrigin(req);
       const url=new URL(req.url,'http://127.0.0.1');
+      const usernamePilot=url.pathname==='/username.html';
+      if(usernamePilot&&(!adminAuthentication?.a1?.legacyPilot||url.search||!['GET','HEAD'].includes(req.method))){send(404,'Tidak ditemukan.');return;}
       if(url.pathname.startsWith('/api/a1/')){api.emit('request',req,res);return;}
       if(['/a1.html','/msa-users.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
       }
       if(apiPaths.has(url.pathname)||/^\/api\/admin\/backup-assignments\/[a-f0-9]{64}\/close$/.test(url.pathname)||/^\/api\/admin\/accounts(?:\/[A-Za-z0-9_-]{1,128})?$/.test(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
       if(!['GET','HEAD'].includes(req.method)){send(405,'Metode tidak diizinkan.');return;}
-      const file=assets.get(url.pathname);
+      const file=usernamePilot?'admin.html':assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}
-      const content=await readFile(path.join(root,file));
+      let content=await readFile(path.join(root,file));
+      if(usernamePilot)content=content.toString('utf8').replace('data-admin-mode="authenticated-local"','data-admin-mode="authenticated-local" data-username-pilot="true"');
       const type=file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.png')?'image/png':'image/svg+xml';
       res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-ABC-Mode':'authenticated-admin-emulator','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"});
       res.end(req.method==='HEAD'?undefined:content);

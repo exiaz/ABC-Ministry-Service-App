@@ -1,4 +1,12 @@
-# ABC Goes to School — Prototipe lokal
+# ABC | Ministry Service App — Prototipe lokal
+
+## AUTH A2.1 — branding dan pilot username
+
+Identitas aplikasi kini Ministry Service App; Goes to School tetap nama program. Logo ABC dan data/ID program tetap. Login email Admin/PIC serta kode aktivasi Mentor di bawah tetap berlaku. Pembaruan cache aset mengganti branding offline tanpa mengganti identitas instalasi PWA atau storage key data.
+
+Jalankan `npm.cmd run test:msa-a2-1` untuk pilot terisolasi: runner memakai port/namespace `test-*` dan akun fiktif sementara, memeriksa pengikatan UID lama, login username berscope, A1 dan tampilan desktop/mobile. `npm.cmd run test:stage6` menjalankan regresi lengkap, termasuk absensi dan backup. Tidak memakai snapshot operasional.
+
+Pilot memerlukan **kedua** flag server `ABC_MSA_A1=1` dan `ABC_MSA_USERNAME_PILOT=1` serta namespace `test-*`. `/username.html` hanya tersedia di lingkungan tersebut dan tetap menyediakan **Masuk dengan email**; `/` tetap login email. Tidak ada form/endpoint untuk mengklaim username. Helper pengikatan hanya trusted dan memerlukan UID sesi sendiri, konfirmasi serta password ulang. `momor1n` hanya diuji pada Superadmin fiktif; akun dan registry operasional tidak diperiksa atau diubah. Jangan memakai fixture untuk mengikat akun nyata. Prosedur aman yang masih direncanakan ada di [kontrak A2.1](MSA_ACCOUNT_ARCHITECTURE.md#auth-a21--branding-dan-pilot-username-uid-lama); pengikatan nyata memerlukan lingkup tersendiri. Username belum menjadi login default.
 
 ## AUTH A1 — uji akun username terisolasi
 

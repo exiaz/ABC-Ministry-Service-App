@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Hentikan ABC Attendance
+title Hentikan ABC Ministry Service App
 echo Menunggu demo menyimpan data dan berhenti. Jangan tutup paksa.
 echo Hanya layanan milik peluncur yang dihentikan. Layanan manual tetap hidup.
 where node >nul 2>nul

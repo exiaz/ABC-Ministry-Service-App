@@ -20,7 +20,7 @@ async function fixture(t,{role='api',env=demoEnvironment({}),healthy=true}={}){
 test('Exact emulator config, allowlist, origins and source signature are required for reuse',async t=>{
   const f=await fixture(t);
   const inspected=await inspectLocalService(f.port,'api',{env:f.env});assert.equal(inspected.kind,'compatible');
-  for(const key of ['ABC_FIRESTORE_NAMESPACE','ABC_ADMIN_UIDS','FIREBASE_AUTH_EMULATOR_HOST','ABC_MENTOR_ORIGIN','ABC_API_ORIGIN','ABC_ADMIN_AUTH_MODE','ABC_MSA_A1']){
+  for(const key of ['ABC_FIRESTORE_NAMESPACE','ABC_ADMIN_UIDS','FIREBASE_AUTH_EMULATOR_HOST','ABC_MENTOR_ORIGIN','ABC_API_ORIGIN','ABC_ADMIN_AUTH_MODE','ABC_MSA_A1','ABC_MSA_USERNAME_PILOT']){
     assert.equal((await inspectLocalService(f.port,'api',{env:{...f.env,[key]:'different'}})).kind,'incompatible');
   }
   assert.notEqual(await serviceSignature(f.env),await serviceSignature({...f.env,FIREBASE_TOKEN:'fictional-rejected'}));

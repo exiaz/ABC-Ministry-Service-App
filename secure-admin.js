@@ -3,9 +3,11 @@ import {createAdminClient} from './admin-client.js';
 import {createAdminDevices} from './admin-devices.js';
 import {createAccountPanel} from './admin-accounts.js';
 import {createBackupPanel} from './admin-backup.js';
+import {msaBrand as brand} from './msa-brand.js';
+import {usernameFields} from './username-login.js';
 const root=document.querySelector('#admin-root');
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const brand=()=>'<div class="brand"><img class="brand-logo" src="./assets/abc-movement-logo.png" alt="ABC Movement" width="94" height="40"><span class="brand-copy">GOES TO<br>SCHOOL</span></div>';
+const usernamePilot=document.body.dataset.usernamePilot==='true';
 const tabs=[['overview','Ringkasan','Dasbor kehadiran'],['history','Riwayat absensi','Riwayat absensi'],['schedule','Jadwal Pelayanan','Jadwal Pelayanan'],['students','Data siswa','Data siswa'],['groups','Kelompok & mentor','Kelompok & mentor'],['birthdays','Ulang Tahun Siswa','Ulang tahun siswa']];
 tabs.push(['devices','Perangkat Mentor','Perangkat Mentor']);
 tabs.push(['accounts','Akun PIC','Pengelolaan akun PIC']);
@@ -17,6 +19,13 @@ function render(state){
   if(state.phase!=='active'){
     const busy=['loading','checking','signing-out'].includes(state.phase),pending=state.phase==='logout-error',checking=state.canVerify||state.phase==='checking';
     root.innerHTML=`<section class="panel pairing-panel">${brand()}<p class="eyebrow">ADMIN · DEMO LOKAL</p><h1>Masuk ke dasbor admin</h1><p id="admin-message" role="${['invalid','error','expired','logout-error'].includes(state.phase)?'alert':'status'}" aria-live="polite">${esc(state.message)}</p>${checking?'<button class="btn small" data-admin="verify">Periksa kembali sesi</button><button class="btn small" data-admin="logout">Keluar</button>':pending?'<button class="btn primary" data-admin="logout">Coba keluar lagi</button>':`<form id="admin-login"><div class="form-row"><label for="admin-email">Email Admin</label><input id="admin-email" name="email" type="email" autocomplete="username" required maxlength="254" ${busy?'disabled':''}><small class="calendar-hint">Gunakan email akun yang diberikan kepada Anda.</small></div><div class="form-row"><label for="admin-password">Kata sandi Anda</label><input id="admin-password" name="password" type="password" autocomplete="current-password" aria-describedby="admin-password-help" required maxlength="512" ${busy?'disabled':''}><small id="admin-password-help" class="calendar-hint">Gunakan kata sandi akun Anda.</small><button class="btn small" type="button" data-admin="toggle-password" aria-pressed="false" ${busy?'disabled':''}>Tampilkan kata sandi</button></div><button class="btn primary" type="submit" ${busy?'disabled':''}>${busy?'Memeriksa…':'Masuk'}</button></form>`}<details class="calendar-hint"><summary>Lupa kata sandi?</summary><p>Klik dua kali <strong>Reset Admin Password.cmd</strong> di folder proyek. Ketik GANTI saat diminta, lalu buat password baru. Setelah halaman dibuka kembali, login dengan password baru. Absensi dan izin perangkat tetap.</p></details><details class="calendar-hint"><summary>Server belum siap atau belum membuat akun?</summary><p>Klik dua kali <strong>Start ABC Attendance.cmd</strong>. Biarkan jendelanya terbuka dan tunggu <strong>Demo siap</strong>. Saat diminta, buat password dua kali tanpa mengetik perintah apa pun.</p></details><p class="calendar-hint">Khusus data fiktif. Reload halaman memerlukan login ulang.</p></section>`;
+    if(usernamePilot){
+      const form=root.querySelector('#admin-login');
+      if(form){form.innerHTML=usernameFields({disabled:busy})+'<button class="btn primary" type="submit" '+(busy?'disabled':'')+'>Masuk</button>';}
+      root.querySelector('.eyebrow').textContent='ADMIN · PILOT USERNAME';
+      if(state.phase==='signed-out')root.querySelector('#admin-message').textContent='Gunakan username yang telah diikat ke akun Admin/PIC uji Anda.';
+      const link=document.createElement('p');link.innerHTML='<a href="/">Masuk dengan email</a>';root.querySelector('.pairing-panel').append(link);
+    }
     return;
   }
   if(selected==='accounts'&&state.role!=='superadmin')selected='overview';
@@ -58,8 +67,8 @@ root.addEventListener('submit',e=>{
   if(e.target.id==='admin-service-form'){e.preventDefault();void calendarPanel.save();return;}
   if(e.target.id==='device-issue-form'){e.preventDefault();void (['superadmin','pic'].includes(client.state.role)?devicePanel.issueActivation():devicePanel.issue());return;}
   if(e.target.id!=='admin-login')return;e.preventDefault();
-  const email=root.querySelector('#admin-email').value.trim(),password=root.querySelector('#admin-password').value;
-  root.querySelector('#admin-password').value='';void client.login(email,password);
+  const email=root.querySelector(usernamePilot?'#admin-username':'#admin-email').value.trim(),password=root.querySelector('#admin-password').value;
+  root.querySelector('#admin-password').value='';void client.login(email,password,{username:usernamePilot});
 });
 root.addEventListener('click',e=>{
   const backupAction=e.target.closest('[data-backup]');if(backupAction&&client.state.phase==='active'){void backupPanel.click(backupAction);return;}
