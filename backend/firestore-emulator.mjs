@@ -3,7 +3,8 @@ import net from 'node:net';
 import {emulatorConfig} from './emulator-config.mjs';
 import {validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {toRosterResponse,describeRosterScope} from './roster.mjs';
-import {effectiveMentor} from '../assignments.js';
+import {effectiveMentor,defaultMentorAt} from '../assignments.js';
+import {createBackupAssignments} from './backup-assignments.mjs';
 import {createEmulatorDevicePairing,sameActivationAssignment} from './device-pairing.mjs';
 import {createEmulatorAttendance} from './attendance.mjs';
 
@@ -96,12 +97,14 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       if(device.kind==='activation-v1'){
         if(entry.grants.length!==1||!sameActivationAssignment(device.assignment,await repository.describe(entry.grants[0],{transaction,mentorIdentity:true}))||device.expiresAt!==entry.expiresAt)return null;
       }
-      return {expiresAt:entry.expiresAt,grants:copyGrants(entry.grants)};
+      const backupGrants=await backups.resolve(device,{...entry,credentialId:snapshot.id},transaction);
+      if(entry.expiresAt<=now())return null;
+      return {expiresAt:entry.expiresAt,grants:[...copyGrants(entry.grants),...copyGrants(backupGrants)],...(backupGrants.length?{backupGrants}:{})};
     }
   };
 
   const repository={
-    async describe(scope,{transaction,mentorIdentity=false}={}){
+    async describe(scope,{transaction,mentorIdentity=false,defaultIdentity=false}={}){
       if(!validRosterScope(scope))return null;
       const getAll=(...refs)=>transaction?transaction.getAll(...refs):db.getAll(...refs);
       const {schoolId,groupId,serviceSessionId}=scope;
@@ -121,7 +124,8 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
       if(!mentorIdentity)return context;
       const mentorId=effectiveMentor(model,groupId,serviceSessionId).mentorId;
       if(!validDevice(mentorId)||!model.mentors.some(mentor=>mentor.id===mentorId))return null;
-      return {...context,mentorId};
+      const defaultMentor=defaultMentorAt(model,groupId,visit.date);
+      return {...context,mentorId,...(defaultIdentity?{defaultMentorId:defaultMentor.mentorId??null,defaultMentorName:defaultMentor.name}:{})};
     },
     async read(scope){
       if(!validRosterScope(scope))return null;
@@ -159,7 +163,8 @@ export async function createFirestoreEmulatorRepositories({now=Date.now}={}){
     }
   };
   // db/root are trusted test-fixture hooks only; never exposed by the API.
-  const pairing=createEmulatorDevicePairing({db,root,config,repository,now,prepareCredential,stageCredential,stageDeviceRevoke});
+  const backups=createBackupAssignments({db,root,repository,now,config});
+  const pairing={...createEmulatorDevicePairing({db,root,config,repository,now,prepareCredential,stageCredential,stageDeviceRevoke}),listBackups:backups.listBackups,saveBackup:backups.saveBackup,closeBackup:backups.closeBackup};
   const attendance=createEmulatorAttendance({db,root,credentials,now});
   return {credentials,repository,deviceAuthorization,pairing,attendance,close,db,root,config};
 }

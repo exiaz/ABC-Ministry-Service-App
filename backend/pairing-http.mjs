@@ -24,16 +24,25 @@ export async function adminPairingRoute({req,url,uid,pairing,stillAuthorized,sen
   const issue=url.pathname==='/api/admin/pairing-codes';
   const calendar=url.pathname==='/api/admin/service-sessions';
   const activation=url.pathname==='/api/admin/activation-codes';
+  const backups=url.pathname==='/api/admin/backup-assignments';
+  const closeBackup=/^\/api\/admin\/backup-assignments\/([a-f0-9]{64})\/close$/.exec(url.pathname);
   const context=url.pathname==='/api/admin/pairing-context',list=url.pathname==='/api/admin/devices';
-  if(!code&&!device&&!issue&&!context&&!list&&!activation&&!calendar)return false;
-  const method=context||list||device&&!device[2]||(activation||calendar)&&req.method==='GET'?'GET':'POST';
+  if(!code&&!device&&!issue&&!context&&!list&&!activation&&!calendar&&!backups&&!closeBackup)return false;
+  const method=context||list||device&&!device[2]||(activation||calendar||backups)&&req.method==='GET'?'GET':'POST';
   if(req.method!==method){send(405,{error:'Metode tidak diizinkan.'},{Allow:method});return true;}
   if(!pairing)throw new PairingError(503,'Pairing emulator lokal tidak tersedia.');
   if(url.search)throw new PairingError(400,'Parameter pairing tidak valid.');
-  const reading=context||list||(activation||calendar)&&req.method==='GET';
+  const reading=context||list||(activation||calendar||backups)&&req.method==='GET';
   await pairing.limit(reading?'admin-read':'admin',uid,reading?60:20);
   if(context||list){send(200,await pairing[context?'adminContext':'listDevices'](uid,stillAuthorized));return true;}
-  if(calendar){
+  if(backups){
+    if(req.method==='GET'){send(200,await pairing.listBackups(uid,stillAuthorized));return true;}
+    const {body}=await jsonBody(req,['deviceId','grants','reason','idempotencyKey'],adminOrigin);
+    send(201,await pairing.saveBackup(uid,body,stillAuthorized));
+  }else if(closeBackup){
+    const {body}=await jsonBody(req,['reason','status'],adminOrigin);
+    send(200,await pairing.closeBackup(uid,closeBackup[1],body,stillAuthorized));
+  }else if(calendar){
     if(req.method==='GET'){send(200,await pairing.listServices(uid,stillAuthorized));return true;}
     const {body}=await jsonBody(req,['id','schoolId','date','groupIds','expectedRevision','idempotencyKey'],adminOrigin);
     send(200,await pairing.saveService(uid,body,stillAuthorized));

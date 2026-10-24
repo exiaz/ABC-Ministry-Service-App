@@ -2,13 +2,15 @@ import {createAdminCalendar} from './admin-calendar.js';
 import {createAdminClient} from './admin-client.js';
 import {createAdminDevices} from './admin-devices.js';
 import {createAccountPanel} from './admin-accounts.js';
+import {createBackupPanel} from './admin-backup.js';
 const root=document.querySelector('#admin-root');
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brand=()=>'<div class="brand"><img class="brand-logo" src="./assets/abc-movement-logo.png" alt="ABC Movement" width="94" height="40"><span class="brand-copy">GOES TO<br>SCHOOL</span></div>';
 const tabs=[['overview','Ringkasan','Dasbor kehadiran'],['history','Riwayat absensi','Riwayat absensi'],['schedule','Jadwal Pelayanan','Jadwal Pelayanan'],['students','Data siswa','Data siswa'],['groups','Kelompok & mentor','Kelompok & mentor'],['birthdays','Ulang Tahun Siswa','Ulang tahun siswa']];
 tabs.push(['devices','Perangkat Mentor','Perangkat Mentor']);
 tabs.push(['accounts','Akun PIC','Pengelolaan akun PIC']);
-let selected='overview',devicePanel,accountPanel,calendarPanel;
+tabs.push(['backup','Backup Mentor','Backup Mentor / Gabung Kelompok Sementara']);
+let selected='overview',devicePanel,accountPanel,calendarPanel,backupPanel;
 const dialog=document.querySelector('#admin-device-dialog');
 function render(state){
   root.dataset.phase=state.phase;
@@ -24,15 +26,18 @@ function render(state){
   if(selected==='devices')root.querySelector('.content > .panel').outerHTML=devicePanel.view();
   if(selected==='schedule')root.querySelector('.content > .panel').outerHTML=calendarPanel.view();
   if(selected==='accounts')root.querySelector('.content > .panel').outerHTML=accountPanel.view();
+  if(selected==='backup')root.querySelector('.content > .panel').outerHTML=backupPanel.view();
 }
 const client=createAdminClient(state=>{
-  if(state.phase!=='active'){devicePanel?.reset({preserveIntent:state.phase==='checking'});accountPanel?.reset();calendarPanel?.reset({preserveIntent:state.phase==='checking'});if(dialog.open)dialog.close();}
+  if(state.phase!=='active'){devicePanel?.reset({preserveIntent:state.phase==='checking'});accountPanel?.reset();calendarPanel?.reset({preserveIntent:state.phase==='checking'});backupPanel?.reset({preserveIntent:state.phase==='checking'});if(dialog.open)dialog.close();}
   render(state);
   if(state.phase==='active'&&state.role==='superadmin'&&selected==='accounts'&&accountPanel.phase==='idle')void accountPanel.load();
   if(state.phase==='active'&&selected==='schedule'&&calendarPanel.phase==='idle')void calendarPanel.load();
   if(state.phase==='active'&&selected==='devices'&&devicePanel.state.phase==='idle')void devicePanel.load();
+  if(state.phase==='active'&&selected==='backup'&&backupPanel.phase==='idle')void backupPanel.load();
 });
 calendarPanel=createAdminCalendar(client,()=>render(client.state));devicePanel=createAdminDevices(client,()=>render(client.state));accountPanel=createAccountPanel(client,()=>render(client.state));render(client.state);
+backupPanel=createBackupPanel(client,()=>render(client.state));
 function confirmDevice(kind,id){
   const s=devicePanel.state,device=s.devices.find(d=>d.deviceId===id),pairingId=s.issued?.pairingId;
   if(s.phase!=='ready'||kind==='revoke'&&!device||kind==='cancel-code'&&!pairingId)return;
@@ -47,6 +52,7 @@ function confirmActivation(pairingId){
   dialog.querySelector('button[type=button]').onclick=()=>dialog.close();dialog.querySelector('form').onsubmit=event=>{event.preventDefault();dialog.close();if(client.state.phase==='active')void devicePanel.activation.revoke(pairingId,true);};dialog.showModal();
 }
 root.addEventListener('submit',e=>{
+  if(e.target.id==='backup-form'){e.preventDefault();backupPanel.submit(e.target);return;}
   if(e.target.id==='account-form'){e.preventDefault();void accountPanel.submit(e.target);return;}
   if(e.target.id==='admin-service-form'){e.preventDefault();void calendarPanel.save();return;}
   if(e.target.id==='device-issue-form'){e.preventDefault();void (['superadmin','pic'].includes(client.state.role)?devicePanel.issueActivation():devicePanel.issue());return;}
@@ -55,6 +61,7 @@ root.addEventListener('submit',e=>{
   root.querySelector('#admin-password').value='';void client.login(email,password);
 });
 root.addEventListener('click',e=>{
+  const backupAction=e.target.closest('[data-backup]');if(backupAction&&client.state.phase==='active'){void backupPanel.click(backupAction);return;}
   const calendarAction=e.target.closest('[data-calendar]');if(calendarAction){const a=calendarAction.dataset.calendar;if(a==='reload')void calendarPanel.load();if(a==='retry')void calendarPanel.retry();if(a==='edit')calendarPanel.edit(calendarAction.dataset.serviceId);if(a==='cancel')calendarPanel.cancel();return;}
   const activationAction=e.target.closest('[data-activation]');
   if(activationAction&&client.state.phase==='active'){
@@ -81,7 +88,7 @@ root.addEventListener('click',e=>{
   const tab=e.target.closest('[data-admin-tab]')?.dataset.adminTab;
   if(tab&&client.state.phase==='active'&&tabs.some(t=>t[0]===tab)){selected=tab;void client.verify();}
 });
-root.addEventListener('change',e=>{if(client.state.phase==='active'&&e.target.dataset.calendarField){calendarPanel.choose(e.target.dataset.calendarField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.deviceField)devicePanel.choose(e.target.dataset.deviceField,e.target.value,e.target.checked);});
+root.addEventListener('change',e=>{if(client.state.phase==='active'&&e.target.dataset.backupField){backupPanel.choose(e.target.dataset.backupField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.calendarField){calendarPanel.choose(e.target.dataset.calendarField,e.target.value,e.target.checked);return;}if(client.state.phase==='active'&&e.target.dataset.deviceField)devicePanel.choose(e.target.dataset.deviceField,e.target.value,e.target.checked);});
 setInterval(()=>devicePanel.expireCode(),1000);
 for(const event of ['focus','online','offline'])window.addEventListener(event,()=>void client.verify());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void client.verify();});

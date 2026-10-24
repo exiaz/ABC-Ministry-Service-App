@@ -11,7 +11,7 @@ import {createRosterServer} from '../../backend/server.mjs';
 import {createFirestoreEmulatorRepositories} from '../../backend/firestore-emulator.mjs';
 
 export {hagai} from './device-management-source.mjs';
-export async function activationFixture(t){
+export async function activationFixture(t,{mentorOrigin='http://127.0.0.1:4176'}={}){
   let time=Date.parse('2026-10-28T10:00:00Z');const prior=process.env.ABC_FIRESTORE_NAMESPACE,{source,grants}=deviceManagementSource();source.serviceSessions.find(row=>row.id===hagai.serviceSessionId).date='2026-10-30';const c=await emulatorFixture({source,now:()=>time});process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;
   const f=await adminLoginFixture(t,{pairing:c.pairing});await c.root.collection('adminPairingPermissions').doc(f.uid).set({active:true,grants});await initializeOwner({...c,auth:f.auth,uid:f.uid,email:f.email,confirmed:true});
   const owner=(await (await f.login()).json()).token;
@@ -25,8 +25,8 @@ export async function activationFixture(t){
     return {keys,body:{code,publicKey},proof:{method:'POST',target,body,timestamp,nonce,signature:sign('sha256',proofMessage({token:code,method:'POST',target,body,timestamp,nonce}),{key:keys.privateKey,dsaEncoding:'ieee-p1363'}).toString('base64url')}};
   };
   const redeem=async code=>{const request=command(code);return {...await c.pairing.redeem(request.body,request.proof),keys:request.keys};};
-  const server=createRosterServer({...c,mentorOrigin:'http://127.0.0.1:4176'});server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));const base='http://127.0.0.1:'+server.address().port;
+  const server=createRosterServer({...c,mentorOrigin});server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));const base='http://127.0.0.1:'+server.address().port;
   const request=(d,method,target,body)=>{const raw=body===undefined?'':JSON.stringify(body),timestamp=String(time),nonce=randomBytes(16).toString('base64url');return {method,headers:{Authorization:'Bearer '+d.credential,'Content-Type':'application/json','X-Device-Timestamp':timestamp,'X-Device-Nonce':nonce,'X-Device-Signature':sign('sha256',proofMessage({method,target,body:raw,token:d.credential,timestamp,nonce}),{key:d.keys.privateKey,dsaEncoding:'ieee-p1363'}).toString('base64url')},...(body===undefined?{}:{body:raw})};};
   const call=(d,target='/api/device/status',method='GET',body)=>fetch(base+target,request(d,method,target,body));
-  return {...c,...f,admin,issue,redeem,command,call,request,base,owner,grants,now:()=>time,advance:ms=>{time+=ms;},setTime:value=>{time=Date.parse(value);}};
+  return {...c,...f,admin,issue,redeem,command,call,request,base,adminBase:f.base,owner,grants,now:()=>time,advance:ms=>{time+=ms;},setTime:value=>{time=Date.parse(value);}};
 }

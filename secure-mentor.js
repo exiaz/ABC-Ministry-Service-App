@@ -14,7 +14,7 @@ function contextsFrom(value){
     const key=scopeKey(row);
     if(seen.has(key)||!isValidDate(row.serviceDate))throw Error();
     seen.add(key);
-    return Object.fromEntries([...ids,'schoolName','groupName','mentorName','serviceDate'].map(k=>[k,row[k]]));
+    return {...Object.fromEntries([...ids,'schoolName','groupName','mentorName','serviceDate'].map(k=>[k,row[k]])),accessKind:row.accessKind==='backup'?'backup':'primary'};
   });
 }
 export function createSecureMentor({client,render,icon,steps,art,openModal,closeModal}){
@@ -42,9 +42,9 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       if(current!==epoch||client.state.phase!=='active')return;
       contexts=rows;phase='ready';
       if(client.state.assignment){
-        const assignment=client.state.assignment,scope=rows.length===1&&rows.find(row=>scopeKey(row)===scopeKey(assignment)&&row.serviceDate===assignment.serviceDate&&row.mentorName===assignment.mentorName);
+        const assignment=client.state.assignment,scope=rows.find(row=>row.accessKind==='primary'&&scopeKey(row)===scopeKey(assignment)&&row.serviceDate===assignment.serviceDate&&row.mentorName===assignment.mentorName);
         if(!scope)throw Error('Penugasan aktivasi tidak sesuai.');
-        schoolId=scope.schoolId;selectedDate=scope.serviceDate;calendarOpen=null;void loadRoster(scope);return;
+        schoolId=scope.schoolId;selectedDate=scope.serviceDate;calendarOpen=null;void loadRoster(rows.find(row=>prior&&scopeKey(row)===scopeKey(prior))??scope);return;
       }
       if(schoolId&&!rows.some(c=>c.schoolId===schoolId)){schoolId='';selected=null;}
       if(prior){const scope=rows.find(c=>scopeKey(c)===scopeKey(prior));if(scope){void loadRoster(scope);return;}selected=null;}
@@ -57,7 +57,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
     let html='';
     if(phase==='loading-context')html=message('Memuat sekolah dan izin pelayanan dari API…');
     else if(phase==='context-error')html=message(error,true);
-    else if(!contexts.length)html=message('Belum ada sekolah atau pelayanan Jumat yang tersedia dalam izin perangkat. Hubungi admin.');
+    else if(!contexts.length)html=message('Belum ada sekolah atau pelayanan yang tersedia dalam izin perangkat. Hubungi admin.');
     else if(!schoolId){
       html=`<div class="heading"><div><h1>Halo, Kak Mentor!</h1><p>Pilih sekolah sesuai izin perangkat.</p></div><span class="badge excused">API lokal</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">ABC MOVEMENT · GOES TO SCHOOL</div><h2>Langkah kecil.<br>Dampak yang berarti.</h2><p>Catat kehadiran siswa fiktif.<br>Absensi disimpan melalui API lokal.</p></div>${art()}</section>${steps(1)}<div class="section-heading"><h2>Melayani di sekolah mana?</h2><span class="count-label">${schoolRows().length} sekolah</span></div><div class="school-grid">${schoolRows().map(c=>`<button class="school-card blue" data-action="select-school" data-id="${esc(c.schoolId)}"><div class="school-icon">${icon('school')}</div>${icon('arrow')}<h3>${esc(c.schoolName)}</h3><p>Sesuai izin perangkat</p><div class="school-meta"><span>${new Set(contexts.filter(row=>row.schoolId===c.schoolId).map(row=>row.groupId)).size} kelompok</span></div></button>`).join('')}</div>`;
     }else if(selected){
@@ -73,7 +73,8 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       const rows=contexts.filter(c=>c.schoolId===schoolId&&c.serviceDate===selectedDate);
       html=`<button class="back-btn" data-action="back-dates">${icon('back')} Pilih tanggal lain</button><div class="heading"><div><h1>Pilih kelompokmu</h1><p>${esc(rows[0]?.schoolName??'')} · ${longDate(selectedDate)}</p></div></div>${steps(3)}<div class="group-grid">${rows.map(c=>`<button class="group-card" data-action="select-group" data-id="${esc(c.groupId)}" data-visit="${esc(c.serviceSessionId)}"><div class="group-top"><span class="badge excused">API lokal</span></div><h3>${esc(c.groupName)}</h3><p class="calendar-hint">Sesi: ${esc(c.serviceSessionId)}</p><p class="mentor-subtitle">${esc(c.mentorName)}</p><div class="bottom"><span class="muted">Daftar sesuai izin perangkat</span>${icon('arrow')}</div></button>`).join('')}</div>`;
     }
-    return `<section id="secure-mentor" data-state="${phase}">${html}</section>`;
+    const switcher=client.state.assignment&&contexts.length?`<section class="panel backup-groups" aria-label="Kelompok berizin"><button class="btn small" data-action="secure-context-refresh">Muat ulang izin kelompok</button>${['primary','backup'].map(kind=>`<h3>${kind==='primary'?'Kelompok utama':'Kelompok backup'}</h3>${contexts.filter(c=>c.accessKind===kind).map(c=>contexts.length===1?`<p>${esc(c.groupName)}</p>`:`<button class="btn small" data-action="select-group" data-id="${esc(c.groupId)}" data-visit="${esc(c.serviceSessionId)}" ${selected&&scopeKey(selected)===scopeKey(c)?'aria-current="true"':''}>${esc(c.groupName)}</button>`).join('')||'<p>Belum ada izin backup aktif.</p>'}`).join('')}<p class="calendar-hint">Operator: ${esc(client.state.assignment.mentorName)}. Absensi disimpan terpisah per kelompok.</p></section>`:'';
+    return `<section id="secure-mentor" data-state="${phase}">${switcher}${html}</section>`;
   }
   function rowsView(){
     const a=attendance.state,done=a.data?.state==='completed',disabled=!['ready','saved'].includes(a.phase);
@@ -100,7 +101,8 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
     }
   }
   function action(name,id,serviceSessionId){
-    if(client.state.assignment){if(name==='mentor'){void refresh();return;}if(['select-school','select-group','continue-date','back-schools','back-dates','back-groups'].includes(name)||name.startsWith('calendar-'))return;}
+    if(name==='select-group'&&(attendance.state.phase==='saving'||attendance.state.pending||attendance.state.phase==='conflict'))return;
+    if(client.state.assignment){if(name==='mentor'){void refresh();return;}if(name==='select-group'&&(!serviceSessionId||contexts.length<2))return;if(['select-school','continue-date','back-schools','back-dates','back-groups'].includes(name)||name.startsWith('calendar-'))return;}
     switch(name){
       case 'secure-present':if(students.some(s=>s.id===id))void attendance.mutate('save',{records:[{studentId:id,status:'present'}]});return;
       case 'secure-review':review();return;
@@ -108,6 +110,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
       case 'attendance-retry':void attendance.retry();return;
       case 'attendance-reload':void attendance.reload();return;
       case 'secure-retry':if(selected)void loadRoster(selected);else void refresh();return;
+      case 'secure-context-refresh':void refresh();return;
       case 'mentor':case 'back-schools':epoch++;students=[];selected=null;schoolId='';if(contexts.length)phase='ready';break;
       case 'select-school':if(!contexts.some(c=>c.schoolId===id))return;schoolId=id;selected=null;selectedDate=dates().filter(d=>d<=jakartaToday()).at(-1)||dates()[0];month=selectedDate.slice(0,7);calendarOpen=false;break;
       case 'calendar-toggle':calendarOpen=!calendarOpen;break;

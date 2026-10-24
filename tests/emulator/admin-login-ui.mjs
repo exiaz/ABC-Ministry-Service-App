@@ -34,7 +34,7 @@ test('Admin login UI in isolated Chrome and real Auth Emulator',{timeout:120000}
     // Wait for the request interception, not merely the loading render.
     for(let n=0;n<100&&!resume;n++)await page.waitForTimeout(25);
     assert.equal(typeof resume,'function');await resume();await wait('active');await page.unroute('**/api/admin/session');
-    assert.equal(await page.locator('.admin-tabs button').count(),7);
+    assert.deepEqual((await page.locator('.admin-tabs button').evaluateAll(nodes=>nodes.map(n=>n.dataset.adminTab))).sort(),['overview','history','schedule','students','groups','birthdays','devices','backup'].sort());
     for(const tab of ['history','schedule','students','groups','birthdays','overview']){await page.locator('[data-admin-tab='+tab+']').last().click();await wait('active');assert.equal(await page.locator('.admin-tabs [aria-current=page]').getAttribute('data-admin-tab'),tab);}
     const storage=await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage)}));
     assert.equal(storage.local.includes(f.password),false);assert.equal(storage.local.includes('Bearer'),false);assert.equal(storage.session,'{}');assert.equal(await page.locator('.panel-head button').isDisabled(),true);

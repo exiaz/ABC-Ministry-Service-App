@@ -14,7 +14,9 @@ assets.set('/admin-devices.js','admin-devices.js');
 assets.set('/admin-activation.js','admin-activation.js');
 assets.set('/admin-accounts.js','admin-accounts.js');
 assets.set('/admin-calendar.js','admin-calendar.js');
+assets.set('/admin-backup.js','admin-backup.js');
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
+apiPaths.add('/api/admin/backup-assignments');
 // Same-origin admin shell + existing protected API handler/context. No CORS,
 // cookie session, demo assets/database or public administrative dispatch here.
 export function createAdminServer({adminAuthentication,pairing}){
@@ -24,7 +26,7 @@ export function createAdminServer({adminAuthentication,pairing}){
     try{
       requireAdminOrigin(req);
       const url=new URL(req.url,'http://127.0.0.1');
-      if(apiPaths.has(url.pathname)||/^\/api\/admin\/accounts(?:\/[A-Za-z0-9_-]{1,128})?$/.test(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
+      if(apiPaths.has(url.pathname)||/^\/api\/admin\/backup-assignments\/[a-f0-9]{64}\/close$/.test(url.pathname)||/^\/api\/admin\/accounts(?:\/[A-Za-z0-9_-]{1,128})?$/.test(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
       if(!['GET','HEAD'].includes(req.method)){send(405,'Metode tidak diizinkan.');return;}
       const file=assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}

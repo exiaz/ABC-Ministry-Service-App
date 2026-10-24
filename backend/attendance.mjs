@@ -44,6 +44,7 @@ export function createEmulatorAttendance({db,root,credentials,now}){
       // Capture all caller data before awaiting storage.
       const input=body===undefined?undefined:structuredClone(body);
       return db.runTransaction(async tx=>{
+        let backupOperator;
         const authorize=async()=>{
           const principal=await credentials.authenticate(authorization,proof,tx);
           // Attendance requires the existing verified paired-device capability,
@@ -51,6 +52,7 @@ export function createEmulatorAttendance({db,root,credentials,now}){
           if(!principal||!proof?.deviceId)throw new AttendanceError(401,'Kredensial perangkat tidak valid atau tidak berlaku.');
           if(!scope)invalid();
           if(!canReadRoster(principal,scope))deny();
+          backupOperator=principal.backupGrants?.find(g=>SCOPE_KEYS.every(k=>g[k]===scope[k]));
         };
         await authorize();
         if(!['read','save','finalize','correct'].includes(action))invalid();
@@ -110,7 +112,7 @@ export function createEmulatorAttendance({db,root,credentials,now}){
         await authorize();
         const history=rev=>col('attendanceHistory').doc(hash(JSON.stringify([batchId,rev])));
         if(batch&&revision===0)tx.create(history(0),{batchId,revision:0,action:'baseline',at,previousUpdatedAt:batch.updatedAt??null,snapshot:batch});
-        tx.create(history(next.revision),{batchId,revision:next.revision,action,at,deviceId:proof.deviceId,credentialId:hash(authorization.slice(7)),reason:command.reason??null,snapshot:next});
+        tx.create(history(next.revision),{batchId,revision:next.revision,action,at,deviceId:proof.deviceId,credentialId:hash(authorization.slice(7)),reason:command.reason??null,...(backupOperator?{backupAssignmentId:backupOperator.assignmentId,backupMentorId:backupOperator.mentorId}:{}),snapshot:next});
         tx.set(stored?.ref??col('sessions').doc(batchId),next);
         // All group mutations for a service share this guard. It prevents a
         // moved student from being claimed twice by concurrent first writers.

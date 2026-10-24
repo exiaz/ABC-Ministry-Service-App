@@ -34,6 +34,9 @@ export function createAdminClient(onChange,{request=fetch}={}){
   const deviceId=id=>{if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(id))throw Error('ID perangkat tidak valid.');return id;};
   return {
     get state(){return {...state};},
+    readBackups(){return deviceRequest('/api/admin/backup-assignments');},
+    saveBackup(body){return deviceRequest('/api/admin/backup-assignments',body);},
+    closeBackup(id,body){if(!/^[a-f0-9]{64}$/.test(id))throw Error('ID penugasan tidak valid.');return deviceRequest('/api/admin/backup-assignments/'+id+'/close',body);},
     readAccounts(){return deviceRequest('/api/admin/accounts');},
     createAccount(body){return deviceRequest('/api/admin/accounts',body);},
     updateAccount(id,body){return deviceRequest('/api/admin/accounts/'+deviceId(id),body);},

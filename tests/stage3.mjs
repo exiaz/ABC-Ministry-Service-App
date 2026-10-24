@@ -8,6 +8,9 @@ import {spawnManagedEmulator,stopManagedEmulator} from '../local-emulator.mjs';
 import {demoEnvironment,listen,waitFor,verifyHub,portOccupied} from '../local-demo.mjs';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+// Resume the remaining checks after a browser-only assertion repair, without
+// repeating an already passing integration run. Default still runs everything.
+const fromBrowser=process.argv[2]==='--from-browser';
 async function run(label,args,env=process.env,cwd=ROOT){
   console.log('\nUJI · '+label);
   const code=await new Promise((resolve,reject)=>{
@@ -21,9 +24,12 @@ async function main(){
   // Validate the caller's environment, but never import operational snapshots or
   // attach to its running emulators. Every test child gets disposable ports/data.
   const base=demoEnvironment();await checkPrerequisites();
-  await run('Sintaks dan import',['tests/check.mjs']);
-  const unit=(await readdir(path.join(ROOT,'tests'))).filter(name=>name.endsWith('.test.mjs')).map(name=>'tests/'+name);
-  await run('Regresi unit Stage 1–3',['--test','--test-concurrency=1',...unit]);
+  if(process.argv.slice(2).some(arg=>arg!=='--from-browser'))throw Error('Pilihan pengujian tidak valid.');
+  if(!fromBrowser){
+    await run('Sintaks dan import',['tests/check.mjs']);
+    const unit=(await readdir(path.join(ROOT,'tests'))).filter(name=>name.endsWith('.test.mjs')).map(name=>'tests/'+name);
+    await run('Regresi unit Stage 1–6',['--test','--test-concurrency=1',...unit]);
+  }
   const parent=path.join(ROOT,'.emulator-data/stage3-tests');await mkdir(parent,{recursive:true});
   const state=await mkdtemp(path.join(parent,'run-')),temp=path.join(state,'temp');await mkdir(temp);
   const reservations=await Promise.all(Array.from({length:5},()=>listen(createServer(),0)));
@@ -37,8 +43,8 @@ async function main(){
   try{
     await waitFor(()=>verifyHub({ports,locatorDirectory:temp}),{alive:()=>child.exitCode===null&&child.signalCode===null});
     const integration=(await readdir(path.join(ROOT,'tests/emulator'))).filter(name=>name.endsWith('.test.mjs')).map(name=>'tests/emulator/'+name);
-    const browser=['admin-accounts-ui.mjs','admin-login-ui.mjs','device-management-ui.mjs','mentor-attendance-ui.mjs'].map(name=>'tests/emulator/'+name);
-    await run('Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
+    const browser=['admin-accounts-ui.mjs','admin-login-ui.mjs','device-management-ui.mjs','mentor-attendance-ui.mjs','backup-ui.mjs'].map(name=>'tests/emulator/'+name);
+    if(!fromBrowser)await run('Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
     // Screenshots go to this run's ignored directory, never historical evidence.
     await run('Regresi Chrome Superadmin/PIC/Mentor',['--test','--test-concurrency=1',...browser.map(file=>path.join(ROOT,file))],env,state);
     await run('Kalender demo, laporan dan offline (data fiktif)',[''+path.join(ROOT,'tests/browser.mjs')],env,state);
@@ -48,6 +54,6 @@ async function main(){
     await waitFor(async()=>!(await Promise.all(ports.map(portOccupied))).some(Boolean),{timeout:10000});
     console.log('Emulator tes ditutup. Artefak fiktif terisolasi: '+state);
   }
-  console.log('\nPASS · Stage 3–5. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
+  console.log('\nPASS · '+(fromBrowser?'Chrome, kalender demo/offline dan cold lifecycle':'Stage 3–6')+'. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
 }
 main().catch(error=>{console.error('\nFAIL · '+(error.demoSafe?error.message:error.message?.startsWith('Pengujian gagal:')?error.message:'Prasyarat, layanan atau penghentian tes belum terkonfirmasi. Periksa keluaran di atas dan README.'));process.exitCode=1;});

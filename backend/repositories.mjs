@@ -34,7 +34,7 @@ export function createAuthorizedRosterRepository({credentials,repository}){
       for(const scope of scopes){
         const value=await repository.describe({...scope});
         if(!value)return {kind:'forbidden'};
-        contexts.push(toRosterContext(scope,value));
+        contexts.push({...toRosterContext(scope,value),...(principal.backupGrants?.some(g=>SCOPE_KEYS.every(k=>g[k]===scope[k]))?{accessKind:'backup'}:{})});
       }
       const current=await credentials.authenticate(authorization);
       if(!current)return {kind:'unauthenticated'};

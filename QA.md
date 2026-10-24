@@ -1,5 +1,24 @@
 # Pemeriksaan prototipe
 
+## Stage 6 — Backup sementara · 24 Oktober 2026
+
+Jalankan `npm.cmd run test:stage6` atau **Test ABC Attendance.cmd**. Emulator Auth/Firestore, port, namespace dan screenshot terpisah dari data operasional. Gunakan hanya siswa fiktif. Hasil aktual dan lokasi log ada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+Hasil akhir **PASS**: sintaks/import 130 modul, unit 164/164, integrasi 91/91, Chrome 22/22, demo/laporan/offline PASS dan cold lifecycle 2/2. Integrasi lulus pada putaran lengkap; setelah perbaikan assertion/helper tes browser, `npm.cmd run test:stage6 -- --from-browser` menuntaskan Chrome serta pemeriksaan berikutnya dengan exit 0. Perintah tanpa opsi tetap menjalankan seluruh rangkaian. Rincian kegagalan awal/perbaikannya dan log pada PROJECT_STATUS.md.
+
+| Cakupan | Pemeriksaan |
+|---|---|
+| Admin/PIC | Penugasan multi-kelompok, alasan/konfirmasi, idempotensi, daftar, akhiri/cabut; baca/terbitkan/cabut sesuai tindakan dan seluruh tuple |
+| Keamanan | Token palsu/Mentor sebagai Admin, PIC baca-saja/sempit, lintas sekolah/sesi/kelompok, perangkat legacy/tidak aktif ditolak |
+| Validitas | Perangkat utama tetap aktif saat grant backup kedaluwarsa; batas satu jam/tengah malam WIB, perubahan mentor/tanggal dan izin penerbit ditolak |
+| Absensi | Primary dan backup menulis kelompok sama: satu sukses, satu konflik; kelompok berbeda independen; retry receipt tidak menggandakan write |
+| Integritas | Enrollment/default mentor/snapshot/ID tetap; finalisasi/koreksi per kelompok, riwayat append-only dan operator backup terlacak |
+| Pencabutan | Race revoke/write diserialkan; request dan receipt setelah revoke ditolak; primary tetap aktif; izin tidak hidup kembali melalui retry penugasan |
+| Persistensi/UI | Adapter dibuka kembali; grant/revoke tetap; Chrome Admin dan Mentor memilih/switch kelompok, menyimpan dan menolak akses dicabut; lebar 360/390/1365 piksel |
+| Regresi | Aktivasi 48 jam/single-use/proof, RBAC Stage 1–4, kalender semua hari/sesi tanggal sama, launcher/snapshot dan demo/offline tetap |
+
+Pemeriksaan operator: aktivasi perangkat, buat backup dua kelompok pada sesi khusus, muat ulang izin Mentor, simpan kelompok pertama dan pastikan kelompok kedua belum diubah. Cabut backup saat Mentor membukanya; akses server berikutnya harus ditolak dan kelompok utama tetap dapat dibuka. Jangan mengubah jam sistem untuk uji expiry; suite otomatis memakai jam fixture. Setelah selesai, Stop dan tunggu snapshot terverifikasi. Android fisik dan browser selain Chrome belum menjadi bukti uji tahap ini.
+
 ## Stage 5 — Kalender semua hari · 23 Oktober 2026
 
 Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage5`. Runner memakai emulator, namespace, port dan TEMP terpisah; tidak mengimpor snapshot operasional. Kalender demo/offline memakai server port sementara dan screenshot pada folder run yang diabaikan Git. Hasil akhir berada di [PROJECT_STATUS.md](PROJECT_STATUS.md).

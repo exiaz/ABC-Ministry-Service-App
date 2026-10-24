@@ -83,10 +83,11 @@ test('Secure mentor attendance in real Chrome with paired device and Firestore E
     const before=(await batch()).revision;await page.reload();await active();await choose();assert.equal((await batch()).revision,before);
     assert.match(await row('fictional-1').innerText(),/Hadir/);assert.match(await row('fictional-2').innerText(),/Izin/);
     await page.locator('[data-action=secure-review]').click();await page.locator('#modal .btn[data-action=close-modal]').click();assert.equal((await batch()).state,'draft');
-    let confirm;let submissions=0;
-    await page.route('**/api/attendance/finalize?**',async route=>{submissions++;await new Promise(resolve=>{confirm=async()=>{await route.continue();resolve();};});});
+    let confirm,intercept;let submissions=0;
+    const intercepted=new Promise(resolve=>{intercept=resolve;});
+    await page.route('**/api/attendance/finalize?**',async route=>{submissions++;await new Promise(resolve=>{confirm=async()=>{await route.continue();resolve();};intercept();});});
     await page.locator('[data-action=secure-review]').click();await page.locator('#modal button[type=submit]').evaluate(b=>{b.click();b.click();});await status('saving');assert.equal(await page.locator('.success-panel').count(),0);assert.equal((await batch()).state,'draft');
-    await confirm();await saved();await page.unroute('**/api/attendance/finalize?**');await page.waitForSelector('.success-panel');assert.equal(submissions,1);assert.equal((await batch()).state,'completed');assert.equal((await batch()).revision,before+1);
+    await intercepted;assert.equal(typeof confirm,'function');await confirm();await saved();await page.unroute('**/api/attendance/finalize?**');await page.waitForSelector('.success-panel');assert.equal(submissions,1);assert.equal((await batch()).state,'completed');assert.equal((await batch()).revision,before+1);
     await page.locator('[data-action=secure-correct]').click();await page.locator('#correction-student').selectOption('fictional-1');await page.locator('#correction-status').selectOption('absent');await page.locator('#correction-reason').fill('Koreksi fiktif setelah tinjauan mentor');await page.locator('#modal button[type=submit]').click();await saved();
     assert.equal((await batch()).state,'draft');assert.equal((await batch()).records[0].status,'absent');assert.equal(await page.locator('.success-panel').count(),0);
     await page.locator('[data-action=secure-review]').click();await page.locator('#modal button[type=submit]').click();await saved();assert.equal((await batch()).state,'completed');

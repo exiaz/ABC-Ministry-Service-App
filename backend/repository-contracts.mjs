@@ -5,7 +5,7 @@
  * Test credential issuance/revocation remain trusted in-process operations.
  *
  * @typedef {{schoolId:string, groupId:string, serviceSessionId:string}} RosterScope
- * @typedef {{expiresAt:number, grants:RosterScope[]}} CredentialPrincipal
+ * @typedef {{expiresAt:number, grants:RosterScope[], backupGrants?:Array<RosterScope & {assignmentId:string,mentorId:string}>}} CredentialPrincipal
  * @typedef {{grants:RosterScope[], ttlMs?:number, deviceId?:string}} CredentialOptions
  * @typedef {{id:string, name:string, schoolClass:string|null}} RosterStudent
  * @typedef {RosterScope & {students:RosterStudent[]}} RosterResponse
@@ -36,6 +36,10 @@
  * @property {(authorization:string|undefined)=>Promise<object>} contextAuthorized
  * Deny by default; authenticate before scope validation, enforce the exact tuple,
  * revalidate credentials after I/O, and project only the public roster fields.
+ * Context may label delegated scopes with accessKind:'backup'. Delegation is
+ * resolved from server assignments on every request, never persisted as a new
+ * primary credential or accepted from client metadata. Attendance shares these
+ * reads in its transaction so assignment revocation conflicts with writes.
  *
  * @typedef {object} DeviceAuthorizationRepository
  * @property {(options:{deviceId:string,grants:RosterScope[],ttlMs?:number})=>Promise<string>} issue
