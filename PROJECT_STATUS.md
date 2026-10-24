@@ -1,6 +1,35 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · AUTH A2.3 lokal/emulator · Stage 1–7 dan AUTH A1/A2.1/A2.2 dipertahankan**
+**24 Oktober 2026 · pilot akun Windows terisolasi · AUTH A2.3 dan Stage 1–7 dipertahankan**
+
+## AUTH A2.3 — launcher pilot interaktif Windows
+
+**IMPLEMENTED; verifikasi lokal/emulator fiktif.** Launcher terpisah `Start MSA Auth Pilot.cmd` / `Stop MSA Auth Pilot.cmd` menggunakan implementasi A1/A2.1/A2.2/A2.3 yang sudah ada. Tidak membangun ulang autentikasi atau mengubah login default reguler. Panduan penggunaan dan urutan pengisian tinjauan ada pada bagian pilot paling atas `README.md` serta `/pilot.html` di port 4276.
+
+- Isolasi: namespace baru `test-auth-pilot-<UUID>` setiap run; Firestore/Auth 8280/9299, Hub/logging/websocket 4480/4580/9250, API/Admin/Mentor 4275/4277/4276, seluruhnya loopback. Konfigurasi cloud/produksi ditolak. Tidak menerima emulator/server yang sudah berjalan, tidak mengambil alih port atau mematikan proses berdasarkan nomor port. Readiness memverifikasi locator/Hub/PID milik child, listener dan respons aplikasi. IPC Stop khusus pilot terpisah dari demo reguler.
+- Lifecycle memakai prasyarat, managed emulator IPC, server, pemeriksaan kesehatan dan mekanisme shutdown lama. Stop menutup layanan milik pilot saja. Kegagalan setelah emulator dinyalakan juga menutup resource miliknya; Stop dapat diulang jika penghentian belum terkonfirmasi. Start kedua melaporkan instance sudah aktif. Enter dan Stop `.cmd` didukung.
+- Kebijakan state: tanpa import/export/persistence/recovery. Snapshot/akun/credential/namespace reguler tidak dibaca, disalin atau ditimpa. `.emulator-data/auth-pilot/run-*` hanya konfigurasi dan diagnostik lokal, diabaikan Git. Restart memberi emulator, namespace, peninjau dan kata sandi baru; data browser lama tidak mengotorisasi namespace baru. Jika berganti tanggal WIB, nyalakan ulang untuk fixture pelayanan hari berjalan.
+- Setup trusted lokal memakai fixture roster dan create-only writes, owner initializer serta binding username lama dengan sesi email/password ulang. Peninjau `peninjau.pilot` meminta kata sandi tersembunyi 12–128 karakter dari operator, tanpa password bawaan atau endpoint provisioning publik. Relawan didaftarkan sendiri melalui UI; approval dan linking tetap melalui reviewer dengan alasan, bukti independen fiktif dan konfirmasi. Fixture menyediakan Mentor utama/pengganti, pelayanan stabil `fictional-a23-current`, Hosea `g1`, Obaja `g2` dan siswa fiktif. Label sekolah/kelompok memakai direktori lama agar Admin dan Mentor konsisten; tidak memakai data anak nyata.
+- Wrapper khusus pilot membuka `/` Mentor sebagai `/mentor-account.html`, menyisipkan banner data fiktif/navigasi dan panduan. Halaman/API lama tetap menjalankan gate asli. Login tidak menggantikan kode aktivasi, P-256 proof, association, scope, revision, expiry atau grant backup Stage 6. Admin/aktivasi tersedia lewat tab terpisah. Tidak ada perubahan pada `server.mjs`, `admin-server.mjs`, `backend/`, launcher reguler atau dependency/lockfile/rules.
+
+Verifikasi yang benar-benar dijalankan:
+
+| Pemeriksaan | Hasil aktual |
+|---|---|
+| `npm.cmd run check` | PASS, 161 modul JS/MJS: sintaks dan impor lokal |
+| `npm.cmd test` akhir | PASS, 177/177 termasuk enam tes launcher: konfigurasi/gate, konflik tanpa kill, prasyarat gagal/cleanup IPC, Start `.cmd` menolak produksi, fixture dan root personal versus legacy |
+| `node --test tests/auth-pilot-browser.mjs` | PASS/exit 0 pada putaran final: startup nyata Auth/Firestore dan server pilot, registrasi browser, pending/unlinked ditolak, reviewer username, approval/link, login Mentor, aktivasi/proof/asosiasi, absensi utama/backup Stage 6, suspension, Start ganda, restart state kosong, Enter/Stop `.cmd`, cleanup emulator setelah kata sandi startup tidak valid, dan konflik port melalui Start `.cmd` asli dengan listener lain tetap hidup |
+| Lifecycle final terarah | PASS setelah pelepasan daftar resource dirapikan untuk retry Stop: startup emulator/server, Enter, shutdown dan semua port pilot tertutup |
+| Responsif dan screenshot | PASS assertions 360/390/768/1365 px pada login, panduan, registrasi, tinjauan, Admin dan roster; tidak ada overflow halaman dan link navigasi >=44 px. Screenshot login/panduan/tinjauan/absensi 360 px serta tinjauan/Admin 1365 px diperiksa visual; label utama/backup disamakan sesudah temuan screenshot |
+| `npm.cmd run test:stage6` | PASS/exit 0: unit 175/175 pada awal runner, integrasi 109/109, Chrome 26/26, kalender/laporan/offline PASS, cold recovery/startup-shutdown reguler 2/2. Tambahan dua tes launcher sesudah runner mulai tercakup dalam unit akhir 177/177 di atas. Emulator tes ditutup |
+| Kerahasiaan output | PASS assertion pesan launcher dan log emulator tidak memuat password peninjau/relawan, kode aktivasi yang dipakai atau alias personal; tidak ada token dalam URL/navigasi baru |
+| Diff | `git diff --check` PASS; launcher reguler, kode server/backend lama dan dependency tetap tanpa diff |
+
+Percobaan awal tidak disamarkan sebagai PASS: tes HTTP sandbox terhalang loopback `EACCES`, kemudian dijalankan ulang dengan akses lokal. Penyisipan banner awal membaca header yang diberikan melalui `writeHead` lewat `getHeader`, sehingga banner belum tersisip; wrapper diperbaiki untuk membaca header `writeHead`. Satu assertion markup legacy memakai ID form yang dibuat dinamis dan satu assertion pending mengharapkan pesan unlinked; keduanya disesuaikan dengan kontrak lama. Uji readiness pertama menunggu hingga timeout karena wrapper tidak mengembalikan hasil truthy meski Hub sehat; nilai balik diperbaiki dan emulator percobaan ditutup. Satu tes baru sempat kekurangan impor `path`, lalu diperbaiki. Inspeksi screenshot menemukan nama fixture berbeda dengan direktori Admin; hanya label fixture/panduan pilot yang disamakan. Putaran acceptance berikutnya PASS.
+
+Batas: double-click Explorer native, prompt kata sandi oleh manusia, pemilihan tab oleh browser default, tombol X konsol, Android fisik/Safari/Firefox dan PWA native belum diuji. Eksekusi `.cmd` melalui `cmd.exe`, layanan nyata dan Chrome headless diuji; input password lifecycle otomatis menggunakan callback fixture, sedangkan helper input tersembunyi lama tercakup regresi. Data pilot sengaja tidak dipulihkan; tidak ada migrasi, cutover, recovery akun atau kesiapan produksi yang diklaim. Scope A2.4 tetap belum dijalankan.
+
+Berkas (8): baru `Start MSA Auth Pilot.cmd`, `Stop MSA Auth Pilot.cmd`, `local-auth-pilot.mjs`, `local-auth-pilot-ui.mjs`, `tests/auth-pilot.test.mjs`, `tests/auth-pilot-browser.mjs`; diperbarui `README.md`, `PROJECT_STATUS.md`. Bukti diabaikan Git: `.emulator-data/auth-pilot-qa/{check-final,unit-final,regression-final,pilot-acceptance,pilot-final,lifecycle-final}.log`, screenshot pada subfolder `screenshots/`, regresi penuh `.emulator-data/stage3-tests/run-4Q580M/`. Branch tetap `development`; tidak commit, push, deploy, ubah branch, pasang dependency atau menyentuh data operasional.
 
 ## AUTH A2.3 — integrasi akun Mentor dan perangkat
 

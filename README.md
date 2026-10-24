@@ -1,10 +1,36 @@
 # ABC | Ministry Service App — Prototipe lokal
 
+## Pilot akun interaktif Windows — AUTH A1/A2.2/A2.3
+
+Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
+
+1. Biarkan jendela launcher terbuka. Saat diminta, buat kata sandi peninjau sepanjang 12–128 karakter dan ulangi. Input tidak terlihat. Tidak ada kata sandi bawaan. Peninjau fiktif memakai username **`peninjau.pilot`**; setup lokal mengikat username ke UID pemilik fiktif melalui mekanisme trusted yang sudah ada.
+2. Tunggu **Pilot siap**. Browser membuka login Mentor personal, panduan, dan tinjauan identitas. Jika browser tidak terbuka, gunakan tautan di bawah. Banner kuning dan navigasi pilot muncul pada halaman pilot; demo reguler tetap memakai launcher dan login lama.
+3. Di **Daftar relawan**, buat akun fiktif dengan username/kata sandi sendiri. Di **Tinjau identitas**, pilih **Username akun uji**, masuk sebagai `peninjau.pilot`, lalu buka akun tersebut. Isi `s1` / `g1` / `fictional-a23-current`; pilih **Setujui identitas**, isi alasan dan referensi pemeriksaan fiktif, centang konfirmasi bukti, lalu tinjau dan simpan. Setelah itu pilih **Tautkan identitas Mentor**, isi `fictional-mentor`, cakupan yang sama, alasan dan bukti fiktif, lalu simpan. Kesamaan nama/HP tidak cukup sebagai bukti.
+4. Di **Masuk Mentor**, gunakan akun relawan tadi. Di tab **Admin / aktivasi**, masuk dengan username peninjau dan kata sandi launcher, buka **Perangkat Mentor**, pilih SDN Pacarkeling V (data pilot fiktif), pelayanan hari ini dan **Hosea (g1)**, lalu terbitkan kode 48 jam. Masukkan kode di halaman Mentor dan konfirmasikan **Gunakan perangkat ini**. Login tidak menggantikan kode, proof atau izin perangkat; akses maksimal satu jam dan berakhir paling lambat akhir tanggal pelayanan WIB.
+5. Coba absensi siswa fiktif. Untuk Stage 6, Admin membuka **Backup Mentor**, memilih pelayanan dan perangkat aktif tadi, memberi kelompok **Obaja (g2)** dengan alasan, lalu mengonfirmasi. Mentor memilih **Muat ulang izin kelompok**. Absensi utama/backup dan riwayat tetap terpisah. Panduan dalam browser juga menjelaskan percobaan akun menunggu, ditolak, belum tertaut dan penangguhan melalui pengelolaan akun A1.
+6. Tekan **Enter** di jendela pilot atau klik dua kali **`Stop MSA Auth Pilot.cmd`**. Tunggu konfirmasi berhenti. Jangan tutup paksa; jika penghentian belum terkonfirmasi, biarkan jendela terbuka dan ulangi Stop.
+
+| Halaman pilot | Alamat lokal |
+|---|---|
+| Login personal Mentor (halaman awal) | `http://127.0.0.1:4276/` atau `/mentor-account.html` |
+| Panduan langkah demi langkah | `http://127.0.0.1:4276/pilot.html` |
+| Pendaftaran relawan | `http://127.0.0.1:4277/register.html` |
+| Tinjauan identitas | `http://127.0.0.1:4277/identity-review.html` |
+| Admin / penerbitan kode aktivasi | `http://127.0.0.1:4277/username.html` |
+| Pengelolaan akun uji / penangguhan | `http://127.0.0.1:4277/a1.html` (pilih login username) |
+
+**Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2 dan A2.3 hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua hanya melaporkan pilot sudah aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
+
+**Data sementara:** tidak ada impor, ekspor, snapshot atau pemulihan pilot. Folder `.emulator-data/auth-pilot/run-*` hanya menyimpan konfigurasi/diagnostik emulator dan diabaikan Git; `.emulator-data/local-demo-launcher` tidak dibaca atau ditulis. Setiap restart menghapus konteks uji sebelumnya secara alami melalui emulator baru, membuat peninjau/kata sandi baru, dan memerlukan registrasi/aktivasi ulang. Jangan gunakan kredensial/perangkat dari run sebelumnya. Jika berganti tanggal WIB atau lupa kata sandi peninjau, hentikan lalu nyalakan pilot kembali. Namespace, snapshot, password dan akun demo reguler tidak diubah. Tidak ada endpoint provisioning publik atau izin penggunaan data nyata.
+
+Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
+
 ## AUTH A2.3 — pengujian akun Mentor dan perangkat
 
 Jalankan `npm.cmd run test:msa-a2-3` untuk login Mentor personal, asosiasi perangkat, penolakan akun/link/sesi tidak sah, backup, transaksi revoke/write dan browser responsif. Runner menyiapkan port/namespace `test-*` dan data fiktif sendiri, tanpa snapshot operasional. `npm.cmd run test:stage6` tetap menjalankan regresi penuh termasuk A2.3. Hasil aktual ada di PROJECT_STATUS.md.
 
-Halaman `/mentor-account.html` pada shell Mentor hanya tersedia bila A1, A2.2 dan `ABC_MSA_A2_3=1` diaktifkan pada lingkungan tes demo yang valid. Flag tidak ditambahkan ke launcher dan login utama tetap. Masuk memakai username/password akun yang sudah ditinjau dan ditautkan. Kelompok utama ditentukan server. Jika perangkat belum aktif, minta kode sekali pakai kepada PIC; sesudah verifikasi perangkat, konfirmasikan **Gunakan perangkat ini**. Login sendiri tidak memberikan akses absensi.
+Halaman `/mentor-account.html` pada shell Mentor hanya tersedia bila A1, A2.2 dan `ABC_MSA_A2_3=1` diaktifkan pada lingkungan tes demo yang valid. Flag tidak ditambahkan ke launcher reguler dan login utama tetap; launcher pilot terpisah di atas menyiapkan lingkungan tes tersebut. Masuk memakai username/password akun yang sudah ditinjau dan ditautkan. Kelompok utama ditentukan server. Jika perangkat belum aktif, minta kode sekali pakai kepada PIC; sesudah verifikasi perangkat, konfirmasikan **Gunakan perangkat ini**. Login sendiri tidak memberikan akses absensi.
 
 Kelompok utama dan backup tampil terpisah. Simpan/tinjau/selesaikan/koreksi tetap menunggu konfirmasi server. Saat offline, periksa akses kembali setelah jaringan tersambung; tidak ada simpan offline otomatis. Keluar menutup sesi personal, tanpa mencabut atau menyalin izin perangkat. Perangkat tertaut tidak dapat dipakai melalui alur legacy tanpa sesi akun sah. Akun/link/revisi stale memerlukan pemeriksaan PIC dan aktivasi baru; tombol hapus izin lokal tidak menghapus revokasi server.
 
