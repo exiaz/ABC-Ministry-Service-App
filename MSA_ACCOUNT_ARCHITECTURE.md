@@ -1,6 +1,50 @@
 # MSA — Kajian arsitektur akun personal
 
-**24 Oktober 2026 · Kontrak akun: CONFIRMED arah produk / PROPOSED keputusan teknis / NOT IMPLEMENTED autentikasi personal.** Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan kontrak dan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. UI PIC tetap memakai kontrak email/password yang ada. Tidak mengizinkan migrasi autentikasi, perubahan rules/dependensi atau deployment. [MASTER_BRIEF.md](MASTER_BRIEF.md) memuat kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan; [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat hasil implementasi/tes aktual.
+**24 Oktober 2026 · AUTH A1: IMPLEMENTED terbatas pada akun fiktif/emulator, flag mati secara default.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian A1 berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+
+## AUTH A1 — kontrak implementasi lokal
+
+Lingkup A1 yang diminta pengguna mengizinkan broker/registry dan pengelolaan role untuk akun uji terisolasi. Tidak mengubah login utama email/password atau akun/perangkat lama. `ABC_MSA_A1=1` hanya dikenali oleh instance autentikasi yang sudah lolos seluruh gate Auth/Firestore Emulator, project `demo-abc-attendance`, loopback dan larangan konfigurasi produksi. Tanpa flag, endpoint `/api/a1/*`, halaman `/a1.html` dan skripnya tidak tersedia. Menonaktifkan flag saat proses berjalan menolak operasi; restart diperlukan untuk mengubah ketersediaan modul.
+
+### Akun, identitas dan username — IMPLEMENTED A1
+
+- Koleksi privat `msaAccounts/{uid}` dan `msaUsernames/{canonical}` di namespace emulator yang sama, terpisah dari `adminAccounts` lama. Tidak ada backfill. UID baru deterministik dari namespace + ID permintaan fixture; alias stabil `<uid>@msa.example.invalid`, tidak bergantung pada username atau telepon. Satu UID menyimpan beberapa role, bukan akun terpisah per role. Target satu manusia satu akun memerlukan review/linking A2; username unik saja tidak membuktikan manusia yang sama.
+- Grammar A1: trim, ASCII `^[a-z0-9][a-z0-9._-]{2,31}$`, canonical lowercase, bentuk tampilan dipertahankan. Unicode/confusable ditolak. Nama cadangan: `admin`, `administrator`, `superadmin`, `root`, `system`, `support`, `api`, `msa`, `abc`, `login`, `register`, `null`, `undefined`. Rename/recycle belum tersedia; reservasi gagal tetap ditahan.
+- Profil: nama lengkap, metadata opsional `preferredName`, telepon supplied/normalized dan status supplied terpisah dari verified. Terima `08…`, `628…`, `+628…` serta spasi/kurung/hyphen; canonical `+628` diikuti 8–11 digit. Ini validasi bentuk seluler Indonesia terbatas, bukan verifikasi kepemilikan/nomor aktif atau metadata operator nasional. Tidak menetapkan klaim phone Firebase dari input ini.
+- State akun: `pending`, `active`, `suspended`, `disabled`; provisioning `reserved`, `ready`, `failed`. Akun baru pending/unverified dan tidak mempunyai role/eligibility. `provisionFixture` hanya helper trusted dengan marker fiktif eksplisit, tanpa endpoint registrasi. Tes menetapkan review/eligibility melalui fixture server, bukan input UI. Approval, perubahan kontak, linking mentor/volunteer dan recovery masih PLANNED.
+- Reservasi canonical dan akun dalam transaksi tunggal: satu pemenang untuk kapital berbeda; retry request yang sama mempertahankan UID. Auth dan Firestore tidak berbagi transaksi: jika gagal, registry tetap reserved dan akun failed; tidak bisa login/diotorisasi. Tidak menghapus alias/Auth user atau membuat UID baru saat retry. Pemulihan partial failure memerlukan rekonsiliasi trusted terpisah; belum ada alat pemulihan otomatis.
+
+### Broker dan sesi — IMPLEMENTED A1
+
+`POST /api/a1/login` mengirim username/password ke backend same-origin. Backend mencari registry privat, lalu memverifikasi password melalui REST Firebase dan mencocokkan UID hasil dengan UID registry. Alias, ID token dan refresh token tidak dikirim ke UI. Password hanya transit ke Firebase, tidak disimpan di koleksi/log/audit. Username salah, password salah, akun pending/unverified/suspended/disabled/failed memakai error generik yang sama; username tidak ditemukan tetap memakai percobaan alias dummy dan lantai waktu 150 ms. Ini mengurangi perbedaan timing, bukan jaminan waktu identik pada provider nyata.
+
+Rate limit Firestore transaksional per namespace: 8 percobaan/canonical dan 60 global per menit kalender, termasuk login berhasil. Kunci username di-hash; limiter berlaku lintas instance/restart, tidak mempercayai IP forwarded. Balasan 429 generik dengan Retry-After 60 detik. Review mitigasi DoS, retensi/pruning limiter dan perlindungan jaringan diperlukan sebelum perluasan.
+
+Sesi aplikasi acak 256 bit, admission di memori server memakai hash bearer; token hanya di closure UI, tanpa localStorage/cookie/URL. Maksimal 30 menit dan tidak melampaui ID token Firebase; tidak ada refresh, restart mengakhiri admission. Maksimal 1.000 sesi per proses. Setiap request memeriksa `verifyIdToken(..., true)`, status identitas/akun dan revision Firestore; semua perubahan role/status menaikkan revision, sehingga sesi lama tetap ditolak setelah reaktivasi. Sesi A1 tidak diterima oleh API Admin lama atau API Mentor/absensi.
+
+Firebase tetap verifier password sesuai [REST password sign-in](https://firebase.google.com/docs/reference/rest/auth) dan pemeriksaan revokasi sesuai [pengelolaan sesi Firebase](https://firebase.google.com/docs/auth/admin/manage-sessions). Emulator memakai token unsigned dan bukan bukti keamanan provider/HTTPS produksi. Alias fiktif ini hanya keputusan A1; namespace provider produksi, recovery dan step-up/MFA belum diputuskan.
+
+### Role dan scope — IMPLEMENTED A1
+
+| Role | Kontrak izin A1 |
+|---|---|
+| Superadmin (`superadmin`) | Grant sistem eksplisit `{organizationId:null}`; mengelola registry, role/status dan audit. Bootstrap bukan endpoint publik; sesi Superadmin legacy yang diverifikasi server boleh mengelola akun uji tanpa membuat akun personal untuk dirinya. |
+| Admin / Pengelola Tim (`admin`) | Grant wajib organisasi tertentu; program/event opsional membatasi lebih lanjut. Tidak mendapat `accounts:manage`, tidak memberi role atau mengubah keamanan global. |
+| PIC (`pic`) | Organisasi/program/event eksplisit; tidak dapat mengubah izin dirinya atau orang lain. Delegasi review identitas/penugasan Mentor menunggu A2/adapter domain. |
+| Mentor / Relawan (`volunteer`) | Grant berscope tanpa kemampuan administratif. Login tidak memberi izin roster, kelompok default, perangkat atau absensi. |
+
+Tiap grant menyimpan ID deterministik `(role, scope)`, status `active/revoked`; beberapa role/scope didukung satu UID. Organisasi wajib ada dan aktif pada katalog trusted `msaOrganizations`; program/event harus milik organisasi itu. Katalog fiktif ini bukan implementasi modul organisasi/event MSA. Scope organisasi mencakup turunannya, scope program/event membatasi secara eksplisit. Tidak ada default seluruh organisasi untuk Admin/PIC. `POST /api/a1/access` menguji kontrak izin operasional berscope, tanpa membaca atau memutasi data pelayanan. Modul operasional multi-organisasi masih PLANNED dan wajib memakai pemeriksaan transaksional setara saat nanti diimplementasikan.
+
+Mutasi hanya oleh Superadmin aktif (legacy atau A1), diperiksa ulang dalam transaksi. Tidak ada self-change/promosi sendiri. Target harus ada, provisioning ready, active, identitas verified dan eligible untuk pemberian role; tidak ada aturan employment/nama/telepon. Perubahan state tidak memverifikasi identitas. Penangguhan/nonaktif/pending tidak menghapus grants atau audit; role revoked tidak dihidupkan lagi oleh reaktivasi.
+
+`expectedRevision` mencegah overwrite; konflik 409 meminta muat ulang. Receipt `(actor, requestId)` + fingerprint membuat retry/permintaan promosi berulang idempoten tanpa grant ganda. Transaksi membaca actor/target, memvalidasi scope, menulis revision, receipt dan audit atomik. Penjaga bersama dan query transaksional menolak pencabutan/penonaktifan Superadmin A1 aktif terakhir, termasuk dua pencabutan bersamaan. Owner legacy tidak dapat diedit lewat A1. Audit menyimpan actor UID, target UID, state/role/scope sebelum/sesudah, alasan dan timestamp; tidak menyimpan password/token/nomor penuh.
+
+### HTTP, UI dan batas aktivasi
+
+- Registry/list/search (`username`/nama + filter state/role), perubahan role/status dan audit hanya untuk Superadmin. Route `/api/a1/session` hanya profil sesi sendiri; tidak mengekspos alias atau nomor penuh. HTTP same-origin loopback, allowlist field, JSON maksimal 4 KiB, timeout baca 5 detik, cache no-store dan origin/host gate. Firestore browser tetap deny-all, termasuk registry baru. Klaim browser/localStorage, raw ID token dan direct Firebase signup tidak mengotorisasi A1.
+- `/a1.html` adalah bagian pengguna terpisah yang memakai desain ABC/CSS yang ada. Superadmin lama mendapat tautan dari Akun PIC hanya ketika flag aktif; login utama tetap. Halaman uji mendukung login username akun fiktif, daftar/filter, profil terpisah dari kontrol izin, indikator role/organisasi, alasan wajib, dialog konfirmasi keyboard dan audit. Aliases tersembunyi. Tidak ada kontrol registrasi/approval/recovery palsu.
+- Status suspended/disabled A1 menolak semua sesi A1. Tidak menyatakan suspension global perangkat legacy sudah selesai: tidak ada akun uji yang ditautkan ke perangkat/mentor lama. Adapter legacy/device dan gate suspension atomik di jalur tersebut tetap prasyarat migrasi. Tidak memperluas scope atau role Admin lama, tidak mengganti UID/PIC/kode/proof/TTL/backup/riwayat.
+- Batas uji registry: 200 akun, 100 organisasi katalog dan 100 audit terbaru. Pagination, produksi, public registration, onboarding/linking, password recovery, cutover dan Stage 7 tidak diimplementasikan A1.
 
 ## 1. Rekomendasi
 

@@ -26,6 +26,7 @@ function render(state){
   if(selected==='devices')root.querySelector('.content > .panel').outerHTML=devicePanel.view();
   if(selected==='schedule')root.querySelector('.content > .panel').outerHTML=calendarPanel.view();
   if(selected==='accounts')root.querySelector('.content > .panel').outerHTML=accountPanel.view();
+  if(selected==='accounts'&&state.msaA1===true){const link=document.createElement('a');link.className='btn';link.href='/a1.html';link.textContent='Pengelolaan pengguna MSA · Uji A1';root.querySelector('.content').append(link);}
   if(selected==='backup')root.querySelector('.content > .panel').outerHTML=backupPanel.view();
 }
 const client=createAdminClient(state=>{

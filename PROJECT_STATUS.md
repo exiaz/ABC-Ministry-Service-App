@@ -1,6 +1,39 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · Stage 6 tetap berlaku · kontrak akun MSA dan perapian UI PIC · lokal/emulator**
+**24 Oktober 2026 · AUTH A1 terverifikasi terbatas · Stage 1–6 tetap berlaku · lokal/emulator**
+
+## AUTH A1 — Username, registry akun dan pengelolaan role
+
+**IMPLEMENTED dan TESTED untuk akun fiktif/emulator terisolasi; penerimaan A1 PASS pada lingkup tersebut.** Flag `ABC_MSA_A1` mati secara default. Login utama email/password, UID/credential lama, PIC, kode/proof perangkat Mentor, absensi dan riwayat tetap memakai kontrak sebelumnya. Tidak mengaktifkan pendaftaran umum atau melakukan migrasi, penautan, perubahan credential nyata, Stage 7 maupun deployment. Bagian riwayat di bawah bukan status A1 terkini.
+
+Perubahan implementasi:
+
+- Broker username → registry canonical privat → alias Firebase berbasis UID; Firebase memverifikasi password dan hasil UID wajib cocok. Username ASCII 3–32, trim/lowercase dan reserved names eksplisit. Transaksi reservasi mengatasi kapital berbeda/konkurensi; UID stabil per permintaan fixture. Password tidak disimpan di aplikasi/log/audit; alias/ID token/refresh token tidak dikirim ke UI. Telepon Indonesia dinormalisasi +62 dengan supplied/verified terpisah, nama lengkap dan metadata profil terbatas. Pending/failed/unverified tidak diotorisasi.
+- Akun personal baru menyimpan beberapa grant `superadmin/admin/pic/volunteer`, masing-masing berscope/status. Organisasi/program/event diperiksa ke katalog trusted fiktif; Admin/PIC tidak mendapat semua organisasi. Tidak membuat modul pelayanan/organisasi operasional. Endpoint access hanya menguji kontrak izin; tidak memberi akses absensi/perangkat lama.
+- Hanya Superadmin aktif legacy/A1 dapat mengelola role/status/registry/audit; actor/target, identity, eligibility, revision, scope dan provider aktif diperiksa server. Tidak ada self-change atau eskalasi PIC/Admin. Penjaga/query transaksi melindungi Superadmin A1 terakhir, termasuk pencabutan bersamaan dan kandidat cadangan dengan provider nonaktif. Owner legacy tidak diedit A1. Receipt idempoten mempertahankan satu grant, revision dan audit atomik berisi actor/target, role/scope/state sebelum/sesudah, alasan/waktu.
+- Sesi A1 opaque 256 bit, hash admission server, hanya di memori UI; TTL maksimal 30 menit/expiry provider, tanpa refresh. Setiap request memeriksa token provider/revocation dan status/revision akun. Perubahan role/status membatalkan sesi lama, termasuk sesudah reaktivasi. Limiter login Firestore per canonical/global bertahan lintas instance/restart; error kredensial generik, alias dummy dan lantai waktu 150 ms. Host/origin/JSON/body/timeout dibatasi. Rules browser tetap deny-all tanpa perubahan.
+- Halaman pengguna `/a1.html` hanya tersedia dengan flag, tautan khusus Superadmin pada Akun PIC tanpa mengganti login lama. Pencarian/filter, profil, indikator role/organisasi, kontrol grant/status, alasan wajib, dialog konfirmasi aksesibel dan audit; tidak menampilkan alias atau form registrasi/approval palsu. CSS dibatasi halaman A1; PIC lama dipertahankan. Fingerprint lifecycle memasukkan flag A1 agar konfigurasi berbeda tidak dianggap kompatibel.
+
+Validasi yang benar-benar dijalankan:
+
+| Perintah/pemeriksaan | Hasil aktual |
+|---|---|
+| `npm.cmd run check` | PASS, 138 modul JS/MJS: sintaks dan impor lokal |
+| `npm.cmd test` | PASS, 166/166 pada eksekusi akhir, termasuk grammar/nomor A1 dan fingerprint flag |
+| `npm.cmd run test:stage6` | PASS/exit 0: unit 166/166; integrasi Auth/Firestore 94/94; Chrome Superadmin/PIC/Mentor/A1 23/23; kalender demo/laporan/offline PASS; cold recovery/startup-shutdown 2/2 |
+| `npm.cmd run test:msa-a1` sesudah penguatan provider/flag | PASS/exit 0: unit A1 2/2, integrasi A1 3/3 rangkaian skenario, Chrome A1 1/1; emulator ditutup |
+| Visual A1 | Screenshot 360/390/768/1365 piksel; assertion tanpa overflow, input 16 px/tinggi 44 px, cancel confirmation tanpa mutasi, promote/revoke/search/audit dan login user biasa tanpa kontrol istimewa; screenshot 390/1365 ditinjau visual |
+| Pemeriksaan akhir | `git diff --check` PASS; tidak ada dependency/rules/lockfile/ID/riwayat/branch/HEAD yang diubah; direktori `ABC-MSA-Audit/` tidak ditemukan pada cek awal/akhir dan tidak disentuh |
+
+Rangkaian A1 mencakup username case-insensitive/race satu pemenang, retry UID tetap, kegagalan provisioning fail-closed, kesamaan respons kredensial salah/tidak ada, binding UID provider, raw ID token tidak diakui, rules deny read/write langsung, multi-role PIC/Admin scoped, lintas organisasi/program/event ditolak, PIC/Admin tidak bisa mempromosikan diri/orang lain, missing/pending/unverified/suspended/disabled/ineligible dan provider nonaktif ditolak, promosi bersamaan idempoten, revoke/suspend/reaktivasi tidak memulihkan sesi lama, audit, origin palsu, last-Superadmin/self-change, limiter lintas restart serta halaman/skrip/API 404 ketika flag default mati. Regresi lengkap tetap memverifikasi legacy PIC/Mentor, pairing, Stage 4–6, konkurensi, absensi/koreksi/history dan launcher.
+
+Percobaan unit pertama di sandbox mengalami koneksi loopback `EACCES`; eksekusi dengan izin loopback kemudian lulus. Ini batas lingkungan percobaan awal, bukan hasil PASS yang disembunyikan. Bukti diabaikan Git: `.emulator-data/a1-qa/{check,unit,regression,final-a1}.log`; regresi penuh pada `.emulator-data/stage3-tests/run-ZCg7b3/`, uji akhir A1 pada `run-gjbvuU/`, masing-masing menyimpan screenshot dan log emulator/data fiktif khusus. Tes tidak mengimpor snapshot operasional dan menutup emulator miliknya.
+
+Berkas A1 (23): `backend/msa-accounts.mjs`, `backend/msa-auth.mjs`, `backend/msa-http.mjs`, `backend/admin-auth.mjs`, `backend/server.mjs`, `admin-server.mjs`, `admin-client.js`, `secure-admin.js`, `a1.html`, `msa-users.js`, `local-service.mjs`, `package.json`, `tests/msa-accounts.test.mjs`, `tests/local-service.test.mjs`, `tests/emulator/msa-a1-fixture.mjs`, `tests/emulator/msa-a1.test.mjs`, `tests/emulator/msa-a1-ui.mjs`, `tests/stage3.mjs`, `MASTER_BRIEF.md`, `MSA_ACCOUNT_ARCHITECTURE.md`, `MSA_PRODUCT_VISION.md`, `README.md`, `PROJECT_STATUS.md`.
+
+**PLANNED / belum diimplementasikan:** public registration/invitation, reviewer/approval/linking identitas, pembuktian satu manusia satu akun, inheritance kelompok/default, penautan akun-perangkat dan suspension lintas legacy device, migrasi existing UID, rename, recovery/step-up/MFA, rekonsiliasi otomatis partial Auth setup, pagination skala besar, modul operasi MSA dan produksi. Registry uji dibatasi 200 akun, katalog 100 organisasi dan audit 100 terbaru. Suspended A1 ditolak pada semua jalur A1; tidak diklaim membatalkan perangkat legacy yang belum ditautkan. Auth/Firestore tidak atomik: setup gagal mempertahankan reservasi/UID dan perlu rekonsiliasi trusted, tanpa memberi akses.
+
+Provider produksi/HTTPS, proteksi timing/DoS pada jaringan nyata, signature provider produksi dan perangkat fisik/Firefox/Safari belum diverifikasi. Perubahan manual di Firebase di luar backend tidak dapat dibuat atomik dengan transaksi Firestore; status aplikasi/revision tetap sumber deny untuk mutasi A1. Kontrak detail dan sumber Firebase ada di MSA_ACCOUNT_ARCHITECTURE.md. **Berhenti sesudah verifikasi A1; fase berikutnya memerlukan lingkup tersendiri.** Tidak commit, push, deploy, billing, instalasi atau perubahan branch. HEAD tetap `0aea870018ac90ebf0ee6612f0379ce94d832148`, branch `development`.
 
 ## Kontrak akun dan UI PIC — 24 Oktober 2026
 

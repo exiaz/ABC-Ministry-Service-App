@@ -2,7 +2,11 @@
 
 **Status revisi 24 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–6 (hasil verifikasi pada PROJECT_STATUS.md). Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
 
-## Evolusi autentikasi MSA — kebutuhan dikonfirmasi, PLANNED / NOT IMPLEMENTED
+## AUTH A1 — implementasi akun uji terisolasi, 24 Oktober 2026
+
+Broker username Firebase, registry privat dan pengelolaan multi-role/scope oleh Superadmin kini diimplementasikan terbatas untuk akun fiktif pada emulator dengan `ABC_MSA_A1=1`, mati secara default. Login utama, akun/PIC/perangkat lama dan absensi tetap memakai jalur sebelumnya. Kontrak aktual, eligibility, last-Superadmin, sesi/revokasi serta batasnya ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal); hasil tes aktual ada di PROJECT_STATUS.md. Ini tidak mengaktifkan pendaftaran umum, migrasi/penautan Mentor, pemulihan password, suspension lintas perangkat atau modul pelayanan MSA.
+
+## Evolusi autentikasi MSA — kebutuhan target dan kajian sebelum A1
 
 **Kontrak disempurnakan 24 Oktober 2026; autentikasi personal NOT IMPLEMENTED.** Target CONFIRMED: satu akun personal per relawan, tanpa akun tambahan menurut peran; registrasi Nama lengkap, Nomor HP, Username dan Password; login username tanpa email pada pengalaman pengguna. Dukung undangan serta pendaftaran umum dengan persetujuan. Pendaftar baru tidak menerima hak istimewa sebelum diverifikasi. Username unik tanpa membedakan kapital; rekomendasi teknis PROPOSED 3–32 karakter ASCII. Nomor Indonesia dinormalisasi ke E.164 +62; supplied dan verified tetap status terpisah. Grammar/contoh normalisasi dan race uniqueness hanya dirinci di kontrak akun.
 

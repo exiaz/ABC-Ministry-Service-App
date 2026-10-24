@@ -1,5 +1,11 @@
 # ABC Goes to School — Prototipe lokal
 
+## AUTH A1 — uji akun username terisolasi
+
+Login Admin/PIC dan aktivasi Mentor di bawah tetap berlaku. A1 mati secara default; tidak ada registrasi umum, migrasi akun atau perubahan password/perangkat lama. Pengujian terpisah tersedia melalui `npm.cmd run test:msa-a1`: runner membuat Auth/Firestore Emulator, namespace dan akun fiktif sementara, memeriksa broker/role serta membuka Chrome headless untuk verifikasi, kemudian menutup emulator tes. Hasil lengkap regresi tetap melalui `npm.cmd run test:stage6`.
+
+Untuk pengembangan terisolasi, flag server `ABC_MSA_A1=1` membuka `/a1.html` pada server Admin emulator yang telah dikonfigurasi. Superadmin lama juga mendapat tautan **Pengelolaan pengguna MSA · Uji A1** dari Akun PIC; halaman meminta autentikasi sendiri, tidak menyalin token melalui URL/storage. Pilihan login username hanya menerima akun uji A1 yang telah direview melalui fixture trusted. Tidak ada form untuk mendaftarkan, memverifikasi atau menautkan orang nyata. Gunakan namespace/data fiktif khusus, bukan snapshot operasional. Menonaktifkan flag dan restart menutup halaman/endpoint A1 serta mengakhiri sesi A1. Kontrak, keterbatasan provisioning, role/scope, suspension dan migrasi ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal); hasil aktual di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
 ## Mulai dan login tanpa perintah terminal — Windows
 
 1. Klik dua kali **`Start ABC Attendance.cmd`** di folder proyek. Biarkan jendelanya terbuka. Peluncur memeriksa Node.js 22+, Java JDK 21+, dependensi dan cache emulator. Tunggu empat langkah persiapan sampai **Demo siap**; halaman **Admin 4177** dan **Mentor 4176** baru dibuka setelah emulator dan server diperiksa. Klik Start lagi membuka halaman instance yang sama.

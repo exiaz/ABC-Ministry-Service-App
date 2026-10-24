@@ -1,6 +1,6 @@
 # ABC | Ministry Service App — visi produk dan rencana arsitektur
 
-**Tanggal:** 24 Oktober 2026. **Status seluruh perluasan MSA: PLANNED / NOT IMPLEMENTED.**
+**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1 akun fiktif/emulator di balik flag mati secara default sudah IMPLEMENTED.** Kontrak aktual A1 ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** belum dimulai; kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
 

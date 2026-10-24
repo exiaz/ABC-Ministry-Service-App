@@ -13,7 +13,7 @@ export function createAdminClient(onChange,{request=fetch}={}){
     const result=await response.json();
     if(g!==generation)return null;
     if(typeof result?.uid!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(result.uid)||result.mode!=='emulator-lokal')throw Error();
-    return {uid:result.uid,mode:result.mode,...(result.role?{role:result.role,actions:result.actions??[]}: {})};
+    return {uid:result.uid,mode:result.mode,...(result.msaA1===true?{msaA1:true}:{}),...(result.role?{role:result.role,actions:result.actions??[]}: {})};
   };
   async function deviceRequest(path,body){
     if(!token||logoutToken||state.phase!=='active')throw Error('Sesi admin belum aktif.');

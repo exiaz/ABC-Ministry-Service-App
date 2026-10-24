@@ -2,6 +2,7 @@ import {createHash,randomUUID,randomBytes} from 'node:crypto';
 import {DEMO_PROJECT_ID} from './emulator-config.mjs';
 import {emulatorConfig} from './emulator-config.mjs';
 import {adminPolicy,createAdminAccounts} from './admin-accounts.mjs';
+import {createMsaAuthentication} from './msa-auth.mjs';
 
 const digest=token=>createHash('sha256').update(token).digest('hex');
 const validUid=uid=>typeof uid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(uid);
@@ -61,7 +62,9 @@ export async function createLocalAdminAuthentication(){
     await auth.listUsers(1);
     assertLocal();
   }catch{closed=true;await db.terminate();await deleteApp(app);throw Error('Auth Emulator lokal tidak tersedia atau konfigurasi tidak valid.');}
+  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
   return {
+    a1,
     accounts:createAdminAccounts({db,root,auth}),
     async signIn({email,password}){
       try{
@@ -98,6 +101,6 @@ export async function createLocalAdminAuthentication(){
       }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
     },
     revoke(token){return typeof token==='string'&&admitted.delete(digest(token));},
-    async close(){closed=true;admitted.clear();await db.terminate();await deleteApp(app);}
+    async close(){closed=true;admitted.clear();a1?.close();await db.terminate();await deleteApp(app);}
   };
 }

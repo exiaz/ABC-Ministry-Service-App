@@ -11,6 +11,7 @@ const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 // Resume the remaining checks after a browser-only assertion repair, without
 // repeating an already passing integration run. Default still runs everything.
 const fromBrowser=process.argv[2]==='--from-browser';
+const a1Only=process.argv[2]==='--a1';
 async function run(label,args,env=process.env,cwd=ROOT){
   console.log('\nUJI · '+label);
   const code=await new Promise((resolve,reject)=>{
@@ -24,11 +25,11 @@ async function main(){
   // Validate the caller's environment, but never import operational snapshots or
   // attach to its running emulators. Every test child gets disposable ports/data.
   const base=demoEnvironment();await checkPrerequisites();
-  if(process.argv.slice(2).some(arg=>arg!=='--from-browser'))throw Error('Pilihan pengujian tidak valid.');
+  if(process.argv.slice(2).some(arg=>!['--from-browser','--a1'].includes(arg))||process.argv.length>3)throw Error('Pilihan pengujian tidak valid.');
   if(!fromBrowser){
     await run('Sintaks dan import',['tests/check.mjs']);
-    const unit=(await readdir(path.join(ROOT,'tests'))).filter(name=>name.endsWith('.test.mjs')).map(name=>'tests/'+name);
-    await run('Regresi unit Stage 1–6',['--test','--test-concurrency=1',...unit]);
+    const unit=(await readdir(path.join(ROOT,'tests'))).filter(name=>name.endsWith('.test.mjs')&&(!a1Only||name==='msa-accounts.test.mjs')).map(name=>'tests/'+name);
+    await run(a1Only?'Unit AUTH A1':'Regresi unit Stage 1–6',['--test','--test-concurrency=1',...unit]);
   }
   const parent=path.join(ROOT,'.emulator-data/stage3-tests');await mkdir(parent,{recursive:true});
   const state=await mkdtemp(path.join(parent,'run-')),temp=path.join(state,'temp');await mkdir(temp);
@@ -42,18 +43,20 @@ async function main(){
   const child=spawnManagedEmulator([path.join(ROOT,'node_modules/firebase-tools/lib/bin/firebase.js'),'emulators:start','--only','firestore,auth','--project','demo-abc-attendance','--config',config,'--non-interactive'],{cwd:state,env,logFile:path.join(state,'emulator.log')});
   try{
     await waitFor(()=>verifyHub({ports,locatorDirectory:temp}),{alive:()=>child.exitCode===null&&child.signalCode===null});
-    const integration=(await readdir(path.join(ROOT,'tests/emulator'))).filter(name=>name.endsWith('.test.mjs')).map(name=>'tests/emulator/'+name);
-    const browser=['admin-accounts-ui.mjs','admin-login-ui.mjs','device-management-ui.mjs','mentor-attendance-ui.mjs','backup-ui.mjs'].map(name=>'tests/emulator/'+name);
-    if(!fromBrowser)await run('Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
+    const integration=(await readdir(path.join(ROOT,'tests/emulator'))).filter(name=>name.endsWith('.test.mjs')&&(!a1Only||name==='msa-a1.test.mjs')).map(name=>'tests/emulator/'+name);
+    const browser=(a1Only?['msa-a1-ui.mjs']:['admin-accounts-ui.mjs','admin-login-ui.mjs','device-management-ui.mjs','mentor-attendance-ui.mjs','backup-ui.mjs','msa-a1-ui.mjs']).map(name=>'tests/emulator/'+name);
+    if(!fromBrowser)await run(a1Only?'Integrasi AUTH A1':'Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
     // Screenshots go to this run's ignored directory, never historical evidence.
-    await run('Regresi Chrome Superadmin/PIC/Mentor',['--test','--test-concurrency=1',...browser.map(file=>path.join(ROOT,file))],env,state);
-    await run('Kalender demo, laporan dan offline (data fiktif)',[''+path.join(ROOT,'tests/browser.mjs')],env,state);
-    await run('Cold recovery dan startup/shutdown milik peluncur',['--test','--test-concurrency=1','tests/emulator/local-demo-recovery.mjs','tests/emulator/stage3-startup.mjs'],env);
+    await run(a1Only?'Chrome AUTH A1':'Regresi Chrome Superadmin/PIC/Mentor',['--test','--test-concurrency=1',...browser.map(file=>path.join(ROOT,file))],env,state);
+    if(!a1Only){
+      await run('Kalender demo, laporan dan offline (data fiktif)',[''+path.join(ROOT,'tests/browser.mjs')],env,state);
+      await run('Cold recovery dan startup/shutdown milik peluncur',['--test','--test-concurrency=1','tests/emulator/local-demo-recovery.mjs','tests/emulator/stage3-startup.mjs'],env);
+    }
   }finally{
     await stopManagedEmulator(child);
     await waitFor(async()=>!(await Promise.all(ports.map(portOccupied))).some(Boolean),{timeout:10000});
     console.log('Emulator tes ditutup. Artefak fiktif terisolasi: '+state);
   }
-  console.log('\nPASS · '+(fromBrowser?'Chrome, kalender demo/offline dan cold lifecycle':'Stage 3–6')+'. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
+  console.log('\nPASS · '+(a1Only?'AUTH A1':fromBrowser?'Chrome, kalender demo/offline dan cold lifecycle':'Stage 3–6 + AUTH A1')+'. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
 }
 main().catch(error=>{console.error('\nFAIL · '+(error.demoSafe?error.message:error.message?.startsWith('Pengujian gagal:')?error.message:'Prasyarat, layanan atau penghentian tes belum terkonfirmasi. Periksa keluaran di atas dan README.'));process.exitCode=1;});

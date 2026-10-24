@@ -14,6 +14,7 @@
     "test:stage4": "node tests/stage3.mjs",
     "test:stage5": "node tests/stage3.mjs",
     "test:stage6": "node tests/stage3.mjs",
+    "test:msa-a1": "node tests/stage3.mjs --a1",
     "test:browser": "node tests/browser.mjs",
     "emulators:start": "node tests/emulator/run.mjs start",
     "test:emulator": "node tests/emulator/run.mjs test",
