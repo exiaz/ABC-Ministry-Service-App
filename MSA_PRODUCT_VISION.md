@@ -2,7 +2,7 @@
 
 **Tanggal:** 24 Oktober 2026. **Status seluruh perluasan MSA: PLANNED / NOT IMPLEMENTED.**
 
-Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–5 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** dan Stage 7 **Testing, security, documentation** tidak diganti, diperluas, atau dijalankan oleh pekerjaan perencanaan ini.
+Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** belum dimulai; kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
 
 ## 1. Kondisi yang diperiksa
 
@@ -11,11 +11,12 @@ Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MAST
 | JavaScript ES modules/Node.js; prototipe demo dan jalur Admin/Mentor emulator terpisah | [package.json](package.json), [admin-server.mjs](admin-server.mjs), [secure-admin.js](secure-admin.js) |
 | Jadwal semua hari menggunakan `serviceSessionId`, sekolah dan kelompok; sesi bertanggal sama tetap berbeda; revisi, receipt dan audit melindungi perubahan | [backend/service-calendar.mjs](backend/service-calendar.mjs), [tests/emulator/flexible-calendar.test.mjs](tests/emulator/flexible-calendar.test.mjs) |
 | Peran Superadmin/PIC serta izin pairing yang dibatasi server; izin `pairing:issue` saat ini juga dipakai untuk jadwal dalam cakupan kelompok operator | [backend/admin-accounts.mjs](backend/admin-accounts.mjs), [backend/service-calendar.mjs](backend/service-calendar.mjs) |
+| Admin memakai email/password Auth Emulator dan admission per-login; Mentor memakai device capability, belum akun personal/username. Backup Stage 6 terikat perangkat, primary/target assignment dan credential | [backend/admin-auth.mjs](backend/admin-auth.mjs), [backend/backup-assignments.mjs](backend/backup-assignments.mjs), [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) |
 | Kode Stage 4 berlaku tepat 48 jam, sekali pakai; perangkat terikat kunci/proof dan scope, akses maksimal satu jam serta akhir tanggal pelayanan WIB | [backend/device-pairing.mjs](backend/device-pairing.mjs), [backend/firestore-emulator.mjs](backend/firestore-emulator.mjs) |
 | Absensi memakai revisi, idempotensi, kunci transaksi per sesi dan riwayat versi; roster Mentor memakai proyeksi field terbatas | [backend/attendance.mjs](backend/attendance.mjs), [backend/roster.mjs](backend/roster.mjs) |
 | Laporan dan XLSX demo tersedia; rekap/ekspor Admin server belum dimigrasikan | [reports.js](reports.js), [secure-admin.js](secure-admin.js), status Stage 5 |
 
-Belum ditemukan modul organisasi/program, event umum, rundown, kehadiran relawan atau integrasi Google Sheets dalam aplikasi. `PROJECT.md` tidak ditemukan di root; tidak dibuat dokumen pengganti yang menduplikasi rencana ini. Angka tes Stage 5 yang sudah dicatat merupakan bukti historis implementasi, bukan pengujian baru dalam pekerjaan dokumentasi ini. Seluruh aplikasi masih lokal/emulator dan khusus data fiktif; bukan sistem produksi yang telah disahkan untuk data anak nyata.
+Belum ditemukan modul organisasi/program, event umum, rundown, kehadiran relawan atau integrasi Google Sheets dalam aplikasi. `PROJECT.md` tidak ditemukan di root; tidak dibuat dokumen pengganti yang menduplikasi rencana ini. Angka tes Stage 5–6 yang sudah dicatat merupakan bukti historis implementasi, bukan pengujian baru dalam pekerjaan dokumentasi ini. Seluruh aplikasi masih lokal/emulator dan khusus data fiktif; bukan sistem produksi yang telah disahkan untuk data anak nyata.
 
 ## 2. Cakupan produk — PLANNED / NOT IMPLEMENTED
 
@@ -68,7 +69,7 @@ Nama di bawah adalah konsep, bukan koleksi/schema yang sudah dibuat atau kontrak
 | Seri (`recurrenceRules`) | Aturan/rentang/pengecualian serta relasi ke kejadian yang sudah dimaterialisasi. Bukan pengganti ID event. |
 | Mitra/tempat/kontak | Mitra, venue dan kontak PIC eksternal dipisahkan. Label tempat dapat di-snapshot pada event; detail kontak/lokasi sensitif dibatasi. |
 | Referensi absensi lama (`eventAttendanceLinks`) | Tautan event ke namespace dan `serviceSessionId` lama. Satu sesi lama paling banyak dipetakan ke satu event kanonik; event umum dapat memiliki nol atau beberapa tautan yang disetujui. |
-| Profil relawan (`volunteerProfiles`) | Profil minimal per organisasi; akun login opsional/terpisah. Hubungan dengan `mentorId` lama harus melalui pemetaan terverifikasi, bukan kesamaan nama. |
+| Akun personal dan profil relawan (`volunteerProfiles`) | Target dikonfirmasi: satu akun personal per relawan, lintas peran, dengan profil/membership per organisasi. Profil arsip belum diklaim dapat tetap tanpa akun selama transisi. Hubungan dengan `mentorId` lama melalui pemetaan terverifikasi, bukan kesamaan nama; detail broker/registry masih usulan. |
 | Penugasan/peran (`serviceAssignments`) | Event + relawan + satu/beberapa peran + status penugasan. Dapat direncanakan sebelum kehadiran diketahui. |
 | Kehadiran relawan (`volunteerAttendance`) | Satu catatan per event dan relawan, dengan revisi/audit. Tidak memakai koleksi kehadiran anak. |
 | Template dan versi rundown | Template dapat berlaku per program/metode; setiap versi mempunyai provenance dan lingkup akses. |
@@ -78,13 +79,13 @@ Nama di bawah adalah konsep, bukan koleksi/schema yang sudah dibuat atau kontrak
 
 Semua entitas baru yang berada dalam organisasi harus divalidasi server terhadap organisasi dan relasi induknya. Namespace emulator yang sekarang ada bukan tenant organisasi dan tidak cukup menjadi kontrol akses MSA. Identitas sekolah, kelompok, mentor, siswa, batch, pelayanan dan catatan lama tidak diubah menjadi ID organisasi/program.
 
-### Jembatan ke Stage 1–5
+### Jembatan ke Stage 1–6
 
 - Modul absensi Goes to School tetap memakai sekolah, kelompok, mentor tetap, `serviceSessionId`, batch/record, snapshot serta jejak koreksi yang sudah ada. Jangan menggabungkan batch hanya karena tanggal/event sama.
 - Pada awal adopsi, pemetaan event ke sesi lama dibuat eksplisit dan dapat dimulai satu banding satu. Tidak setiap event MSA mempunyai absensi anak. Pemetaan lebih dari satu sesi memerlukan aturan agregasi yang jelas agar satu pelayanan tidak dihitung berulang.
 - Event baru yang membutuhkan absensi sekolah harus melewati adapter dan otorisasi lama, bukan membuat atau mengubah dokumen absensi dari form umum. Edit tanggal parent tidak boleh diam-diam memindahkan sesi lama atau mempertahankan kode yang semestinya ditolak.
 - Waktu event diusulkan disimpan sebagai waktu mulai yang dapat dinormalisasi beserta zona IANA; tanggal lokal diturunkan secara konsisten. Kontrak sesi lama tetap date-only WIB. Batas kode 48 jam serta akses satu jam/akhir hari WIB tidak diinterpretasikan ulang dari waktu acara tanpa persetujuan perubahan kontrak.
-- Mentor tetap tidak memerlukan login pribadi. Kehadiran profil relawan MSA bukan alasan mencabut/membuat ulang mentor, mengganti default mentor, atau membuka scope baru. Alur Backup Mentor/Temporary Group Merge tetap menjadi pekerjaan Stage 6 asli.
+- Saat ini Mentor tidak memerlukan login pribadi. Target akun personal menggantikan asumsi tersebut setelah penautan/migrasi disetujui; profil/registrasi saja tidak memberi akses. Default terverifikasi diwarisi setelah link yang sah, tanpa membuat ulang Mentor atau mengganti riwayat. Backup Stage 6 tetap izin sementara per perangkat/sesi, bukan penugasan tetap. Gate akun dan perangkat harus dirancang bersama sebelum cutover; lihat kajian akun.
 
 ## 5. Rundown Builder dan BibleMax — PLANNED / NOT IMPLEMENTED
 
@@ -113,7 +114,7 @@ Pisahkan **ditugaskan** dari **hadir**. Seorang relawan dapat menjadi PIC dan pe
 
 Profil minimal, penugasan, konfirmasi kesiapan, kehadiran aktual dan riwayat partisipasi merupakan modul terpisah. Pembatalan penugasan tidak menghapus sejarah kehadiran. Koreksi kehadiran membutuhkan pelaku, alasan dan versi sebelumnya. Kehadiran anak tetap berada di domain absensi lama, tidak digabung dengan daftar relawan.
 
-Identitas relawan pada dua organisasi tidak digabung berdasarkan nama/email/telepon secara otomatis. Riwayat awal diusulkan terbatas per organisasi; pelaporan lintas organisasi dan pemetaan identitas bersama memerlukan izin serta keputusan tata kelola. Status penugasan yang belum dikonfirmasi tidak boleh menjadi Hadir/Tidak hadir secara otomatis.
+Target akun personal tunggal tidak berarti profil/riwayat dua organisasi digabung berdasarkan nama/email/telepon secara otomatis. Identitas kanonik memerlukan verifikasi, sedangkan membership, izin dan profil privat tetap per organisasi. Riwayat awal diusulkan terbatas per organisasi; pelaporan lintas organisasi dan penautan lintas realm/tenant memerlukan keputusan tata kelola. Status penugasan yang belum dikonfirmasi tidak boleh menjadi Hadir/Tidak hadir secara otomatis.
 
 ## 7. Batas izin dan privasi — PLANNED / NOT IMPLEMENTED
 
@@ -129,6 +130,15 @@ Usulan tindakan MSA dipisahkan, misalnya membuat/mengedit/publikasi event, menge
 | Pembagian rundown | Baca-saja bukan publik otomatis. Proyeksi yang dibagikan memisahkan konten pelayanan dari catatan privat; izin/revokasi berlaku pada server, bukan tombol tersembunyi atau tab browser. |
 
 Setiap lintasan baru memerlukan validasi relasi organisasi/program/event, allowlist field, audit minimal tanpa rahasia, penolakan lintas organisasi, dan idempotensi untuk mutasi penting. Rahasia OAuth/credential tidak berada dalam localStorage, log, URL, dokumen domain atau Sheets. Kebijakan persetujuan dokumentasi, retensi, akses mitra dan penanganan insiden perlu ditetapkan pemilik data sebelum memakai data nyata. Ini persyaratan desain, bukan klaim kepatuhan atau kesiapan produksi.
+
+### 7.1 Akun personal — kebutuhan dikonfirmasi; solusi teknis masih usulan
+
+- Satu akun relawan untuk semua peran; registrasi nama lengkap, nomor telepon, username dan password, tanpa email dalam UX login. Undangan dan pendaftaran umum menunggu verifikasi/persetujuan sesuai konteks; pengguna baru tidak otomatis menjadi Mentor/PIC/admin.
+- Mentor lama mewarisi default terverifikasi sesudah identity linking terverifikasi. Superadmin/PIC menugaskan relawan yang layak dalam scope. Kelayakan PIC tidak bergantung full-time atau daftar pengecualian individu. Pemberian role administratif tetap kemampuan berbeda dari penugasan operasional.
+- UID lama, default/override/backup dan riwayat dipertahankan. Recovery tanpa email, suspension, duplikat akun dan keterikatan perangkat harus didesain sebelum onboarding luas.
+- Broker username di backend dengan Firebase password provider, alias internal dan registry privat merupakan **rekomendasi teknis**, bukan keputusan final atau implementasi. Tidak mengganti Firebase dengan password store sendiri, tidak melepas rules/backend gate, dan tidak memperluas `pairing:issue` menjadi seluruh izin MSA.
+
+[MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) menjadi rincian kajian: sumber kode/rujukan Firebase, alternatif, linking, migrasi PIC/Mentor, dependensi Stage 6, recovery/suspension, usulan fase dan acceptance test. Kebijakan username/telepon, reviewer/approval, alias provider, recovery, sesi dan transisi kode masih terbuka. Ini tidak mengizinkan implementasi fitur akun atau Stage 7.
 
 ## 8. Google Sheets — PLANNED / NOT IMPLEMENTED
 
@@ -175,7 +185,7 @@ Utamakan satu kolom pada ponsel, tombol simpan/status yang jelas, input opsional
 
 ## 10. Migrasi bertahap — PLANNED / NOT IMPLEMENTED
 
-1. Inventarisasi ulang kontrak, gap server/demo dan bukti Stage 1–5; selesaikan Stage 6–7 asli sebelum memulai implementasi MSA. Tetapkan pemilik data, matriks izin, definisi event dan persetujuan organisasi.
+1. Inventarisasi ulang kontrak, gap server/demo dan bukti Stage 1–6; Stage 6 telah selesai lokal, Stage 7 tetap tahap terpisah yang belum dimulai. Sebelum implementasi MSA, tetapkan pemilik data, matriks izin, definisi event dan persetujuan organisasi. Kajian akun personal hanya memperjelas kebutuhan/dependensi, bukan mengaktifkan fase implementasi baru.
 2. Tambahkan fondasi MSA secara additive melalui modul/adapter di masa depan, dengan fitur belum aktif secara default dan jalur legacy tetap tersedia. Uji data fiktif; tidak langsung backfill semua record atau mengubah root/namespace.
 3. Buat pemetaan organisasi/program/event untuk data lama melalui pratinjau dan persetujuan. Jangan mengasumsikan setiap sekolah adalah organisasi, atau setiap sesi harus mempunyai program. Pemetaan diulang secara idempoten dengan kunci unik; ID absensi lama tetap sama. Nilai yang belum diketahui tetap belum dipetakan, bukan ditebak dari nama/tanggal.
 4. Setiap batch migrasi kelak memerlukan snapshot yang diverifikasi, dry-run, rekonsiliasi jumlah/relasi/revisi dan laporan perubahan; simpan provenance serta catatan sebelum/sesudah. Perubahan penugasan atau penggabungan kelompok bukan pekerjaan migrasi MSA ini.
@@ -189,7 +199,7 @@ Nomor tahap berikut merupakan usulan setelah roadmap asli, bukan penggantian Sta
 | Urutan/prioritas | Lingkup | Gate sebelum lanjut |
 |---|---|---|
 | P0, sebelum/sambil persiapan Stage 6 | Stabilkan Stage 1–5, inventarisasi keterbatasan dan validasi regresi | Tidak mengklaim tes lama sebagai tes baru; gap server/demo diketahui |
-| **Stage 6 asli** | **Backup Mentor / Temporary Group Merge** | Scope asli dijaga; izin sementara, identitas dan riwayat tidak rusak; tidak dimulai dalam rencana ini |
+| **Stage 6 asli** | **Backup Mentor / Temporary Group Merge** | Sudah diimplementasikan lokal/emulator; hasil terverifikasi di PROJECT_STATUS.md. Rencana MSA/akun tidak mengubah scope, TTL atau riwayatnya |
 | **Stage 7 asli** | **Testing, security, documentation** | Regresi Stage 1–6, keamanan dan petunjuk operasi sesuai lingkup yang disetujui; bukan sertifikasi produksi otomatis |
 | Stage 8 usulan, P1 | Fondasi MSA: organisasi, program opsional, keanggotaan/izin dan adapter legacy | Kepemilikan data, pemetaan ID serta uji penolakan lintas organisasi disetujui |
 | Stage 9 usulan, P1 | Buat Pelayanan Baru, draf/publikasi, jadwal gabungan, perulangan terbatas, dashboard/navigasi/merek | Lima isian minimum; tanpa program tetap bekerja; pemilihan tanggal tidak memberi akses absensi |
@@ -215,7 +225,7 @@ Seluruh mitigasi berikut **PLANNED / NOT IMPLEMENTED**; keputusan ini tidak meng
 | Workbook Sheets aktif, layout, formula, pemilik dan tab keluaran | Konfirmasi ulang dengan pemilik file sebelum mapping; catatan kerja lama belum membuktikan kompatibilitas workbook sekarang |
 | OAuth, identitas worker, secret storage dan akses jaringan | Keputusan arsitektur/operasi terpisah; connector cloud tidak boleh membypass safeguard emulator lokal |
 | Benturan edit MSA/Sheets, reorder atau penghapusan | Proyeksi satu arah ber-checksum; konflik ditinjau manusia. Bidir menunggu kebijakan per-field dan versi dasar |
-| Identitas relawan lintas organisasi dan laporan agregat | Jangan merge otomatis; pemilik data memutuskan izin pemetaan identitas dan unit hitungan |
+| Akun personal, identitas lintas organisasi/realm dan laporan agregat | Satu akun lintas peran dikonfirmasi; jangan auto-merge orang/profil. Broker/alias, verifikasi/linking, kebijakan telepon/recovery, reviewer dan izin agregasi masih memerlukan keputusan; lihat kajian akun |
 | Media anak, kontak relawan/mitra dan lokasi sensitif | Persetujuan, proyeksi minimal, akses, retensi dan prosedur insiden ditetapkan pemilik data sebelum data nyata |
 | Tautan tamu baca-saja | Mulai dengan pembaca terotorisasi; guest link, masa berlaku, pencabutan dan field publik memerlukan persetujuan |
 | Gap rekap/ekspor server dan skala izin/jadwal saat ini | Masuk inventaris P0; jangan menganggap tab placeholder, batas lokal 256 tuple atau XLSX demo sudah menjadi backend MSA yang skalabel |

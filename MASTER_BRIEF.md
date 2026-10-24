@@ -2,6 +2,16 @@
 
 **Status revisi 24 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–6 (hasil verifikasi pada PROJECT_STATUS.md). Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
 
+## Evolusi autentikasi MSA — kebutuhan dikonfirmasi, PLANNED / NOT IMPLEMENTED
+
+**Kajian 24 Oktober 2026; dokumentasi saja.** Targetnya satu akun personal per relawan, tanpa akun tambahan menurut peran: registrasi nama lengkap, nomor telepon, username dan password; login username tanpa email pada pengalaman pengguna. Dukung undangan serta pendaftaran umum dengan persetujuan. Pendaftar baru tidak menerima hak istimewa sebelum diverifikasi.
+
+Mentor lama mewarisi kelompok default terverifikasi secara otomatis setelah identitasnya ditautkan secara terverifikasi, dengan mempertahankan `mentorId`, penugasan bertanggal efektif dan snapshot. Kesamaan nama/nomor atau kepemilikan kode perangkat bukan bukti penautan. Superadmin/PIC dapat menugaskan relawan yang layak dalam wewenangnya; kelayakan PIC tidak bergantung pada pekerjaan full-time dan tidak boleh memakai pengecualian individu hardcoded. Satu akun dapat memiliki beberapa peran, tetapi setiap tindakan/cakupan tetap diperiksa server.
+
+Rancang recovery tanpa email serta suspension global/per-scope tanpa menghapus sejarah. Pertahankan UID PIC/Superadmin, seluruh identitas sekolah/kelompok/sesi/siswa/batch, riwayat, RBAC dan proteksi Stage 1–6. Kontrak Mentor tanpa login pribadi pada aplikasi/AGENTS.md adalah kondisi sekarang; migrasi ke akun personal belum dijalankan. Registrasi/login tidak otomatis memberi izin perangkat atau absensi.
+
+**Usulan teknis, belum disahkan:** gunakan Firebase Authentication dengan broker username dan identifier provider internal, registry privat/unik, pengaitan identitas terverifikasi serta membership/penugasan terpisah. Pertahankan gate kode/proof perangkat Stage 4–6 pada fase awal; jangan menganggap login password menggantikannya. Alias internal, kebijakan username/telepon, kewenangan reviewer, kanal recovery, sesi dan cutover tetap keputusan terbuka. [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) merinci bukti kode, alternatif Firebase, risiko Stage 6, fase minimal dan acceptance test; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan. Tidak ada izin perubahan kode, database/rules, dependensi, Stage 7 atau deployment dari kajian ini.
+
 ## Stage 6 — Backup Mentor / Gabung Kelompok Sementara · 24 Oktober 2026
 
 Lingkup yang disetujui: Admin/Superadmin dan PIC berwenang dapat memberi perangkat Mentor yang sudah aktif izin backup untuk beberapa kelompok pada **sekolah dan ID sesi yang sama**. Kelompok utama dan backup ditampilkan terpisah. Siswa, mentor tetap, ID sesi/batch dan riwayat tidak dipindah atau digabung; finalisasi dan koreksi tetap per kelompok.

@@ -2,6 +2,21 @@
 
 **24 Oktober 2026 · Stage 6 backup Mentor sementara · Auth/Firestore Emulator lokal · tidak dipublikasikan**
 
+## Kajian autentikasi MSA — 24 Oktober 2026 · dokumentasi saja
+
+**Implementasi tetap Stage 1–6 lokal/emulator. Akun personal MSA: PLANNED / NOT IMPLEMENTED.** Kajian selesai; tidak memulai Stage 7 atau migrasi. [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md) merinci temuan aktual, kebutuhan dikonfirmasi, usulan teknis, dampak migrasi, keputusan terbuka dan acceptance test masa depan.
+
+- Kebutuhan dikonfirmasi di MASTER_BRIEF dan visi MSA: satu akun per relawan lintas peran, nama/telepon/username/password, login tanpa email dalam UX, undangan dan registrasi umum dengan persetujuan; default Mentor diwarisi otomatis sesudah identity linking terverifikasi. Superadmin/PIC menugaskan relawan dalam scope; kelayakan PIC tidak bergantung full-time atau pengecualian individu.
+- Kode HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca` diperiksa: Admin email/password Auth Emulator dan handle per-login; role/revision serta tuple permissions server; Mentor device capability/proof, kode 48 jam/single-use, batas satu jam/akhir WIB; backup Stage 6 terikat perangkat/credential; transaksi absensi/history; rules deny-all browser. Belum ada self-registration, registry username, verified phone/link atau recovery akun personal. Reset pemilik lokal bukan recovery relawan.
+- Rekomendasi **belum disahkan**: reuse Firebase Authentication melalui broker username/registry privat dan identifier provider internal; pertahankan UID PIC/owner lama, tautkan `mentorId` tanpa mengganti riwayat, dan pertahankan gate perangkat saat transisi. Verifikasi password tetap ke Firebase; custom token bukan pengganti verifikasi. API akun baru tidak otomatis memberikan role, scope atau akses absensi.
+- Risiko utama: account takeover dari link berbasis nama/telepon/kode, duplikat PIC UID dengan registrasi baru, Auth/Firestore provisioning tidak atomik, kontak tak terverifikasi/nomor daur ulang, alias teknis tidak bisa menerima email recovery, dan suspension akun tidak otomatis membatalkan credential perangkat Stage 6. Kajian merancang state/revision, gate akun dalam transaksi, recovery terkontrol, scoped/global suspension, rekonsiliasi serta cutover tanpa legacy bypass.
+- Keputusan terbuka: izin alias internal, policy username/telepon, reviewer/approval/role delegation, realm organisasi, kanal recovery/step-up, sesi dan transisi kode/perangkat. Usulan fase A0–A4 belum dijalankan dan tidak mengubah penomoran roadmap. Kebijakan PIC tidak memerlukan daftar orang yang dikecualikan.
+- Dokumentasi resmi Firebase mengenai password REST/provider, Admin users, custom auth, session revocation, password policy dan enumeration protection ditinjau; sumber ditautkan di kajian. Tidak membuka console Firebase, mengaktifkan layanan/billing atau menghubungi endpoint aplikasi/database.
+
+Berkas kajian: `MSA_ACCOUNT_ARCHITECTURE.md` (baru), `MASTER_BRIEF.md`, `MSA_PRODUCT_VISION.md`, `PROJECT_STATUS.md`. Validasi dokumentasi **PASS**: fence/encoding empat dokumen, struktur tabel, 25 tautan lokal baru/diubah dalam kajian/diff dan `git diff --check`. Diff tracked hanya tiga dokumen lama dan kajian menambahkan satu dokumen baru; pada pemeriksaan akhir juga muncul folder untracked `ABC-MSA-Audit/`, di luar pekerjaan ini dan tidak disentuh. HEAD dan branch sama dengan awal kajian. AGENTS.md/README, aplikasi, tes, database, rules/config, dependensi/lockfile dan skill tidak diubah oleh kajian. Tes aplikasi/emulator tidak dijalankan karena tidak ada perubahan runtime dan kajian tidak mengizinkan perubahan database. Hasil PASS Stage 6 di bawah tetap bukti historis, bukan hasil tes ulang fitur akun. Tidak commit, push atau deploy.
+
+Langkah berikutnya: tetapkan keputusan terbuka dan lingkup fase implementasi pertama secara terpisah. Pekerjaan ini berhenti pada review/dokumentasi; tidak membuat akun, undangan, token, mapping, migrasi atau endpoint baru.
+
 ## Stage 6 — Backup Mentor / Gabung Kelompok Sementara
 
 **Penerimaan Stage 6: PASS dalam lingkup lokal/emulator yang diuji. Seluruh pemeriksaan akhir selesai; tidak ada blocker prasyarat lokal.** Lingkup tetap aplikasi ABC Attendance lokal/emulator; rencana perluasan MSA dan Stage 7 belum diimplementasikan.
