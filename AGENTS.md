@@ -2,6 +2,8 @@
 
 Acuan aturan bisnis: [MASTER_BRIEF.md](MASTER_BRIEF.md). Baca revisi terbaru [PROJECT_STATUS.md](PROJECT_STATUS.md) untuk status implementasi dan batasan; bagian riwayat bukan status terkini.
 
+Rincian arsitektur dan roadmap perluasan MSA yang berstatus **PLANNED / NOT IMPLEMENTED** ada di [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md); `MASTER_BRIEF.md` tetap acuan kebutuhan. Rencana tersebut bukan izin implementasi tahap berikutnya.
+
 - Pertahankan arsitektur JavaScript ES modules/Node.js yang ada kecuali perubahan disetujui pengguna.
 - Gunakan bahasa Indonesia untuk seluruh teks yang tampil kepada pengguna.
 - Pertahankan ID sekolah, kelompok, mentor, siswa, dan sesi, termasuk ID pelayanan dan batch absensi; reschedule tidak mengganti ID.

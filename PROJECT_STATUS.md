@@ -2,6 +2,21 @@
 
 **23 Oktober 2026 · Stage 5 kalender semua hari dan jadwal PIC · Auth/Firestore Emulator lokal · tidak dipublikasikan**
 
+## Pre-Stage 6 — Perencanaan MSA · 24 Oktober 2026
+
+**Perencanaan terdokumentasi; seluruh fitur perluasan MSA berstatus PLANNED / NOT IMPLEMENTED.** Status implementasi aplikasi tetap Stage 1–5. Stage 6 asli **Backup Mentor / Temporary Group Merge** dan Stage 7 asli **Testing, security, documentation** tidak dimulai, diganti atau diperluas oleh pekerjaan ini.
+
+- [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) merinci produk multi-organisasi/program, event dengan program opsional, Buat Pelayanan Baru dengan lima isian minimum, rundown/BibleMax fleksibel, relawan, Sheets satu arah, UX/merek, jembatan ID lama, risiko dan usulan tahap sesudah Stage 7. `MASTER_BRIEF.md` memuat kebutuhan yang dikonfirmasi beserta batas current/planned; `AGENTS.md` hanya ditambah tautan acuan rencana tanpa mengulang model/roadmap.
+- Pemeriksaan kode mencakup kontrak jadwal `backend/service-calendar.mjs`, RBAC `backend/admin-accounts.mjs`, aktivasi/proof/kredensial, absensi/riwayat, roster, laporan demo, shell Admin, paket dan tes relevan. Belum ada modul organisasi/program/event umum/rundown/relawan/Sheets. Rekap/ekspor Admin server yang belum dimigrasikan tetap merupakan batas sebelumnya. `PROJECT.md` tidak ditemukan dan tidak dibuat duplikatnya.
+- Model MSA diusulkan additive dengan pemetaan eksplisit event ke sesi absensi lama; bukan penggantian ID, schema atau koleksi yang sudah ada. BibleMax ditegaskan sebagai metodologi terintegrasi dengan pilihan/urutan/durasi fleksibel; reorder persisten dan isolasi salinan event/template menjadi kriteria penerimaan kelak. Tidak menebak tahapan internal BibleMax.
+- Integrasi Sheets belum dibangun. Catatan workflow Sheets terdahulu dipakai sebagai konteks historis, bukan konfirmasi workbook aktif; file/tab operasional tidak dibuka atau diubah. Dokumentasi Google resmi tentang scope, metadata serta kuota/backoff ditinjau untuk membatasi usulan koneksi/sinkron; keputusan target, identitas OAuth/worker dan pemilik file tetap terbuka.
+
+Keputusan sebelum implementasi: kepemilikan/izin antar organisasi, pemetaan Superadmin/PIC, event versus sesi sekolah, batas draf/perulangan/waktu, materi template BibleMax yang disetujui, identitas relawan, akses tamu, kebijakan privasi/retensi dan target/otorisasi/conflict policy Sheets. Tidak ada keputusan tersebut yang dibypass dengan memberi akses produksi atau membuat asumsi data nyata.
+
+Verifikasi pekerjaan ini **PASS**: kesesuaian dokumen terhadap permintaan/kode, status PLANNED dan roadmap asli ditinjau; format Markdown, tabel/fence dan 18 tautan lokal diperiksa; `git diff --check` lulus. Working tree hanya berisi empat berkas dokumentasi yang disebut di bawah; HEAD dan branch tetap sama dengan awal pekerjaan. Tes aplikasi tidak dijalankan ulang karena tidak ada perubahan runtime; hasil Stage 5 di bawah tetap bukti historis. Tidak ada perubahan kode, schema, dependensi, Firebase, branch, commit, push atau deployment.
+
+Berkas pekerjaan ini: `MSA_PRODUCT_VISION.md` (baru), `MASTER_BRIEF.md`, `PROJECT_STATUS.md`, `AGENTS.md`. Pekerjaan berhenti pada dokumentasi; langkah berikutnya tetap penetapan lingkup Stage 6 asli, bukan implementasi MSA otomatis.
+
 ## Stage 5 — Kalender semua hari dan jadwal PIC
 
 - Kalender, form jadwal, proyeksi Admin/kode aktivasi dan navigasi Mentor menerima tanggal valid pada semua hari. Kalender hanya memfilter sesi; tanggal kosong tidak membuat sesi atau memberi izin. Helper pemilihan lama tetap tersedia sebagai pembacaan tanpa efek samping. Mentor demo tidak membuat provisional atau menambah kelompok ke jadwal. Sesi provisional lama perlu verifikasi; arsip tetap dipertahankan.
