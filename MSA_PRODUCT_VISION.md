@@ -4,6 +4,10 @@
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** kini diverifikasi pada lingkup lokal/emulator (hasil dan batasnya di PROJECT_STATUS.md); kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
 
+## AUTH A2.2 — pembaruan status terbatas
+
+Pendaftaran pending, review identitas berscope dan link UID–Mentor kini diimplementasikan hanya pada namespace fiktif `test-*` dengan A1 + flag A2.2 eksplisit, nonaktif secara default. Resolusi default baca-saja tidak memberi role/akses absensi/perangkat. Tidak ada registrasi publik, linking operasional, asosiasi akun-perangkat, recovery atau cutover; modul produk tetap PLANNED. Bagian A2.1/kajian berikut mencatat keadaan tahap sebelumnya. Kontrak aktual: MSA_ACCOUNT_ARCHITECTURE.md; hasil aktual: PROJECT_STATUS.md.
+
 ## AUTH A2.1 — pembaruan status terbatas
 
 Identitas aplikasi/header/login/PWA **ABC | Ministry Service App** sudah diimplementasikan dengan logo ABC asli; Goes to School tetap nama program. Pilot pengikatan username ke UID Admin/PIC lama tersedia hanya pada namespace tes `test-*`, melalui helper trusted dan reautentikasi, dengan flag A1 + pilot eksplisit. Login email tetap default; akun/registry operasional tidak diikat atau diperiksa. Kontrak dan prosedur binding nyata yang belum dijalankan ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a21--branding-dan-pilot-username-uid-lama); bukti aktual di PROJECT_STATUS.md. Bagian visi merek di bawah kini merujuk rencana UX/modul lanjutan, bukan menyatakan branding dasar masih belum tersedia. Modul pelayanan, registrasi umum, linking Mentor, recovery dan cutover tetap belum diimplementasikan. Stage 7 memverifikasi fondasi, bukan mengaktifkan modul.

@@ -9,11 +9,18 @@ async function json(req){
   if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Data akun tidak valid.');return value;
 }
 export async function msaRoute({req,url,authorization,local,adminAuthentication,send}){
-  if(!url.pathname.startsWith('/api/a1/'))return false;
+  const intake=url.pathname.startsWith('/api/a2-2/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(intake){
+    if(!a1.registration){send(404,{error:'Tidak ditemukan.'});return true;}
+    a1.registration.enabled();
+    if(url.search||!['GET','POST'].includes(req.method))fail(400,'Permintaan identitas tidak valid.');
+    if(path==='/api/a2-2/register'&&req.method==='POST'){send(202,await a1.registration.register(await json(req)));return true;}
+  }
   if(path==='/api/a1/login'){
     if(req.method!=='POST'||url.search)fail(400,'Permintaan login tidak valid.');
     const value=await json(req);if(Object.keys(value).some(k=>!['username','password'].includes(k)))fail(400,'Parameter login tidak valid.');
@@ -25,6 +32,18 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(intake){
+    const r=a1.registration;
+    if(path==='/api/a2-2/queue'&&req.method==='GET'){send(200,await r.queue(actor));return true;}
+    const match=/^\/api\/a2-2\/accounts\/([A-Za-z0-9_-]{1,128})(?:\/(review|delegate|link|defaults))?$/.exec(path);
+    if(match){
+      const [,uid,operation]=match;
+      if(!operation&&req.method==='GET'){send(200,await r.detail(actor,uid));return true;}
+      if(operation==='defaults'&&req.method==='GET'){send(200,await r.defaults(actor,uid));return true;}
+      if(['review','delegate','link'].includes(operation)&&req.method==='POST'){send(200,await r[operation](actor,uid,await json(req)));return true;}
+    }
+    send(404,{error:'Tidak ditemukan.'});return true;
   }
   if(path==='/api/a1/session'&&req.method==='GET'&&!url.search){send(200,actor.kind==='legacy'?{uid:actor.uid,legacy:true,role:legacy.role}:actor.profile);return true;}
   if(path==='/api/a1/logout'&&req.method==='POST'&&!url.search){a1.logout(authorization);if(actor.kind==='legacy')adminAuthentication.revoke(authorization.slice(7));send(200,{signedOut:true});return true;}

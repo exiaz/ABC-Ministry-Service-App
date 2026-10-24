@@ -1,6 +1,42 @@
 # ABC Attendance — status revisi
 
-**24 Oktober 2026 · Stage 7 terverifikasi · Stage 1–6, AUTH A1/A2.1 tetap berlaku · lokal/emulator**
+**24 Oktober 2026 · AUTH A2.2 lokal/emulator · Stage 1–7 dan AUTH A1/A2.1 dipertahankan**
+
+## AUTH A2.2 — pendaftaran relawan dan penautan identitas terverifikasi
+
+**IMPLEMENTED dan TESTED; acceptance A2.2 PASS dalam lingkup fiktif/lokal/emulator terisolasi.** Registrasi publik dan linking operasional tetap nonaktif. Login default/UID/mentorId/ID sesi, credential/device, backup Stage 6 dan absensi/histori tidak dimigrasikan. Bagian Stage 7/A2.1 di bawah merupakan bukti sebelumnya; tidak menyatakan A2.2 belum tersedia pada revisi terbaru ini. Tidak ada blocker tersisa dalam cakupan tes ini; batas migrasi/produksi di bawah tetap berlaku.
+
+Fungsi yang ditambahkan:
+
+- Form responsif `/register.html`: nama lengkap, HP, username dan password, tanpa field email/alias. Validator/normalizer dan reservasi username A1 digunakan ulang; HP +62 tetap supplied/unverified. Registrasi pending tanpa role/eligibility; respons generik tidak mengungkap UID/status/alias/availability. Provisioning mempertahankan UID/reservasi pada kegagalan Auth/Firestore dan retry idempoten tidak mengganti password yang sudah dibuat.
+- `/identity-review.html`: antrean/detail privat, peringatan hitungan nama/HP sama, keputusan pending/reject/approve dengan alasan, referensi bukti independen dan konfirmasi. Evidence adalah deklarasi reviewer sesudah pemeriksaan fiktif, bukan verifikasi manusia otomatis/OTP. Self-review dan eskalasi ditolak. Superadmin lama/A1 mengawasi; PIC lama perlu delegasi Superadmin untuk akun + tuple tertentu serta grant/revisi PIC yang masih berlaku. PIC A1 berbasis organisasi belum punya adapter cakupan sekolah dan tetap ditolak.
+- Klaim `mentorIdentityLinks/{mentorId}` unik transaksional, pointer akun, actor/target/scope/alasan/bukti/revision, audit append-only dan receipt idempoten. Klaim existing tidak dipindah otomatis, termasuk milik akun suspended; satu UID satu link pada fase ini. Resolver default/efektif lama dipakai baca-saja hanya pada tuple link. Tidak membuat role, grant absensi/device/backup atau mengubah sejarah. Review tidak menggabungkan akun legacy/PIC/A1; `momor1n` tidak diikat operasional.
+- Gate mati default: A1 + `ABC_MSA_A2_2=1`, namespace `test-*`, Auth/Firestore demo loopback valid, dan pemeriksaan ulang gate saat request/provisioning. Flag tidak diaktifkan pada launcher. Limiter Firestore persisten global/canonical registrasi dan per-reviewer; origin/host/body/method/query dibatasi. Profil pribadi A2.2 hanya menerima state identitas, bukan referensi bukti/kontak privat reviewer. Sesi A1 tidak diterima sebagai bearer perangkat atau akses Admin lama.
+
+Validasi yang benar-benar dijalankan:
+
+| Perintah | Hasil aktual |
+|---|---|
+| `npm.cmd run check` (termasuk ulang `check-final.log`) | PASS, 151 modul sintaks/impor lokal |
+| `npm.cmd test` | PASS, 171/171 |
+| `npm.cmd run test:msa-a2-2` | PASS: unit 171/171, integrasi A2.2 7/7, Chrome 1/1; kemudian tambahan assertion privasi/retry diuji kembali dalam regresi penuh |
+| `npm.cmd run test:stage6` | PASS/exit 0: unit 171/171, integrasi 103/103, Chrome 25/25, kalender/laporan/offline PASS, cold recovery/startup-shutdown 2/2; emulator milik tes ditutup |
+| `npm.cmd run test:msa-a2-2` ulang setelah penambahan label/filter Ditolak A1 | PASS/exit 0: sintaks/impor 151 modul, unit 171/171, integrasi A2.2 7/7, Chrome 1/1 termasuk registrasi → review/link → filter/detail Ditolak pada UI A1; emulator tes ditutup. Hanya penyesuaian UI status baru/teks batas akses dan assertion kompatibilitas, tanpa perubahan backend sesudah regresi penuh |
+
+Run awal dalam sandbox gagal pada koneksi localhost `EACCES`; verifikasi yang memakai listener/emulator dijalankan ulang dengan akses loopback yang diizinkan. Putaran terarah pertama di luar sandbox 6/7 karena fixture suspend mengirim field role bersama perubahan status (400 sesuai kontrak A1); payload tes diperbaiki, putaran berikutnya 7/7 dan browser PASS. Tidak menutupi kegagalan awal sebagai PASS. Screenshot registrasi 360 px dan review 1365 px ditinjau; geometri brand baru disesuaikan memakai pola MSA asli sebelum regresi akhir. Screenshot final registrasi/review 360 px ditinjau kembali: label, helper, input, konfirmasi, pembungkusan teks dan tanpa overflow; assertions juga mencakup 390/768/1365 px. Setelah regresi penuh, label/filter/seleksi status `rejected` ditambahkan pada UI A1 lama agar akun A2.2 yang ditolak tetap tampil benar, lalu diuji terarah kembali.
+
+Batas keamanan dan dependensi **AUTH A2.3**: tetap emulator unsigned/data fiktif, bukan bukti produksi. Approval tidak memverifikasi nomor; tidak ada recovery, undangan, step-up/MFA, pagination/retensi produksi, revoke/reassign link atau penanganan manual akun ganda. Intent registrasi hanya di memori; sesudah reload/intent hilang, provisioning tidak pasti perlu rekonsiliasi operator trusted. Bukti identitas memerlukan pemeriksaan reviewer di luar aplikasi; matching nama/HP tidak cukup. Sebelum migrasi: putuskan lingkup A2.3, asosiasi UID-device, gate akun/link/membership dalam roster/backup/transaksi absensi/receipt, race suspend/revoke/write, recovery/phone verification, rekonsiliasi UID PIC lama, perluasan/revokasi scope link dan rollback tanpa fallback yang mengabaikan suspension. A2.2 sengaja tidak memberi akses operasional, sehingga belum mengklaim suspension personal mencabut device legacy.
+
+Berkas perubahan (28):
+
+- Backend/server (7): `backend/msa-registration.mjs` (baru), `backend/msa-accounts.mjs`, `backend/msa-auth.mjs`, `backend/msa-http.mjs`, `backend/admin-auth.mjs`, `admin-server.mjs`, `local-service.mjs`.
+- UI (6): baru `register.html`, `identity-review.html`, `msa-registration-ui.js`, `msa-intake.css`; kompatibilitas status Ditolak pada `a1.html`, `msa-users.js`.
+- Verifikasi/runner (9): baru `tests/msa-registration.test.mjs`, `tests/emulator/msa-a2-2-fixture.mjs`, `tests/emulator/msa-a2-2.test.mjs`, `tests/emulator/msa-a2-2-ui.mjs`; `tests/emulator/admin-login-fixture.mjs`, `tests/emulator/msa-a1-fixture.mjs`, `tests/local-service.test.mjs`, `tests/stage3.mjs`, `package.json`.
+- Spesifikasi/status (6): `MASTER_BRIEF.md`, `MSA_ACCOUNT_ARCHITECTURE.md`, `MSA_PRODUCT_VISION.md`, `README.md`, `QA.md`, `PROJECT_STATUS.md`.
+
+Bukti diabaikan Git: `.emulator-data/a2-2-qa/{focused,focused-local,focused-final,check,check-final,unit,regression,compatibility-final}.log`; focused PASS di `.emulator-data/stage3-tests/run-PM4Lkr/`, regresi penuh di `run-zPqmbs/`, kompatibilitas akhir di `run-iQQdck/`. Semua fixture memakai namespace/port fiktif sendiri, tanpa snapshot operasional. Batas UI: Chrome headless/viewport, bukan Android fisik/Safari/Firefox/instalasi PWA atau audit screen reader formal. `git diff --check` PASS; diff mengonfirmasi lockfile/rules, backend absensi/backup/pairing/repository, data/assignment, manifest/cache dan logo tidak berubah. SHA-256 logo tetap `b86a4d8f5a17615c324864751e83c38be7bdaa08587eb7fd15edaef23c4f41d0`.
+
+HEAD awal `f262f81e5d2aab85570e3c47a019ea45aa04653a`, branch `development`; working tree awal bersih. Tidak commit, push, deploy, ubah branch/billing/dependency/lockfile/rules atau akun/data operasional; untracked di luar tugas tidak disentuh. Berhenti sebelum public registration, linking operasional, recovery atau credential/device cutover.
 
 ## Stage 7 — Regresi penuh, keamanan dan dokumentasi
 

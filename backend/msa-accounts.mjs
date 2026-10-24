@@ -5,7 +5,7 @@ export const hash=value=>createHash('sha256').update(value).digest('hex');
 export const fail=(status,message)=>{throw Object.assign(Error(message),{status,adminAccountError:true});};
 const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value);
 const roles=['superadmin','admin','pic','volunteer'];
-const states=['pending','active','suspended','disabled'];
+const states=['pending','active','rejected','suspended','disabled'];
 const reserved=new Set(['admin','administrator','superadmin','root','system','support','api','msa','abc','login','register','null','undefined']);
 export function normalizeUsername(value){
   if(typeof value!=='string')fail(400,'Username tidak valid.');
@@ -24,10 +24,18 @@ export function normalizePhone(value){
 }
 export const scopeKey=scope=>JSON.stringify([scope.organizationId,scope.programId??null,scope.eventId??null]);
 const grantKey=(role,scope)=>hash(role+':'+scopeKey(scope));
-const publicAccount=row=>({uid:row.uid,username:row.username,fullName:row.fullName,profile:row.profile??{},state:row.state,revision:row.revision,identity:row.identity,eligibleRoles:row.eligibleRoles,phoneState:row.phone?.state??'absent',roles:row.roles,provisioning:row.provisioning});
+const publicAccount=row=>({uid:row.uid,username:row.username,fullName:row.fullName,profile:row.profile??{},state:row.state,revision:row.revision,identity:row.origin==='a2-2'?{state:row.identity.state}:row.identity,eligibleRoles:row.eligibleRoles,phoneState:row.phone?.state??'absent',roles:row.roles,provisioning:row.provisioning});
 
-// Trusted fixture enrollment only. There is deliberately no HTTP registration,
-// identity-approval, owner bootstrap, migration or password reset endpoint.
+// Shared atomic reservation for trusted A1 fixtures and isolated A2.2 intake.
+export async function reserveUsername(tx,ref,claim,row,matches){
+  const [r,c]=await tx.getAll(ref,claim);
+  if(r.exists){if(!matches(r.data()))fail(409,'Permintaan setup berbeda.');return false;}
+  if(c.exists)fail(409,'Username tidak tersedia.');
+  tx.create(claim,{uid:row.uid,state:'reserved'});tx.create(ref,row);return true;
+}
+
+// A1 trusted enrollment and authorization. Isolated intake/review lives in
+// msa-registration; owner bootstrap, migration and reset are not exposed here.
 export function createMsaAccounts({db,root,auth,assertLocal,now=Date.now}){
   const accounts=root.collection('msaAccounts'),registry=root.collection('msaUsernames');
   const event=(tx,actor,target,previous,next,reason)=>tx.create(root.collection('msaAuthorizationEvents').doc(randomUUID()),{actorUid:actor,targetUid:target,previous,next,reason,at:now()});
@@ -65,11 +73,7 @@ export function createMsaAccounts({db,root,auth,assertLocal,now=Date.now}){
       const username=normalizeUsername(value.username),phone=normalizePhone(value.phone),uid='msa-'+hash(root.path+':'+value.requestId).slice(0,40),alias=uid+'@msa.example.invalid';
       const ref=accounts.doc(uid),claim=registry.doc(username.canonical);
       const fresh=await db.runTransaction(async tx=>{
-        const [r,c]=await tx.getAll(ref,claim);
-        if(r.exists){if(r.data().canonical!==username.canonical||r.data().fullName!==value.fullName.trim())fail(409,'Permintaan setup berbeda.');return false;}
-        if(c.exists)fail(409,'Username tidak tersedia.');
-        tx.create(claim,{uid,state:'reserved'});
-        tx.create(ref,{uid,username:username.display,canonical:username.canonical,providerAlias:alias,fullName:value.fullName.trim(),profile,phone,state:'pending',identity:{state:'unverified'},eligibleRoles:[],roles:[],revision:1,provisioning:'reserved',createdAt:now()});return true;
+        return reserveUsername(tx,ref,claim,{uid,username:username.display,canonical:username.canonical,providerAlias:alias,fullName:value.fullName.trim(),profile,phone,state:'pending',identity:{state:'unverified'},eligibleRoles:[],roles:[],revision:1,provisioning:'reserved',createdAt:now()},r=>r.canonical===username.canonical&&r.fullName===value.fullName.trim());
       });
       if(!fresh)return {uid,provisioning:(await ref.get()).data().provisioning};
       try{

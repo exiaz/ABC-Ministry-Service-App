@@ -9,7 +9,7 @@ export async function msaFixture(t,{usernamePilot=false,source}={}){
   const previous={flag:process.env.ABC_MSA_A1,pilot:process.env.ABC_MSA_USERNAME_PILOT,namespace:process.env.ABC_FIRESTORE_NAMESPACE};
   const c=await emulatorFixture({source});process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;process.env.ABC_MSA_A1='1';
   if(usernamePilot)process.env.ABC_MSA_USERNAME_PILOT='1';else delete process.env.ABC_MSA_USERNAME_PILOT;
-  const f=await adminLoginFixture(t,{pairing:c.pairing}),created=[];
+  const f=await adminLoginFixture(t,{pairing:c.pairing,repository:c.repository}),created=[];
   await initializeOwner({...c,auth:f.auth,uid:f.uid,email:f.email,confirmed:true});
   for(const organization of [{id:'org-a',name:'Organisasi Fiktif A'},{id:'org-b',name:'Organisasi Fiktif B'}])await c.root.collection('msaOrganizations').doc(organization.id).set({...organization,state:'active',programIds:['program-'+organization.id],events:[{id:'event-'+organization.id,programId:'program-'+organization.id}]});
   const response=await f.login(),{token}=await response.json();

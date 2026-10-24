@@ -1,5 +1,15 @@
 # ABC | Ministry Service App — Prototipe lokal
 
+## AUTH A2.2 — pengujian pendaftaran dan tinjauan identitas
+
+Jalankan `npm.cmd run test:msa-a2-2` untuk pendaftaran, review, delegasi PIC, link Mentor, kegagalan parsial dan UI responsif dengan data fiktif. Runner menyiapkan port/emulator/namespace sementara sendiri dan menutupnya sesudah tes. `npm.cmd run test:stage6` mencakup regresi penuh Stage 1–6, A1/A2.1/A2.2, browser, offline dan lifecycle. Hasil eksekusi ada di PROJECT_STATUS.md.
+
+Fitur mati secara default; launcher/login utama tidak berubah. Halaman terpisah `/register.html` dan `/identity-review.html` hanya dilayani pada server Admin dengan kedua flag `ABC_MSA_A1=1`, `ABC_MSA_A2_2=1`, namespace `test-*` dan konfigurasi emulator demo valid. Gunakan runner untuk menyiapkan fixture, bukan snapshot/akun operasional. Registrasi menerima nama, HP, username dan password; akun baru menunggu verifikasi tanpa hak pelayanan. Simpan pengajuan retry yang sama selama halaman masih terbuka; reload membuang intent di memori dan memerlukan pemeriksaan operator jika provisioning belum pasti.
+
+Superadmin dapat membuka detail, memeriksa peringatan duplikat dan mencatat keputusan beserta alasan. Jika bukti belum cukup, pilih **Tetap menunggu bukti**. Persetujuan/link memerlukan referensi pemeriksaan independen dan konfirmasi. Kesamaan nama/HP tidak cukup. PIC hanya melihat akun yang didelegasikan Superadmin dengan cakupan sekolah/kelompok/pelayanan yang sudah dimilikinya. Delegasi tidak memberi hak administratif baru. Link mempertahankan Mentor dan sejarah; hasil resolusi default hanya pratinjau baca-saja, tanpa akses absensi, perangkat, backup atau peran otomatis. Nomor HP tetap belum terverifikasi.
+
+Jangan membuka registrasi publik, mengikat identitas operasional atau memakai data anak nyata. Recovery, asosiasi akun-perangkat, suspension lintas legacy device dan cutover belum tersedia. Kontrak, limit, endpoint dan dependensi tahap berikutnya: [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a22--kontrak-implementasi-intake-dan-review-terisolasi).
+
 ## AUTH A2.1 — branding dan pilot username
 
 Identitas aplikasi kini Ministry Service App; Goes to School tetap nama program. Logo ABC dan data/ID program tetap. Login email Admin/PIC serta kode aktivasi Mentor di bawah tetap berlaku. Pembaruan cache aset mengganti branding offline tanpa mengganti identitas instalasi PWA atau storage key data.

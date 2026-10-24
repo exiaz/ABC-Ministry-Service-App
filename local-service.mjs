@@ -14,7 +14,7 @@ export function servicePath(port,root=ROOT){
 }
 export async function serviceSignature(env=process.env,root=ROOT){
   const keys=['ABC_ROSTER_ADAPTER','ABC_ADMIN_AUTH_MODE','ABC_FIREBASE_PROJECT_ID','GCLOUD_PROJECT','GOOGLE_CLOUD_PROJECT','FIRESTORE_EMULATOR_HOST','FIREBASE_AUTH_EMULATOR_HOST','ABC_FIRESTORE_NAMESPACE','ABC_ADMIN_UIDS','ABC_MENTOR_ORIGIN','ABC_API_ORIGIN','GOOGLE_APPLICATION_CREDENTIALS','FIREBASE_TOKEN','NODE_ENV'];
-  keys.push('ABC_MSA_A1','ABC_MSA_USERNAME_PILOT');
+  keys.push('ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2');
   const config=Object.fromEntries(keys.map(key=>[key,env[key]??null]));
   try{config.ABC_ADMIN_UIDS=JSON.stringify(JSON.parse(config.ABC_ADMIN_UIDS).sort());}catch{}
   // Include source bytes so a process started before a code change is never reused.

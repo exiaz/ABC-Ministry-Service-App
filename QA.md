@@ -1,6 +1,14 @@
 # Pemeriksaan prototipe
 
-## Stage 7 — Regresi penuh, keamanan dan dokumentasi · 24 Oktober 2026
+## AUTH A2.2 — verifikasi terisolasi · 24 Oktober 2026
+
+Lingkup terbaru menambahkan pendaftaran empat field, queue/detail review, pending/reject/approve dengan bukti, delegasi PIC per akun/tuple, claim Mentor unik, retry provisioning dan pratinjau default tanpa grant operasi. Jalankan `npm.cmd run test:msa-a2-2`; runner memakai Auth/Firestore Emulator, port/namespace `test-*` dan akun fiktif baru. `npm.cmd run test:stage6` tetap regresi penuh dan kini menyertakan suite A2.2. Hasil aktual/angka/log ada pada revisi terbaru PROJECT_STATUS.md; bagian Stage 7 berikut adalah bukti sebelum A2.2.
+
+Skenario: normalisasi +62/supplied; Unicode/field privilege injection; username case race dan repeated submissions; kegagalan sebelum/sesudah create Auth dan finalisasi Firestore; retry tanpa overwrite password/UID; evidence kurang dan rejection; actor tanpa delegasi/cross-scope/stale; approval/link berwenang; link concurrent satu pemenang dan receipt; defaults efektif/snapshot historis; pending/rejected/suspended serta akun personal ditolak data/akses Admin/perangkat; role/eligibility kosong; gate default/live/non-test, body/origin/query/rate-limit persisten. Browser memakai backend nyata, empat field pendaftaran tanpa email/alias, approval/link eksplisit, konfirmasi batal, token/storage privat, viewport 360/390/768/1365 dan tanpa overflow.
+
+Tidak mencakup public onboarding, recovery, real-world identity verification, operasi UID/device, suspend/revoke/write lintas device, produksi/TLS atau perangkat Android fisik. Kontrak dan dependensi A2.3: MSA_ACCOUNT_ARCHITECTURE.md. Jangan menggunakan akun, kontak atau siswa nyata.
+
+## Riwayat Stage 7 — Regresi penuh, keamanan dan dokumentasi · 24 Oktober 2026
 
 Lingkup terkini mencakup Stage 1–6, AUTH A1 dan AUTH A2.1 pada data fiktif/emulator. Perintah yang digunakan tetap `npm.cmd run check`, `npm.cmd test` dan `npm.cmd run test:stage6`; nama script terakhir dipertahankan karena runner tersebut sudah memuat seluruh suite A1/A2.1, browser, offline dan cold recovery. Tidak menambahkan fitur atau runner baru. Hasil eksekusi, temuan dengan severity, bukti kegagalan/perbaikan dan verdict AUTH A2.2 ada pada revisi Stage 7 di [PROJECT_STATUS.md](PROJECT_STATUS.md). Angka Stage 6 dan bagian berikut merupakan riwayat, bukan hasil terkini.
 

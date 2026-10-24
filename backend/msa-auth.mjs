@@ -2,8 +2,9 @@ import {randomBytes} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createMsaAccounts,normalizeUsername,hash,fail} from './msa-accounts.mjs';
 import {createLegacyUsernamePilot} from './msa-legacy-usernames.mjs';
+import {createMsaRegistration} from './msa-registration.mjs';
 
-export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,now=Date.now}){
+export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,now=Date.now}){
   const sessions=new Map(),accounts=createMsaAccounts({db,root,auth,assertLocal,now});
   const prune=()=>{for(const [k,s] of sessions)if(s.expiresAt<=now())sessions.delete(k);};
   const checkToken=async token=>{
@@ -32,8 +33,9 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
   };
   const assertPilot=()=>{assertLocal();if(!pilotEnabled||process.env.ABC_MSA_USERNAME_PILOT!=='1'||!root.id.startsWith('test-'))fail(503,'Pilot username hanya tersedia pada namespace tes terisolasi.');};
   const legacyPilot=pilotEnabled?createLegacyUsernamePilot({db,root,auth,assertPilot,emailActor,verifyPassword,consumeAttempt,now}):undefined;
+  const registration=registrationEnabled?createMsaRegistration({db,root,auth,repository,verifyPassword,now,assertEnabled:()=>{assertLocal();if(process.env.ABC_MSA_A2_2!=='1'||!root.id.startsWith('test-'))fail(503,'Pendaftaran uji tidak aktif.');}}):undefined;
   return {
-    accounts,legacyPilot,
+    accounts,legacyPilot,registration,
     async login({username,password}){
       assertLocal();prune();
       let canonical;try{canonical=normalizeUsername(username).canonical;}catch{canonical='!invalid';}

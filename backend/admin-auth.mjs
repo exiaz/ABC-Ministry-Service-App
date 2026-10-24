@@ -33,7 +33,7 @@ export async function createConfiguredAdminAuthentication(){
 // This core helper exposes no HTTP route. The opt-in M2B.5A same-origin login
 // calls this exact signIn path. UID claims alone cannot establish provenance,
 // even after Admin SDK verification in emulator mode.
-export async function createLocalAdminAuthentication(){
+export async function createLocalAdminAuthentication({repository}={}){
   const config=adminAuthConfig(),admitted=new Map();
   const {initializeApp,deleteApp}=await import('firebase-admin/app');
   const {getAuth}=await import('firebase-admin/auth');
@@ -74,7 +74,7 @@ export async function createLocalAdminAuthentication(){
       return {kind:'ok',...policy};
     }catch(error){return {kind:error.legacyDenied?'forbidden':'unauthenticated'};}
   };
-  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,emailActor:authorizeEmail,pilotEnabled:process.env.ABC_MSA_USERNAME_PILOT==='1'&&store.namespace.startsWith('test-'),assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
+  const a1=process.env.ABC_MSA_A1==='1'?createMsaAuthentication({db,root,auth,config,repository,emailActor:authorizeEmail,registrationEnabled:process.env.ABC_MSA_A2_2==='1'&&store.namespace.startsWith('test-'),pilotEnabled:process.env.ABC_MSA_USERNAME_PILOT==='1'&&store.namespace.startsWith('test-'),assertLocal:()=>{assertLocal();if(process.env.ABC_MSA_A1!=='1')throw Error('A1 tidak aktif.');}}):undefined;
   return {
     a1,
     accounts:createAdminAccounts({db,root,auth}),

@@ -19,6 +19,7 @@ assets.set('/a1.html','a1.html');
 assets.set('/msa-users.js','msa-users.js');
 assets.set('/msa-brand.js','msa-brand.js');
 assets.set('/username-login.js','username-login.js');
+for(const file of ['register.html','identity-review.html','msa-registration-ui.js','msa-intake.css'])assets.set('/'+file,file);
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
 apiPaths.add('/api/admin/backup-assignments');
 // Same-origin admin shell + existing protected API handler/context. No CORS,
@@ -32,7 +33,11 @@ export function createAdminServer({adminAuthentication,pairing}){
       const url=new URL(req.url,'http://127.0.0.1');
       const usernamePilot=url.pathname==='/username.html';
       if(usernamePilot&&(!adminAuthentication?.a1?.legacyPilot||url.search||!['GET','HEAD'].includes(req.method))){send(404,'Tidak ditemukan.');return;}
-      if(url.pathname.startsWith('/api/a1/')){api.emit('request',req,res);return;}
+      if(['/register.html','/identity-review.html','/msa-registration-ui.js','/msa-intake.css'].includes(url.pathname)){
+        if(!adminAuthentication?.a1?.registration||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
+        adminAuthentication.a1.registration.enabled();
+      }
+      if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')){api.emit('request',req,res);return;}
       if(['/a1.html','/msa-users.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
       }
@@ -53,8 +58,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   try{
     const port=Number(process.env.ABC_ADMIN_PORT||4177);
     if(!Number.isSafeInteger(port)||port<1||port>65535||[4173,4175,4176].includes(port))throw Error();
-    adminAuthentication=await createLocalAdminAuthentication();
     adapters=await createConfiguredRepositories();
+    adminAuthentication=await createLocalAdminAuthentication({repository:adapters.repository});
     server=createAdminServer({adminAuthentication,pairing:adapters.pairing});
     const stop=async()=>{await new Promise(resolve=>{server.close(resolve);server.closeIdleConnections();});await adapters.close();await adminAuthentication.close();await lifecycle?.close();process.exit(0);};
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
