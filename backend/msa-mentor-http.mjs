@@ -27,6 +27,9 @@ export async function msaMentorRoute({req,url,authorization,local,adminAuthentic
     send(200,await mentor.login(value));return true;
   }
   if(!header)fail(401,'Masuk dengan akun Mentor terlebih dahulu.');
+  if(path==='/api/a2-3/devices'&&req.method==='GET'){send(200,await mentor.listDevices(header));return true;}
+  const deviceRevoke=/^\/api\/a2-3\/devices\/([A-Za-z0-9_-]{1,128})\/revoke$/.exec(path);
+  if(deviceRevoke&&req.method==='POST'){const {value}=await json(req);send(200,await mentor.revokeDevice(header,deviceRevoke[1],value));return true;}
   if(path==='/api/a2-3/context'&&req.method==='GET'){send(200,await mentor.context(header));return true;}
   if(path==='/api/a2-3/logout'&&req.method==='POST'){
     const {value}=await json(req);if(Object.keys(value).length)fail(400,'Parameter tidak diizinkan.');send(200,await mentor.logout(header));return true;

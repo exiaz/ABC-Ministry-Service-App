@@ -6,6 +6,7 @@ const headers=new Set(['authorization','content-type','x-device-timestamp','x-de
 export function mentorCors(req,url,origin,personalEnabled=false){
   const routes={'/api/pairing/redeem':['POST'],'/api/device/status':['GET'],'/api/roster':['GET'],'/api/roster-context':['GET'],'/api/attendance':['GET','PUT'],'/api/attendance/finalize':['POST'],'/api/attendance/corrections':['POST']};
   if(personalEnabled)Object.assign(routes,{'/api/a2-3/login':['POST'],'/api/a2-3/context':['GET'],'/api/a2-3/logout':['POST'],'/api/a2-3/device-status':['GET'],'/api/a2-3/associate':['POST']});
+  if(personalEnabled){routes['/api/a2-3/devices']=['GET'];if(/^\/api\/a2-3\/devices\/[A-Za-z0-9_-]{1,128}\/revoke$/.test(url.pathname))routes[url.pathname]=['POST'];}
   const allowedHeaders=personalEnabled?new Set([...headers,'x-msa-session']):headers;
   if(!origin||!routes[url.pathname])return null;
   if(!req.headers.origin)return null;

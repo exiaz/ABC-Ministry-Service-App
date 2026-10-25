@@ -79,5 +79,10 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
     close(){sessions.clear();}
   };
   if(mentorAccounts&&process.env.ABC_MSA_A2_3==='1'&&process.env.ABC_MSA_A2_2==='1'&&root.id.startsWith('test-'))api.mentor=createMsaMentorAuthentication({a1:api,devices:mentorAccounts});
+  if(api.mentor&&registration&&process.env.ABC_MSA_A2_4A==='1')api.deviceLifecycle={
+    enabled:mentorAccounts.lifecycle.enabled,
+    list:(actor,uid)=>mentorAccounts.lifecycle.list(uid,(tx,b)=>registration.authorizeDeviceManagement(tx,actor,uid,'pairing:read',b)),
+    revoke:(actor,uid,deviceId,value)=>mentorAccounts.lifecycle.revoke(uid,deviceId,value,actor.uid,(tx,b)=>registration.authorizeDeviceManagement(tx,actor,uid,'pairing:revoke',b))
+  };
   return api;
 }

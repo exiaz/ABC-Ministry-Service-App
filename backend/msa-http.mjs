@@ -10,11 +10,13 @@ async function json(req){
 }
 export async function msaRoute({req,url,authorization,local,adminAuthentication,send}){
   const intake=url.pathname.startsWith('/api/a2-2/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake)return false;
+  const lifecycle=url.pathname.startsWith('/api/a2-4/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(lifecycle){if(!a1.deviceLifecycle){send(404,{error:'Tidak ditemukan.'});return true;}a1.deviceLifecycle.enabled();if(url.search)fail(400,'Parameter tidak diizinkan.');}
   if(intake){
     if(!a1.registration){send(404,{error:'Tidak ditemukan.'});return true;}
     a1.registration.enabled();
@@ -33,9 +35,17 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
   }
+  if(lifecycle){
+    const match=/^\/api\/a2-4\/accounts\/([A-Za-z0-9_-]{1,128})\/devices(?:\/([A-Za-z0-9_-]{1,128})\/revoke)?$/.exec(path);
+    if(match){const [,uid,deviceId]=match;
+      if(!deviceId&&req.method==='GET'){send(200,await a1.deviceLifecycle.list(actor,uid));return true;}
+      if(deviceId&&req.method==='POST'){send(200,await a1.deviceLifecycle.revoke(actor,uid,deviceId,await json(req)));return true;}
+    }
+    send(404,{error:'Tidak ditemukan.'});return true;
+  }
   if(intake){
     const r=a1.registration;
-    if(path==='/api/a2-2/queue'&&req.method==='GET'){send(200,await r.queue(actor));return true;}
+    if(path==='/api/a2-2/queue'&&req.method==='GET'){send(200,{...await r.queue(actor),...(a1.deviceLifecycle?{deviceManagement:true}:{})});return true;}
     const match=/^\/api\/a2-2\/accounts\/([A-Za-z0-9_-]{1,128})(?:\/(review|delegate|link|defaults))?$/.exec(path);
     if(match){
       const [,uid,operation]=match;

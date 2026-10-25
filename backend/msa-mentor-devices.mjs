@@ -4,6 +4,7 @@ import {adminAuthConfig} from './admin-auth.mjs';
 import {hash,fail} from './msa-accounts.mjs';
 import {SCOPE_KEYS,validRosterScope} from './access-control.mjs';
 import {sameActivationAssignment} from './device-pairing.mjs';
+import {createMsaDeviceLifecycle} from './msa-device-lifecycle.mjs';
 
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(v);
 const scopeKey=s=>JSON.stringify(SCOPE_KEYS.map(k=>s?.[k]));
@@ -42,7 +43,7 @@ export function createMsaMentorDevices({db,root,config,repository,credentials,no
     const link=(await tx.get(col('mentorIdentityLinks').doc(a.mentorLink.mentorId))).data();
     if(link?.uid!==a.uid||link.state!=='active'||link.revision!==a.mentorLink.revision||scopeKey(link.scope)!==scopeKey(a.mentorLink.scope))denied();return a;
   };
-  return {
+  const api={
     enabled,
     async admit(personal){
       return db.runTransaction(async tx=>{
@@ -98,6 +99,10 @@ export function createMsaMentorDevices({db,root,config,repository,credentials,no
       });
     }
   };
+  api.lifecycle=createMsaDeviceLifecycle({db,root,now,eligible:api.eligible,enabled:()=>{enabled();if(process.env.ABC_MSA_A2_4A!=='1')fail(503,'Pengelolaan perangkat akun uji tidak aktif.');}});
+  api.ownDevices=p=>api.lifecycle.list(p.uid,async tx=>(await identity(tx,p)).account);
+  api.revokeOwnDevice=(p,deviceId,value)=>api.lifecycle.revoke(p.uid,deviceId,value,p.uid,async tx=>(await identity(tx,p)).account);
+  return api;
 }
 
 export function createMsaMentorAuthentication({a1,devices}){
@@ -109,11 +114,13 @@ export function createMsaMentorAuthentication({a1,devices}){
     enabled:devices.enabled,
     async login(value){
       devices.enabled();const result=await a1.login(value),header='Bearer '+result.token;
-      try{const p=await resolve(header);await devices.admit(p);return {token:result.token,...await devices.context(p)};}
+      try{const p=await resolve(header);await devices.admit(p);return {token:result.token,...await devices.context(p),...(process.env.ABC_MSA_A2_4A==='1'?{deviceManagement:true}:{})};}
       catch(e){a1.logout(header);if(e.status===503)throw e;denied();}
     },
     resolve,
-    async context(header){return devices.context(await resolve(header));},
+    async context(header){return {...await devices.context(await resolve(header)),...(process.env.ABC_MSA_A2_4A==='1'?{deviceManagement:true}:{})};},
+    async listDevices(header){return devices.ownDevices(await resolve(header));},
+    async revokeDevice(header,deviceId,value){return devices.revokeOwnDevice(await resolve(header),deviceId,value);},
     async logout(header){const p=await resolve(header);await devices.logout(p);a1.logout(header);return {signedOut:true};},
     async deviceStatus(header,authorization,proof){return devices.deviceStatus(await resolve(header),authorization,proof);},
     async associate(header,authorization,proof,value){return devices.associate(await resolve(header),authorization,proof,value);}

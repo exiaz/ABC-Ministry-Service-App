@@ -154,7 +154,9 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
           const events=(await tx.get(col('authorizationEvents').where('deviceId','==',entry.id))).docs.map(d=>d.data()).filter(e=>['pairing-redeemed','pairing-device-revoked','device-revoked'].includes(e.event)&&Number.isSafeInteger(e.at)&&typeof e.actor==='string');
           events.sort((a,b)=>b.at-a.at||Number(b.event==='pairing-device-revoked')-Number(a.event==='pairing-device-revoked'));
           const last=events[0];
-          devices.push({deviceId:entry.id,state:entry.state==='revoked'?'revoked':entry.expiresAt<=now()?'expired':'active',expiresAt:entry.expiresAt,createdAt:entry.createdAt,revokedAt:entry.revokedAt,grants:copy(entry.grants),lastEvent:last?{event:last.event,at:last.at,actor:last.actor}:null});
+          const linked=process.env.ABC_MSA_A2_4A==='1'&&config.namespace.startsWith('test-')?(await tx.get(col('msaDeviceAssociations').doc(entry.id))).data():undefined;
+          const classification=process.env.ABC_MSA_A2_4A==='1'&&config.namespace.startsWith('test-')?{accountLinkState:linked&&entry.msaAccountBinding&&linked.uid===entry.msaAccountBinding.uid?'account-linked':linked||entry.msaAccountBinding?'inconsistent':'unresolved-legacy'}:{};
+          devices.push({deviceId:entry.id,state:entry.state==='revoked'?'revoked':entry.expiresAt<=now()?'expired':'active',expiresAt:entry.expiresAt,createdAt:entry.createdAt,revokedAt:entry.revokedAt,grants:copy(entry.grants),lastEvent:last?{event:last.event,at:last.at,actor:last.actor}:null,...classification});
         }
         assertAdminLocal();await currentAdmin(stillAuthorized);
         return {devices:devices.sort((a,b)=>b.createdAt-a.createdAt||a.deviceId.localeCompare(b.deviceId))};
@@ -249,6 +251,10 @@ export function createEmulatorDevicePairing({db,root,config,repository,now,prepa
         const entry=(await tx.get(col('devices').doc(deviceId))).data(),permission=(await tx.get(permissionRef(uid))).data();
         if(entry?.id!==deviceId||!entry.publicKey||!permitted(permission,entry.grants))throw denied();
         assertAdminLocal();await currentAdmin(stillAuthorized);
+        if(revoke&&process.env.ABC_MSA_A2_4A==='1'&&config.namespace.startsWith('test-')){
+          const association=await tx.get(col('msaDeviceAssociations').doc(deviceId));
+          if(association.exists||entry.msaAccountBinding)throw new PairingError(409,'Cabut perangkat tertaut melalui tinjauan identitas akun dengan alasan dan revisi terkini.');
+        }
         if(revoke&&entry.state==='active'&&entry.revokedAt===null){stageDeviceRevoke(tx,deviceId);event(tx,'pairing-device-revoked',uid,{deviceId});}
         return {deviceId,state:revoke?'revoked':entry.state==='revoked'?'revoked':entry.expiresAt<=now()?'expired':'active',expiresAt:entry.expiresAt,grants:copy(entry.grants)};
       });

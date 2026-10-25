@@ -1,6 +1,14 @@
 # ABC Goes to School — Master Brief
 
-**Status revisi 24 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–6 (hasil verifikasi pada PROJECT_STATUS.md). Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
+**Status revisi 25 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–6 (hasil verifikasi pada PROJECT_STATUS.md). Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
+
+## AUTH A2.4A — suspension dan lifecycle perangkat tertaut, 25 Oktober 2026
+
+Pengelolaan perangkat tertaut hanya untuk data fiktif/emulator di belakang A1 + A2.2 + A2.3 + `ABC_MSA_A2_4A=1` dan namespace `test-*`; default reguler tetap mati. Mentor dengan sesi personal aktif dapat melihat/mencabut perangkat akunnya sendiri. Superadmin berwenang meninjau akun A2.2; PIC memerlukan delegasi per akun/revisi yang masih berlaku, cakupan primary yang tepat dan izin `pairing:read`/`pairing:revoke`. Status akun tetap diubah melalui kontrol Superadmin A1 yang sudah ada.
+
+Pencabutan memerlukan konfirmasi, alasan, requestId dan revisi akun/asosiasi terkini. Transaksi mencabut device dan asosiasi, menaikkan revision dan mencatat actor/target/alasan/waktu/audit/receipt, tanpa mengubah UID, mentorId, credential, grant, ID pelayanan/batch atau histori absensi. Retry yang sama idempoten setelah otorisasi ulang; perubahan bersamaan tidak boleh menimpa state baru. Endpoint pencabutan perangkat lama mengarahkan perangkat tertaut ke kontrol ini agar alasan/revisi tidak dilewati.
+
+Suspension/rejected/nonaktif dan perubahan revisi akun menolak sesi lama serta seluruh akses perangkat yang sudah tertaut, termasuk roster, write/finalisasi/koreksi/retry dan backup Stage 6. Reaktivasi akun tidak mengaktifkan asosiasi stale atau perangkat yang dicabut: diperlukan login baru, kode PIC baru, aktivasi Stage 4/P-256 proof dan konfirmasi asosiasi untuk deviceId/credential baru. Tidak ada transfer/rebind, pemanjangan izin atau fallback legacy bagi perangkat tertaut. Perangkat yang belum tertaut diklasifikasikan sebagai kasus migrasi belum terselesaikan; tidak dicocokkan otomatis berdasarkan nama/nomor/ID dan belum tercakup klaim suspension global. Ini tidak mengaktifkan recovery, migrasi operasional atau cutover. Bukti aktual: PROJECT_STATUS.md.
 
 ## AUTH A2.3 — akun Mentor dan perangkat terisolasi, 24 Oktober 2026
 

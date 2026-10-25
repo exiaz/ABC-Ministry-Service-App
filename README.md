@@ -26,6 +26,17 @@ Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.c
 
 Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
 
+## AUTH A2.4A — perangkat akun dan penangguhan
+
+Gunakan **Start MSA Auth Pilot.cmd** yang sama. Fitur baru hanya aktif dalam pilot fiktif/emulator; launcher reguler tetap memakai perilaku lama. Tidak ada kata sandi pemulihan, migrasi atau perubahan login default.
+
+- **Mentor:** setelah login, pilih **Perangkat saya**. Daftar menampilkan perangkat yang sudah tertaut dan statusnya. Untuk mencabut satu perangkat, pilih **Cabut akses perangkat**, isi alasan dan konfirmasikan. Batal tidak mengubah akses. Pilih **Kembali** untuk kembali ke absensi. Histori absensi tetap tersimpan.
+- **Superadmin/PIC:** buka **Tinjau identitas**, masuk, pilih akun, lalu **Lihat perangkat akun** pada detailnya. Superadmin dapat meninjau akun; PIC hanya untuk akun yang didelegasikan, cakupan yang sama dan izin baca/cabut yang masih sah. Daftar perangkat lama memberi label **Belum tertaut · perlu rekonsiliasi** untuk perangkat yang belum diketahui pemilik akunnya; jangan menganggap suspension akun sudah mencakup perangkat tersebut. Perangkat tertaut dicabut melalui detail akun agar alasan dan revisi dicatat.
+- **Suspend/reactivate:** Superadmin memakai halaman pengelolaan akun A1 (`http://127.0.0.1:4277/a1.html`), memilih akun → jenis perubahan **Status akun** → **Ditangguhkan/Aktif**, mengisi alasan dan menyetujui ringkasan. Sesi lama tidak berlaku lagi. PIC tidak memperoleh hak baru untuk mengubah status akun.
+- **Memakai perangkat lagi:** sesudah akun aktif dan penugasan diperiksa, login baru, minta kode baru kepada PIC, lakukan aktivasi Stage 4, lalu konfirmasikan **Gunakan perangkat ini**. Izin/deviceId lama tidak dipulihkan atau dipindahkan, dan backup lama tidak disalin. Jika revisi sudah berubah, muat ulang data lalu tinjau kembali sebelum mengirim pengajuan baru.
+
+Uji terarah: `npm.cmd run test:msa-a2-4a`. Regresi penuh: `npm.cmd run test:stage6`. Alur Auth Pilot: `node --test tests/auth-pilot-browser.mjs`. Semuanya hanya memakai data fiktif dan emulator terisolasi; hasil aktual serta dependensi A2.4B ada di PROJECT_STATUS.md dan MSA_ACCOUNT_ARCHITECTURE.md.
+
 ## AUTH A2.3 — pengujian akun Mentor dan perangkat
 
 Jalankan `npm.cmd run test:msa-a2-3` untuk login Mentor personal, asosiasi perangkat, penolakan akun/link/sesi tidak sah, backup, transaksi revoke/write dan browser responsif. Runner menyiapkan port/namespace `test-*` dan data fiktif sendiri, tanpa snapshot operasional. `npm.cmd run test:stage6` tetap menjalankan regresi penuh termasuk A2.3. Hasil aktual ada di PROJECT_STATUS.md.

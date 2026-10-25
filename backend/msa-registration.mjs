@@ -87,6 +87,16 @@ export function createMsaRegistration({db,root,auth,assertEnabled,verifyPassword
   };
   return {
     enabled,
+    async authorizeDeviceManagement(tx,actor,uid,action,binding){
+      const row=await read(tx,uid),power=await reviewer(tx,actor,row);
+      let deviceRevokeAllowed=true;
+      if(!power.superadmin){
+        const p=await adminPolicy(root,actor.uid,{tx,action}),s=row.mentorLink?.scope;
+        if(p.role!=='pic'||!s||scopeKey(s)!==scopeKey(power.scope)||binding&&scopeKey(binding.primary)!==scopeKey(s))fail(403,'Perangkat di luar cakupan peninjau.');
+        deviceRevokeAllowed=p.actions.includes('pairing:revoke');
+      }
+      return {...row,deviceRevokeAllowed};
+    },
     async register(value){
       enabled();await limit('register','global',60);
       let canonical;try{canonical=normalizeUsername(value?.username).canonical;}catch{canonical='!invalid';}

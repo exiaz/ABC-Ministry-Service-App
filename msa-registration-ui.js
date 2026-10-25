@@ -1,12 +1,15 @@
 import {msaBrand} from './msa-brand.js';
+import {createAccountDevicesUI} from './account-devices-ui.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('brand').innerHTML=msaBrand();
 let token='',busy=false,selected,pending,requestId=crypto.randomUUID(),inputKey='';
+const deviceRoot=$('review-devices'),devicesUI=deviceRoot?createAccountDevicesUI({root:deviceRoot,request:(path,body)=>request(path,body),base:()=>'/api/a2-4/accounts/'+selected.uid+'/devices'}):null;
+let deviceManagement=false;
 const feedback=text=>{$('feedback').textContent=text;};
 const labels={pending:'Menunggu',active:'Disetujui',rejected:'Ditolak',suspended:'Ditangguhkan',disabled:'Nonaktif'};
 async function request(path,body){
   const response=await fetch(path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
-  const value=await response.json();if(!response.ok){if([401,403].includes(response.status)&&token){token='';$('review-workspace').hidden=true;$('review-login').hidden=false;$('queue').replaceChildren();$('detail').hidden=true;$('account-info').textContent='';$('history').replaceChildren();selected=undefined;pending=undefined;$('confirmation').close();}throw Error(value.error??'Permintaan belum dapat diproses.');}return value;
+  const value=await response.json();if(!response.ok){if([401,403].includes(response.status)&&token){token='';devicesUI?.reset();if(deviceRoot)deviceRoot.hidden=true;$('review-workspace').hidden=true;$('review-login').hidden=false;$('queue').replaceChildren();$('detail').hidden=true;$('account-info').textContent='';$('history').replaceChildren();selected=undefined;pending=undefined;$('confirmation').close();}throw Error(value.error??'Permintaan belum dapat diproses.');}return value;
 }
 async function action(fn){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn();}catch(e){feedback(e.name==='TimeoutError'?'Koneksi terputus. Coba lagi dengan pengajuan yang sama.':e.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
 if($('registration')){
@@ -17,8 +20,9 @@ if($('registration')){
   });};
 }else{
   const base=uid=>'/api/a2-2/accounts/'+uid;
-  async function load(){const data=await request('/api/a2-2/queue');$('delegate-option').disabled=!data.superadmin;$('review-workspace').hidden=false;$('queue').innerHTML=data.accounts.map(a=>`<article><h3>${esc(a.fullName)}</h3><p>@${esc(a.username)} · ${esc(labels[a.state])}</p><button data-account="${esc(a.uid)}">Tinjau akun</button></article>`).join('')||'<p>Tidak ada akun dalam cakupan tinjauan Anda.</p>';}
+  async function load(){const data=await request('/api/a2-2/queue');deviceManagement=!!data.deviceManagement;$('delegate-option').disabled=!data.superadmin;$('review-workspace').hidden=false;$('queue').innerHTML=data.accounts.map(a=>`<article><h3>${esc(a.fullName)}</h3><p>@${esc(a.username)} · ${esc(labels[a.state])}</p><button data-account="${esc(a.uid)}">Tinjau akun</button></article>`).join('')||'<p>Tidak ada akun dalam cakupan tinjauan Anda.</p>';}
   async function detail(uid){
+    devicesUI?.reset();if(deviceRoot)deviceRoot.hidden=!deviceManagement;
     const data=await request(base(uid)),a=data.account;selected=a;$('detail').hidden=false;$('account-title').textContent=a.fullName+' (@'+a.username+')';
     $('account-info').textContent=`${labels[a.state]} · Revisi ${a.revision} · HP ${a.phone.normalized} · ${a.phone.state==='verified'?'Nomor terverifikasi':'Nomor diberikan, belum terverifikasi'}`;
     $('duplicate-warning').textContent=`Peringatan duplikat: ${data.warnings.sameName} nama serupa; ${data.warnings.samePhone} nomor sama. Perlu pemeriksaan independen.`;
