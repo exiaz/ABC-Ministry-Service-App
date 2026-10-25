@@ -87,6 +87,12 @@ export function createMsaRegistration({db,root,auth,assertEnabled,verifyPassword
   };
   return {
     enabled,
+    async authorizeRecoveryReview(tx,actor,row,delegation,onlySuperadmin=false){
+      const power=await reviewer(tx,actor,row?{reviewAssignment:delegation}:undefined);
+      if(onlySuperadmin&&!power.superadmin)fail(403,'Hanya Superadmin dapat mendelegasikan pemulihan.');
+      if(!power.superadmin&&row&&scopeKey(power.scope)!==scopeKey(row.identity?.scope))fail(403,'Pemulihan di luar cakupan delegasi.');
+      return power;
+    },
     async authorizeDeviceManagement(tx,actor,uid,action,binding){
       const row=await read(tx,uid),power=await reviewer(tx,actor,row);
       let deviceRevokeAllowed=true;

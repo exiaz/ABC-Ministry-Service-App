@@ -28,7 +28,7 @@ export function createMsaMentorDevices({db,root,config,repository,credentials,no
     enabled();
     if(!personal||!id(personal.uid)||!Number.isSafeInteger(personal.revision)||!Number.isSafeInteger(personal.expiresAt)||!/^[a-f0-9]{64}$/.test(personal.sessionId??''))denied();
     const [a,s]=(await Promise.all([get(tx,col('msaAccounts').doc(personal.uid)),get(tx,col('msaMentorSessions').doc(personal.sessionId))])).map(d=>d.data());
-    if(a?.uid!==personal.uid||a.provisioning!=='ready'||a.state!=='active'||a.identity?.state!=='verified'||a.revision!==personal.revision||!a.mentorLink||s?.uid!==a.uid||s.state!=='active'||s.revision!==a.revision||!Number.isSafeInteger(s.expiresAt)||s.expiresAt!==personal.expiresAt||s.expiresAt<=now()||personal.expiresAt<=now())denied();
+    if(a?.uid!==personal.uid||a.provisioning!=='ready'||a.state!=='active'||a.recoveryLock||a.identity?.state!=='verified'||a.revision!==personal.revision||!a.mentorLink||s?.uid!==a.uid||s.state!=='active'||s.revision!==a.revision||!Number.isSafeInteger(s.expiresAt)||s.expiresAt!==personal.expiresAt||s.expiresAt<=now()||personal.expiresAt<=now())denied();
     const link=(await get(tx,col('mentorIdentityLinks').doc(a.mentorLink.mentorId))).data();
     if(link?.uid!==a.uid||link.state!=='active'||link.mentorId!==a.mentorLink.mentorId||link.revision!==a.mentorLink.revision||scopeKey(link.scope)!==scopeKey(a.mentorLink.scope)||scopeKey(link.scope)!==scopeKey(a.identity.scope)||!validRosterScope(link.scope))denied();
     return {account:a,link};
@@ -39,7 +39,7 @@ export function createMsaMentorDevices({db,root,config,repository,credentials,no
   };
   const sessionRow=async(tx,p)=>{
     enabled();const a=(await tx.get(col('msaAccounts').doc(p.uid))).data();
-    if(a?.state!=='active'||a.provisioning!=='ready'||a.identity?.state!=='verified'||a.revision!==p.revision||!a.mentorLink)denied();
+    if(a?.state!=='active'||a.recoveryLock||a.provisioning!=='ready'||a.identity?.state!=='verified'||a.revision!==p.revision||!a.mentorLink)denied();
     const link=(await tx.get(col('mentorIdentityLinks').doc(a.mentorLink.mentorId))).data();
     if(link?.uid!==a.uid||link.state!=='active'||link.revision!==a.mentorLink.revision||scopeKey(link.scope)!==scopeKey(a.mentorLink.scope))denied();return a;
   };
@@ -71,7 +71,7 @@ export function createMsaMentorDevices({db,root,config,repository,credentials,no
       const b=(await get(tx,col('msaDeviceAssociations').doc(device.id))).data();if(!b&&!device.msaAccountBinding)return true;
       try{
         enabled();if(!b) return false;const a=(await get(tx,col('msaAccounts').doc(b.uid))).data(),l=(await get(tx,col('mentorIdentityLinks').doc(b.mentorId))).data();
-        return a?.state==='active'&&a.provisioning==='ready'&&a.identity?.state==='verified'&&a.mentorLink?.mentorId===b.mentorId&&a.mentorLink.revision===l?.revision&&l?.uid===a.uid&&l.state==='active'&&scopeKey(a.mentorLink.scope)===scopeKey(l.scope)&&scopeKey(a.identity.scope)===scopeKey(l.scope)&&matches(b,device,entry,credentialId,a,l)&&!!await assignment(tx,l);
+        return a?.state==='active'&&!a.recoveryLock&&a.provisioning==='ready'&&a.identity?.state==='verified'&&a.mentorLink?.mentorId===b.mentorId&&a.mentorLink.revision===l?.revision&&l?.uid===a.uid&&l.state==='active'&&scopeKey(a.mentorLink.scope)===scopeKey(l.scope)&&scopeKey(a.identity.scope)===scopeKey(l.scope)&&matches(b,device,entry,credentialId,a,l)&&!!await assignment(tx,l);
       }catch(e){if(e.adminAccountError)return false;throw e;}
     },
     async deviceStatus(personal,authorization,proof){

@@ -16,15 +16,19 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
   const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
   return http.createServer(async(req,res)=>{try{
     const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
-    const personal=['mentor-account.html','mentor-account.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
+    const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
+    const personal=recovery||['mentor-account.html','mentor-account.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
     if(personal){
       try{if(!mentorMode)throw Error();assertMentorAccountMode(emulatorConfig());}catch{res.writeHead(404);res.end('Tidak ditemukan');return;}
+      if(recovery&&(process.env.ABC_MSA_A2_4B!=='1'||process.env.ABC_MSA_A2_4A!=='1')){res.writeHead(404);res.end('Tidak ditemukan');return;}
       if(!['GET','HEAD'].includes(req.method)||url.search){res.writeHead(404);res.end('Tidak ditemukan');return;}
     }
     if(!assets.has(name)&&!personal){res.writeHead(404);res.end('Tidak ditemukan');return;}
     let body=await readFile(path.join(root,mentorMode&&name==='index.html'?'mentor.html':name));
     if(mentorMode&&name==='index.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
     if(personal&&name==='mentor-account.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
+    if(name==='account-recovery.html')body=body.toString('utf8').replace('content="__RECOVERY_API__"','content="'+apiOrigin+'"');
+    if(name==='mentor-account.html'&&process.env.ABC_MSA_A2_4B==='1'&&process.env.ABC_MSA_A2_4A==='1')body=body.toString('utf8').replace('</form>','</form><p><a class="btn" href="/account-recovery.html">Lupa kata sandi?</a></p>');
     const security=mentorMode?{'Content-Security-Policy':`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${apiOrigin}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`,'Referrer-Policy':'no-referrer'}:{};
     res.writeHead(200,{'Content-Type':types[path.extname(name)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','X-ABC-Mode':mentorMode?'paired-local-fictional-roster':'fictional-prototype',...security});res.end(body);
   }catch{res.writeHead(500);res.end('Halaman tidak dapat dibuka');}});

@@ -13,7 +13,7 @@ import {initializeOwner} from './backend/admin-accounts.mjs';
 import {createRosterServer} from './backend/server.mjs';
 import {createAdminServer} from './admin-server.mjs';
 import {createPrototypeServer} from './server.mjs';
-import {askDemoPassword} from './provision-demo.mjs';
+import {askDemoPassword,hiddenInput} from './provision-demo.mjs';
 import {fictionalRosterData} from './tests/fixtures/roster.mjs';
 import {fixtureRecords} from './tests/emulator/fixture.mjs';
 import {jakartaToday} from './dates.js';
@@ -31,7 +31,7 @@ export function pilotEnvironment(base=process.env,{ports=PILOT_PORTS,id=randomUU
   if(!/^[a-f0-9-]{36}$/.test(id)||ports.length!==8||new Set(ports).size!==8||ports.some(p=>!Number.isSafeInteger(p)||p<1024||p>65535||[4173,4175,4176,4177,8080,9099,4400,4500,9150].includes(p)))throw safe('Konfigurasi port atau identitas pilot tidak valid.');
   for(const key of ['FIRESTORE_EMULATOR_HOST','FIREBASE_AUTH_EMULATOR_HOST'])if(base[key]&&!/^127\.0\.0\.1:[1-9]\d{0,4}$/.test(base[key]))throw safe('Alamat emulator dari lingkungan tidak aman.');
   const [firestore,auth,,,,api,admin,mentor]=ports;
-  const env={...base,ABC_ROSTER_ADAPTER:'firestore-emulator',ABC_ADMIN_AUTH_MODE:'firebase-auth-emulator',ABC_FIREBASE_PROJECT_ID:'demo-abc-attendance',GCLOUD_PROJECT:'demo-abc-attendance',GOOGLE_CLOUD_PROJECT:'demo-abc-attendance',FIRESTORE_EMULATOR_HOST:'127.0.0.1:'+firestore,FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:'+auth,ABC_FIRESTORE_NAMESPACE:'test-auth-pilot-'+id,ABC_ADMIN_UIDS:JSON.stringify(['pilot-reviewer-'+id]),ABC_ROSTER_PORT:String(api),ABC_ADMIN_PORT:String(admin),ABC_MENTOR_PORT:String(mentor),ABC_API_ORIGIN:'http://127.0.0.1:'+api,ABC_MENTOR_ORIGIN:'http://127.0.0.1:'+mentor,ABC_MSA_A1:'1',ABC_MSA_USERNAME_PILOT:'1',ABC_MSA_A2_2:'1',ABC_MSA_A2_3:'1',ABC_MSA_A2_4A:'1',ABC_JAVA_TCP_FALLBACK:'1'};
+  const env={...base,ABC_ROSTER_ADAPTER:'firestore-emulator',ABC_ADMIN_AUTH_MODE:'firebase-auth-emulator',ABC_FIREBASE_PROJECT_ID:'demo-abc-attendance',GCLOUD_PROJECT:'demo-abc-attendance',GOOGLE_CLOUD_PROJECT:'demo-abc-attendance',FIRESTORE_EMULATOR_HOST:'127.0.0.1:'+firestore,FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:'+auth,ABC_FIRESTORE_NAMESPACE:'test-auth-pilot-'+id,ABC_ADMIN_UIDS:JSON.stringify(['pilot-reviewer-'+id]),ABC_ROSTER_PORT:String(api),ABC_ADMIN_PORT:String(admin),ABC_MENTOR_PORT:String(mentor),ABC_API_ORIGIN:'http://127.0.0.1:'+api,ABC_MENTOR_ORIGIN:'http://127.0.0.1:'+mentor,ABC_MSA_A1:'1',ABC_MSA_USERNAME_PILOT:'1',ABC_MSA_A2_2:'1',ABC_MSA_A2_3:'1',ABC_MSA_A2_4A:'1',ABC_MSA_A2_4B:'1',ABC_JAVA_TCP_FALLBACK:'1'};
   delete env.ABC_EMULATOR_IMPORT_DIR;return env;
 }
 
@@ -75,11 +75,20 @@ export async function openPilotPages({mentorOrigin,adminOrigin}){
   });
 }
 
-export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword=askDemoPassword,prerequisites=checkPrerequisites,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady}={}){
+// Restricted test delivery is an in-process call from the launcher's local
+// terminal. No pipe/HTTP endpoint, file, URL, clipboard or log receives secrets.
+export async function recoverPilotAccount({recovery,username,askPassword,delivery}){
+  const challenge=delivery??await recovery.deliver(username);
+  try{let password=await askPassword();try{return {result:await recovery.reset({...challenge,password})};}finally{password='';}}
+  catch(error){return {...(error.status===403?{}:{delivery:challenge}),error:error.status===503?'Pemulihan belum selesai. Akses ditutup; ulangi perintah yang sama.':'Pemulihan belum berhasil. Periksa tinjauan, kata sandi dan batas waktu, lalu ulangi perintah.'};}
+}
+
+export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword=askDemoPassword,askRecoveryPassword,prerequisites=checkPrerequisites,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady}={}){
   const env=pilotEnvironment(base,{ports}),prior={...process.env};
   const existing=await controlRequest(address,'status');
   if(existing){log('Pilot sudah berjalan. Gunakan tautan di jendela pilot pertama, atau Stop MSA Auth Pilot.cmd.');return;}
   let phase='starting',emulator,context,app,terminal,monitor,bootstrap,stopping,controller;
+  let recovery;const deliveries=new Map();
   const resources={servers:[],auths:[]},abort=new AbortController();
   let finish;const finished=new Promise(resolve=>finish=resolve);
   const check=()=>{if(abort.signal.aborted)throw safe('Penyiapan pilot dibatalkan.');for(const key of Object.keys(env))if(process.env[key]!==env[key])throw safe('Konfigurasi pilot berubah; akses ditutup.');};
@@ -124,6 +133,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       const {initializeApp}=await import('firebase-admin/app'),{getAuth}=await import('firebase-admin/auth');
       app=initializeApp({projectId:'demo-abc-attendance'},'auth-pilot-'+randomUUID());
       const adminAuthentication=await createLocalAdminAuthentication(context);resources.auths.push(adminAuthentication);
+      recovery=adminAuthentication.a1.recovery;
       await preparePilot(context,{auth:getAuth(app),adminAuthentication,password,check});
       log('3/4 · Menyiapkan halaman Mentor dan peninjau…');
       const options={mentorOrigin:'http://127.0.0.1:'+mentor,adminOrigin:'http://127.0.0.1:'+admin};
@@ -132,14 +142,36 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       resources.servers.push(await listen(wrapPilotServer(createAdminServer({adminAuthentication,pairing:context.pairing}),options),admin));
       resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api}),{...options,mentor:true}),mentor));
       check();await ready();await appsReady(resources);phase='ready';
-      log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+' (kata sandi yang baru Anda buat).\nMentor: '+options.mentorOrigin+'/\nPanduan: '+options.mentorOrigin+'/pilot.html\nPendaftaran: '+options.adminOrigin+'/register.html\nTinjauan: '+options.adminOrigin+'/identity-review.html\nAdmin / aktivasi: '+options.adminOrigin+'/username.html\nTekan Enter untuk berhenti atau klik Stop MSA Auth Pilot.cmd. Semua data pilot sementara.');
+      log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+' (kata sandi yang baru Anda buat).\nMentor: '+options.mentorOrigin+'/\nPanduan: '+options.mentorOrigin+'/pilot.html\nPendaftaran: '+options.adminOrigin+'/register.html\nTinjauan: '+options.adminOrigin+'/identity-review.html\nPemulihan: '+options.adminOrigin+'/account-recovery.html\nAdmin / aktivasi: '+options.adminOrigin+'/username.html\nSesudah review pemulihan disetujui, operator tepercaya mengetik: pulihkan <username>. Pemilik mengisi kata sandi baru sendiri tanpa tampil.\nTekan Enter untuk berhenti atau klik Stop MSA Auth Pilot.cmd. Semua data pilot sementara.');
       await onReady?.({context,options,resources,state,stop});
       try{await open(options);}catch{log('Browser belum terbuka. Gunakan tautan pilot di atas.');}
       monitor=setInterval(()=>{if(phase==='ready')void ready().then(()=>appsReady(resources)).then(check).catch(()=>{log('Layanan pilot terputus. Akses ditutup; nyalakan ulang untuk memakai data fiktif baru.');void stop();});},5000);monitor.unref();
     }finally{password='';}
   })();
   try{await bootstrap;}catch(error){log(error.pilotSafe||error.demoSafe?error.message:'Pilot belum siap. Periksa prasyarat, emulator dan kata sandi. Rincian rahasia tidak dicetak.');process.exitCode=1;await stop();}
-  if(phase!=='stopped'){terminal=createInterface({input,output});terminal.on('line',()=>void stop());terminal.once('close',()=>void stop());}
+  const attachTerminal=()=>{
+    if(phase!=='ready')return;
+    terminal=createInterface({input,output});terminal.once('close',()=>void stop());
+    terminal.on('line',line=>{
+      if(!line.trim()){void stop();return;}
+      const match=/^pulihkan ([A-Za-z0-9][A-Za-z0-9._-]{2,31})$/.exec(line.trim());
+      if(!match){log('Gunakan pulihkan <username> untuk pemulihan fiktif, atau Enter untuk berhenti.');return;}
+      // Remove readline completely before hidden input so it cannot echo keys.
+      terminal.removeAllListeners('close');terminal.removeAllListeners('line');terminal.close();terminal=null;
+      void (async()=>{
+        const username=match[1].toLowerCase();
+        try{
+          check();log('Pemilik akun: isi kata sandi baru sendiri. Operator tidak perlu mengetahuinya.');
+          const ask=askRecoveryPassword??(async()=>{let password=await hiddenInput('Kata sandi baru (12–128 karakter, tidak tampil): ',{input,output,signal:abort.signal});try{if(password!==await hiddenInput('Ulangi kata sandi baru (tidak tampil): ',{input,output,signal:abort.signal}))throw Error();return password;}finally{password='';}});
+          const r=await recoverPilotAccount({recovery,username,askPassword:ask,delivery:deliveries.get(username)});
+          if(r.delivery)deliveries.set(username,r.delivery);else deliveries.delete(username);
+          log(r.error??r.result.message);
+        }catch{log('Pemulihan ditolak. Periksa persetujuan baru dan masa berlaku. Akun owner tidak dipulihkan melalui pilot.');}
+        finally{attachTerminal();}
+      })();
+    });
+  };
+  attachTerminal();
   await finished;
 }
 

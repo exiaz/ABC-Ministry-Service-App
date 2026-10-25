@@ -1,6 +1,6 @@
 # ABC | Ministry Service App — Prototipe lokal
 
-## Pilot akun interaktif Windows — AUTH A1/A2.2/A2.3
+## Pilot akun interaktif Windows — AUTH A1–A2.4B
 
 Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
 
@@ -20,11 +20,26 @@ Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.c
 | Admin / penerbitan kode aktivasi | `http://127.0.0.1:4277/username.html` |
 | Pengelolaan akun uji / penangguhan | `http://127.0.0.1:4277/a1.html` (pilih login username) |
 
-**Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2 dan A2.3 hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua hanya melaporkan pilot sudah aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
+**Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2, A2.3, A2.4A dan A2.4B hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua hanya melaporkan pilot sudah aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
 
 **Data sementara:** tidak ada impor, ekspor, snapshot atau pemulihan pilot. Folder `.emulator-data/auth-pilot/run-*` hanya menyimpan konfigurasi/diagnostik emulator dan diabaikan Git; `.emulator-data/local-demo-launcher` tidak dibaca atau ditulis. Setiap restart menghapus konteks uji sebelumnya secara alami melalui emulator baru, membuat peninjau/kata sandi baru, dan memerlukan registrasi/aktivasi ulang. Jangan gunakan kredensial/perangkat dari run sebelumnya. Jika berganti tanggal WIB atau lupa kata sandi peninjau, hentikan lalu nyalakan pilot kembali. Namespace, snapshot, password dan akun demo reguler tidak diubah. Tidak ada endpoint provisioning publik atau izin penggunaan data nyata.
 
 Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
+
+## AUTH A2.4B — lupa kata sandi tanpa email, khusus pilot
+
+Gate `ABC_MSA_A2_4B=1` memerlukan seluruh gate A2.4A dan namespace `test-*`. **Start MSA Auth Pilot.cmd** mengaktifkannya hanya dalam proses pilot. Launcher reguler, login default dan akun operasional tetap. Gunakan akun relawan fiktif yang sudah active/verified; peninjau/owner pilot tidak dapat dipulihkan melalui jalur ini.
+
+1. Pada login Mentor pilih **Lupa kata sandi?**, isi username, lalu **Ajukan pemulihan**. Pesan selalu sama untuk username dikenal dan tidak dikenal. Jangan masukkan email, nomor HP atau kata sandi pada pengajuan. Jika koneksi gagal, isian dan ID pengajuan tetap untuk retry di halaman yang sama.
+2. Penanggung jawab membuka **Pemulihan akun** di navigasi pilot (`http://127.0.0.1:4277/account-recovery.html`), membuka **Tinjauan penanggung jawab**, lalu masuk sebagai `peninjau.pilot`. Pilih permintaan, alasan dan keputusan. Persetujuan memerlukan bukti independen baru khusus pemulihan serta konfirmasi. Nama/HP/kode perangkat dan persetujuan identitas lama tidak cukup. Bukti belum cukup: tetap menunggu atau tolak. Superadmin dapat mendelegasikan permintaan tertentu kepada UID PIC dengan cakupan/revisi yang masih berlaku; delegasi tinjauan identitas sebelumnya tidak memberikan hak pemulihan.
+3. Sesudah persetujuan, **operator lokal tepercaya** mengetik `pulihkan <username-relawan>` di jendela launcher yang masih terbuka. Pemilik akun mengisi kata sandi baru sendiri dua kali pada prompt tersembunyi. Kata sandi harus 12–128 karakter tanpa karakter kontrol. Jangan mengirim kata sandi kepada peninjau. Penyerahan challenge hanya terjadi dalam memori proses launcher; tidak ada endpoint delivery, kode yang harus disalin, file rahasia, SMS, WhatsApp atau email. Browser peninjau tidak menerima rahasianya. Pengisian kata sandi pada pilot ini berlangsung di terminal lokal, bukan ponsel.
+4. Jika reset belum selesai, akses akun tetap ditutup. Ulangi **perintah yang sama dalam proses launcher yang sama**; jangan menonaktifkan flag atau menghapus lock. Sesudah berhasil, masuk dengan kata sandi baru, minta kode aktivasi baru dari PIC dan konfirmasikan perangkat baru. UID/username/Mentor/peran/histori tetap; sesi, admission, asosiasi dan backup lama tidak pulih. Akun suspended/rejected/nonaktif tidak dibuka oleh recovery.
+
+Persetujuan/challenge berlaku **10 menit**. Pengajuan ulang publik tidak membatalkan persetujuan yang sedang berjalan. Jika kedaluwarsa sebelum reset, peninjau perlu memeriksa dan menyetujui lagi; saat disetujui ulang, challenge lama batal. Hasil review yang responsnya hilang dapat dikirim ulang dengan intent yang sama tanpa audit ganda. Peninjau dapat membatalkan otorisasi; pembatalan/suspension selama provider sedang diperbarui mempertahankan lock agar hasil terlambat tidak membuka akses.
+
+Jika proses mati ketika update provider belum pasti, proses baru **tidak boleh melanjutkan worker lama**. Pilot tidak mengimpor state: hentikan dan mulai run fiktif baru. Jangan memakai prosedur ini pada data persisten/produksi. Jika lupa kata sandi owner/peninjau pilot, hentikan dan mulai pilot baru; bukan reset owner, pengikatan `momor1n`, atau penggantian akun operasional. Prosedur trusted owner dan dependensi A2.4C ada di `MSA_ACCOUNT_ARCHITECTURE.md`.
+
+Uji terarah: `npm.cmd run test:msa-a2-4b`. Regresi: `npm.cmd run test:stage6`. Pilot interaktif: `node --test tests/auth-pilot-browser.mjs`. Hasil yang benar-benar dijalankan dicatat di `PROJECT_STATUS.md`.
 
 ## AUTH A2.4A — perangkat akun dan penangguhan
 
@@ -45,7 +60,7 @@ Halaman `/mentor-account.html` pada shell Mentor hanya tersedia bila A1, A2.2 da
 
 Kelompok utama dan backup tampil terpisah. Simpan/tinjau/selesaikan/koreksi tetap menunggu konfirmasi server. Saat offline, periksa akses kembali setelah jaringan tersambung; tidak ada simpan offline otomatis. Keluar menutup sesi personal, tanpa mencabut atau menyalin izin perangkat. Perangkat tertaut tidak dapat dipakai melalui alur legacy tanpa sesi akun sah. Akun/link/revisi stale memerlukan pemeriksaan PIC dan aktivasi baru; tombol hapus izin lokal tidak menghapus revokasi server.
 
-Gunakan akun, kode, bukti dan siswa fiktif saja. Tidak ada recovery, registrasi publik, migrasi akun/device atau aktivasi produksi. Rincian boundary legacy dan dependensi A2.4: MSA_ACCOUNT_ARCHITECTURE.md.
+Gunakan akun, kode, bukti dan siswa fiktif saja. Pemulihan hanya tersedia pada pilot A2.4B di atas; tidak ada registrasi publik, migrasi akun/device atau aktivasi produksi. Rincian boundary legacy dan dependensi A2.4: MSA_ACCOUNT_ARCHITECTURE.md.
 
 ## AUTH A2.2 — pengujian pendaftaran dan tinjauan identitas
 

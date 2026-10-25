@@ -22,6 +22,10 @@ export async function msaMentorRoute({req,url,authorization,local,adminAuthentic
   if(req.headers.host!=='127.0.0.1:'+req.socket.localPort||req.headers.origin&&req.headers.origin!==mentorOrigin)fail(403,'Origin Mentor tidak diizinkan.');
   if(url.search)fail(400,'Parameter tidak diizinkan.');
   const path=url.pathname,header=mentorSessionHeader(req);
+  if(path==='/api/a2-3/recovery-request'&&req.method==='POST'){
+    const recovery=adminAuthentication.a1.recovery;if(!recovery){send(404,{error:'Tidak ditemukan.'});return true;}
+    const {value}=await json(req);send(202,await recovery.request(value));return true;
+  }
   if(path==='/api/a2-3/login'&&req.method==='POST'){
     const {value}=await json(req);if(Object.keys(value).some(k=>!['username','password'].includes(k)))fail(400,'Parameter login tidak valid.');
     send(200,await mentor.login(value));return true;

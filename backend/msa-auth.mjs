@@ -4,6 +4,7 @@ import {createMsaAccounts,normalizeUsername,hash,fail} from './msa-accounts.mjs'
 import {createLegacyUsernamePilot} from './msa-legacy-usernames.mjs';
 import {createMsaRegistration} from './msa-registration.mjs';
 import {createMsaMentorAuthentication} from './msa-mentor-devices.mjs';
+import {createMsaRecovery} from './msa-recovery.mjs';
 
 export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,mentorAccounts,now=Date.now}){
   const sessions=new Map(),accounts=createMsaAccounts({db,root,auth,assertLocal,now});
@@ -84,5 +85,6 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
     list:(actor,uid)=>mentorAccounts.lifecycle.list(uid,(tx,b)=>registration.authorizeDeviceManagement(tx,actor,uid,'pairing:read',b)),
     revoke:(actor,uid,deviceId,value)=>mentorAccounts.lifecycle.revoke(uid,deviceId,value,actor.uid,(tx,b)=>registration.authorizeDeviceManagement(tx,actor,uid,'pairing:revoke',b))
   };
+  if(api.deviceLifecycle&&process.env.ABC_MSA_A2_4B==='1')api.recovery=createMsaRecovery({db,root,auth,registration,now,assertEnabled:()=>{assertLocal();mentorAccounts.lifecycle.enabled();registration.enabled();}});
   return api;
 }

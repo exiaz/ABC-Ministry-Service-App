@@ -19,6 +19,7 @@
     "test:msa-a2-2": "node tests/stage3.mjs --a2-2",
     "test:msa-a2-3": "node tests/stage3.mjs --a2-3",
     "test:msa-a2-4a": "node tests/stage3.mjs --a2-4a",
+    "test:msa-a2-4b": "node tests/stage3.mjs --a2-4b",
     "test:browser": "node tests/browser.mjs",
     "emulators:start": "node tests/emulator/run.mjs start",
     "test:emulator": "node tests/emulator/run.mjs test",

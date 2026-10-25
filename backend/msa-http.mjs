@@ -11,11 +11,18 @@ async function json(req){
 export async function msaRoute({req,url,authorization,local,adminAuthentication,send}){
   const intake=url.pathname.startsWith('/api/a2-2/');
   const lifecycle=url.pathname.startsWith('/api/a2-4/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle)return false;
+  const recovery=url.pathname.startsWith('/api/a2-4b/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(recovery){
+    if(!a1.recovery){send(404,{error:'Tidak ditemukan.'});return true;}a1.recovery.enabled();
+    if(url.search)fail(400,'Parameter tidak diizinkan.');
+    if(path==='/api/a2-4b/request'&&req.method==='POST'){send(202,await a1.recovery.request(await json(req)));return true;}
+    if(path==='/api/a2-4b/reset'&&req.method==='POST'){send(200,await a1.recovery.reset(await json(req)));return true;}
+  }
   if(lifecycle){if(!a1.deviceLifecycle){send(404,{error:'Tidak ditemukan.'});return true;}a1.deviceLifecycle.enabled();if(url.search)fail(400,'Parameter tidak diizinkan.');}
   if(intake){
     if(!a1.registration){send(404,{error:'Tidak ditemukan.'});return true;}
@@ -34,6 +41,12 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(recovery){
+    if(path==='/api/a2-4b/queue'&&req.method==='GET'){send(200,await a1.recovery.queue(actor));return true;}
+    const match=/^\/api\/a2-4b\/requests\/([a-f0-9]{64})\/review$/.exec(path);
+    if(match&&req.method==='POST'){send(200,await a1.recovery.review(actor,match[1],await json(req)));return true;}
+    send(404,{error:'Tidak ditemukan.'});return true;
   }
   if(lifecycle){
     const match=/^\/api\/a2-4\/accounts\/([A-Za-z0-9_-]{1,128})\/devices(?:\/([A-Za-z0-9_-]{1,128})\/revoke)?$/.exec(path);

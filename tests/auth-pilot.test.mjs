@@ -15,13 +15,13 @@ import {spawn} from 'node:child_process';
 test('Pilot uses fresh test namespace, isolated ports and scoped flags; invalid/cloud configuration fails closed',()=>{
   const base={ABC_EMULATOR_IMPORT_DIR:'ignored-regular-snapshot'},first=pilotEnvironment(base),second=pilotEnvironment(base);
   assert.match(first.ABC_FIRESTORE_NAMESPACE,/^test-auth-pilot-/);assert.notEqual(first.ABC_FIRESTORE_NAMESPACE,second.ABC_FIRESTORE_NAMESPACE);
-  for(const key of ['ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A'])assert.equal(first[key],'1');
+  for(const key of ['ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A','ABC_MSA_A2_4B'])assert.equal(first[key],'1');
   assert.equal(first.ABC_EMULATOR_IMPORT_DIR,undefined);assert.equal(base.ABC_EMULATOR_IMPORT_DIR,'ignored-regular-snapshot');
   assert.equal(first.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8280');assert.equal(first.FIREBASE_AUTH_EMULATOR_HOST,'127.0.0.1:9299');
   assert.notEqual(PILOT_ADDRESS,controllerPath());
   for(const base of [{GOOGLE_APPLICATION_CREDENTIALS:'no'},{FIREBASE_TOKEN:'no'},{NODE_ENV:'production'},{GCLOUD_PROJECT:'real-project'},{FIRESTORE_EMULATOR_HOST:'example.com:8080'}])assert.throws(()=>pilotEnvironment(base));
   for(const ports of [[8080,...PILOT_PORTS.slice(1)],[8280,8280,...PILOT_PORTS.slice(2)],PILOT_PORTS.slice(1)])assert.throws(()=>pilotEnvironment({},{ports}));
-  const regular=demoEnvironment({});assert.equal(regular.ABC_MSA_A2_3,undefined);assert.equal(regular.ABC_MSA_A2_4A,undefined);assert.equal(regular.ABC_FIRESTORE_NAMESPACE,'local-demo-m2b5b');
+  const regular=demoEnvironment({});assert.equal(regular.ABC_MSA_A2_3,undefined);assert.equal(regular.ABC_MSA_A2_4A,undefined);assert.equal(regular.ABC_MSA_A2_4B,undefined);assert.equal(regular.ABC_FIRESTORE_NAMESPACE,'local-demo-m2b5b');
 });
 test('Pilot detects occupied ports and leaves unrelated listener alive',async()=>{
   const server=await listen(net.createServer(socket=>socket.end()),0);
@@ -57,6 +57,7 @@ test('Pilot mentor root is gated personal login while regular mentor root and la
     assert.match((await read(pilot)).body,/id="account-login"/);assert.match((await read(pilot)).body,/PILOT LOKAL/);
     assert.match((await read(regular)).body,/id="pairing-root"/);assert.doesNotMatch((await read(regular)).body,/pilot-nav/);
     assert.match((await read(pilot,'/pilot.html')).body,/peninjau.pilot/);assert.equal((await read(regular,'/pilot.html')).status,404);
+    delete process.env.ABC_MSA_A2_4B;assert.doesNotMatch((await read(pilot)).body,/Lupa kata sandi/);assert.equal((await read(pilot,'/account-recovery.html')).status,404);process.env.ABC_MSA_A2_4B='1';
     delete process.env.ABC_MSA_A2_3;assert.equal((await read(pilot)).status,404);
     const launcher=await readFile(new URL('../Start ABC Attendance.cmd',import.meta.url),'utf8');assert.match(launcher,/local-demo.mjs/);assert.doesNotMatch(launcher,/auth-pilot|ABC_MSA_A/);
   }finally{

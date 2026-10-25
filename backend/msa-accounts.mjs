@@ -40,7 +40,7 @@ export function createMsaAccounts({db,root,auth,assertLocal,now=Date.now}){
   const accounts=root.collection('msaAccounts'),registry=root.collection('msaUsernames');
   const event=(tx,actor,target,previous,next,reason)=>tx.create(root.collection('msaAuthorizationEvents').doc(randomUUID()),{actorUid:actor,targetUid:target,previous,next,reason,at:now()});
   const read=async(tx,uid)=>{const row=(await tx.get(accounts.doc(uid))).data();if(!row||row.uid!==uid||row.provisioning!=='ready')fail(403,'Akun tidak tersedia.');return row;};
-  const active=row=>{if(row.state!=='active'||row.identity?.state!=='verified')fail(403,'Akun belum terverifikasi atau tidak aktif.');};
+  const active=row=>{if(row.state!=='active'||row.identity?.state!=='verified'||row.recoveryLock)fail(403,'Akun belum terverifikasi atau tidak aktif.');};
   const providerActive=async uid=>{try{const user=await auth.getUser(uid);return user.uid===uid&&!user.disabled;}catch{return false;}};
   const manager=async(tx,actor)=>{
     assertLocal();
@@ -121,6 +121,7 @@ export function createMsaAccounts({db,root,auth,assertLocal,now=Date.now}){
         }
         const nextState=stateChange?value.state:row.state;
         if(nextState==='active'&&row.identity?.state!=='verified')fail(403,'Identitas belum terverifikasi.');
+        if(nextState==='active'&&row.recoveryLock)fail(403,'Akun sedang dipulihkan dan belum dapat diaktifkan.');
         if(nextState==='active'&&(stateChange||value.status==='active')&&!await providerActive(uid))fail(403,'Identitas provider tidak tersedia atau nonaktif.');
         if(row.roles.some(g=>g.role==='superadmin'&&g.status==='active')&&(nextState!=='active'||!nextRoles.some(g=>g.role==='superadmin'&&g.status==='active'))){
           // Shared guard plus transactional query serialize concurrent removals.

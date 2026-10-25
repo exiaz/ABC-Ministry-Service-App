@@ -14,9 +14,10 @@ try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.AB
 const output=path.resolve('.emulator-data/auth-pilot-qa/screenshots');
 
 test('Interactive pilot real lifecycle, onboarding, review/link, username login, device proof, attendance/backup and responsive navigation',{timeout:300000},async()=>{
+  const recoveryPassword=randomBytes(24).toString('base64url');
   const password=randomBytes(24).toString('base64url'),messages=[],input=new PassThrough(),terminal=new PassThrough();
   let notify,fail;const ready=new Promise((resolve,reject)=>{notify=resolve;fail=reject;});
-  const running=runPilot({input,output:terminal,askPassword:async()=>password,open:async()=>{},log:s=>{messages.push(s);console.log(s);},onReady:notify});
+  const running=runPilot({input,output:terminal,askPassword:async()=>password,askRecoveryPassword:async()=>recoveryPassword,open:async()=>{},log:s=>{messages.push(s);console.log(s);},onReady:notify});
   running.then(()=>fail(Error('Pilot berhenti sebelum siap.')),fail);
   let browser;
   try{
@@ -58,11 +59,18 @@ test('Interactive pilot real lifecycle, onboarding, review/link, username login,
     await review.locator('#refresh').click();await review.waitForSelector('#detail:not([hidden])');await review.locator('#review-devices [data-devices-open]').click();await review.waitForSelector('#review-devices [data-device-revoke]');await capture(review,'reviewer-devices');
     await review.locator('#review-devices [data-device-revoke]').click();await review.locator('#review-devices textarea[name=reason]').fill('Pencabutan perangkat pilot fiktif oleh peninjau');await review.locator('#review-devices button[type=submit]').click();await review.waitForFunction(()=>document.querySelectorAll('#review-devices [data-device-revoke]').length===0);
     await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForSelector('#account-code');assert.equal(await page.locator('#account-attendance').isVisible(),false);
-    await f.context.root.collection('msaAccounts').doc(claim.uid).update({state:'suspended',revision:4});await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForSelector('#account-login:not([hidden])');assert.equal(await page.locator('#account-attendance').isVisible(),false);
+    const recover=await context.newPage();recover.on('pageerror',e=>errors.push(e.message));
+    await page.goto(mentorOrigin+'/mentor-account.html');await page.getByRole('link',{name:'Lupa kata sandi?',exact:true}).click();await page.locator('#recovery-username').fill(username);await page.locator('#recovery-request button').click();await page.waitForSelector('#request-pending:not([hidden])');await capture(page,'recovery-pending');
+    await recover.goto(adminOrigin+'/account-recovery.html');await recover.locator('#reviewer-entry summary').click();await recover.locator('#review-username').fill(PILOT_USERNAME);await recover.locator('#review-password').fill(password);await recover.locator('#recovery-login button').click();await recover.waitForSelector('[data-recovery-id]');await recover.locator('[data-recovery-id]').click();await recover.locator('#recovery-decision').selectOption('approve');await recover.locator('#recovery-reason').fill('Pemulihan pilot fiktif dengan bukti baru');await recover.locator('#recovery-reference').fill('Pemeriksaan fiktif independen dengan pemilik');await recover.locator('#recovery-evidence-confirmed').check();await recover.locator('#recovery-review button[type=submit]').click();await recover.locator('#recovery-apply').click();await recover.waitForFunction(()=>document.querySelector('#review-state').textContent.includes('Disetujui'));await capture(recover,'recovery-approved');
+    input.write('pulihkan '+username+'\n');await waitFor(async()=> (await f.context.root.collection('msaRecoveryRequests').get()).docs.some(d=>d.data().state==='completed'),{timeout:20000});
+    await page.goto(mentorOrigin+'/mentor-account.html');await page.locator('#account-username').fill(username);await page.locator('#account-password').fill(recoveryPassword);await page.locator('#account-login-form button').click();await page.waitForSelector('#account-code');await capture(page,'recovery-fresh-login');
+    assert.equal((await f.context.root.collection('msaAccounts').doc(claim.uid).get()).data().revision,4);
+    assert.ok(messages.every(s=>!s.includes(recoveryPassword)));
+    await f.context.root.collection('msaAccounts').doc(claim.uid).update({state:'suspended',revision:5});await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForSelector('#account-login:not([hidden])');assert.equal(await page.locator('#account-attendance').isVisible(),false);
     assert.deepEqual(errors,[]);assert.ok(messages.every(s=>!s.includes(password)&&!s.includes(mentorPassword)&&!s.includes(code)&&!s.includes('@example.invalid')));
     // Firebase CLI diagnostics must not contain submitted application secrets.
-    for(const file of await readdir(f.state))if(file.endsWith('.log')){const log=await readFile(path.join(f.state,file),'utf8');assert.ok(!log.includes(password)&&!log.includes(mentorPassword)&&!log.includes(code)&&!log.includes('@msa.example.invalid'));}
-    console.log('PASS pilot browser: registration → review → link → username → activation/proof → primary/backup attendance → suspension; screenshots '+output);
+    for(const file of await readdir(f.state))if(file.endsWith('.log')){const log=await readFile(path.join(f.state,file),'utf8');assert.ok(!log.includes(password)&&!log.includes(mentorPassword)&&!log.includes(recoveryPassword)&&!log.includes(code)&&!log.includes('@msa.example.invalid'));}
+    console.log('PASS pilot browser: registration → review → link → username → activation/proof → primary/backup attendance → reviewed recovery → trusted terminal reset → suspension; screenshots '+output);
   }finally{
     await browser?.close();
     if(process.platform==='win32'&&await controlRequest(PILOT_ADDRESS,'status')){
