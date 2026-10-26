@@ -38,6 +38,17 @@ Jalankan **Start MSA Auth Pilot.cmd**, pilih **Pelayanan & kalender**, lalu masu
 
 Gate `ABC_MSA_STAGE9B1` mati pada startup reguler; hanya proses pilot/tes yang menyalakannya bersama fondasi sebelumnya dan grant fixture eksplisit. Restart memulai fixture baru. `npm.cmd run test:stage9b1` menjalankan unit/integrasi/Chrome terarah; `npm.cmd run test:stage6` menjalankan regresi penuh; `node --test tests/auth-pilot-browser.mjs` memeriksa launcher nyata. Status tes aktual ada di PROJECT_STATUS.md. Publikasi terpisah dari rundown, tidak memberi absensi/perangkat/assignment otomatis. Governance grant/PIC masih provisional; Stage 9B.2 dan produksi belum diizinkan.
 
+### Tambahkan ke kalender — salinan manual
+
+Pada detail **pelayanan terbit**, isi **Durasi untuk salinan kalender (menit)** dengan durasi yang sudah Anda pastikan. Tidak ada nilai bawaan: waktu selesai dihitung dari menit yang Anda isi, memakai zona waktu pelayanan. Durasi ini hanya untuk salinan dan tidak mengubah event MSA. Ekspor ditolak bila event berubah revisi, dibatalkan, atau akses Anda tidak lagi sah; buka detail terbaru sebelum mencoba lagi.
+
+- **Tambahkan ke Google Calendar** membuka tab prefill; Anda meninjau dan menyimpan sendiri di Google. Izinkan tab baru bila browser memblokirnya. Aplikasi tidak memakai OAuth/API dan tidak menyimpan event ke akun Google.
+- **Unduh .ics** menghasilkan berkas untuk diimpor ke aplikasi kalender lain. UID stabil untuk event yang sama; perilaku impor ulang mengikuti aplikasi kalender penerima. Waktu lokal memakai IANA timezone dan definisi VTIMEZONE untuk zona pilot WIB/WITA/WIT.
+
+Hanya judul dan label tempat pada event terbit serta deskripsi tetap yang aman dibagikan yang disertakan. Tidak ada kontak PIC, data siswa, catatan internal, token atau tautan akses MSA. Field ekspor tidak menerima perubahan judul/tempat/deskripsi dari browser. Salinan manual **tidak otomatis mengikuti perubahan atau pembatalan MSA**; periksa jadwal terbaru dan perbarui salinan Anda sendiri. Berkas/tautan yang sudah Anda simpan tidak dapat ditarik kembali oleh MSA.
+
+Format mengikuti [template prefill resmi Google](https://developers.google.com/workspace/calendar/api/concepts/inviting-attendees-to-events) dan [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545.html): ICS memakai CRLF, pelolosan TEXT, folding UTF-8 maksimal 75 octet, UID, DTSTART/DTEND berzona, dan metadata revisi. Ekspor tetap berada di gate Stage 9B.1 dan izin baca organisasi yang sama. Tidak ada sinkronisasi Google Calendar/Sheets, undangan, atau subscription kalender. Pengujian memakai emulator fiktif dan mencegat navigasi Google; impor nyata ke Google/Outlook/Apple Calendar belum diuji.
+
 ## Stage 9A — draf pelayanan
 
 Jalankan **Start MSA Auth Pilot.cmd**, pilih **Pelayanan & kalender** (`http://127.0.0.1:4277/msa-events.html`), masuk sebagai `peninjau.pilot` dengan kata sandi launcher, lalu pilih **Kelola pelayanan**. Fixture memberi izin event dan kelayakan PIC secara eksplisit pada dua organisasi fiktif; relawan baru tidak mendapatkannya otomatis.

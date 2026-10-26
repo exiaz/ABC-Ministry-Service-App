@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {hash,fail} from './msa-accounts.mjs';
 import {coreMutationInput} from './msa-core.mjs';
 import {eventDate,eventInput} from './msa-events.mjs';
+import {manualCalendarExport} from './msa-calendar-export.mjs';
 
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(v);
 const denied=()=>fail(403,'Pelayanan atau izin kalender belum diizinkan.');
@@ -50,6 +51,12 @@ export function createMsaCalendar({db,root,core,events,now=Date.now}){
         const program=row.programId===null?null:(await tx.get(col('msaCorePrograms').doc(row.programId))).data();await access(tx,actor,org,readActions);enabled();
         // Calendar-only readers never receive previous draft versions or actors.
         return {event:{...view(row),organizationName:v.o.name,programName:program?.organizationId===org?program.name:null,picLabel:picLabel(row)},capabilities:{edit:v.g.permissions.includes('events:read')&&v.g.permissions.includes('events:edit')&&row.status!=='cancelled'&&(row.status==='draft'||v.g.permissions.includes('events:publish')),publish:row.status==='draft'&&v.g.permissions.includes('events:publish'),cancel:row.status==='published'&&v.g.permissions.includes('events:cancel')}};
+      });
+    },
+    async exportEvent(actor,org,eventId,value){
+      enabled();if(!id(eventId))fail(400,'ID pelayanan tidak valid.');return db.runTransaction(async tx=>{
+        await access(tx,actor,org,readActions);const row=(await tx.get(col('msaServiceEvents').doc(eventId))).data();if(!row||row.id!==eventId||row.organizationId!==org)denied();
+        const result=manualCalendarExport({namespace:root.id,event:row,value,now:now()});await access(tx,actor,org,readActions);enabled();if(!await actor.check())denied();return result;
       });
     },
     async transition(actor,org,eventId,operation,value){

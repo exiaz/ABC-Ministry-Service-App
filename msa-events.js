@@ -70,8 +70,27 @@ async function calendarDetail(organizationId,eventId){
   $('calendar-detail').hidden=true;$('calendar-detail').replaceChildren();calendarCurrent=undefined;note('Memuat detail pelayanan…');const r=await request(calendarPath(organizationId,eventId)),e=r.event;calendarCurrent=r;
   $('calendar-detail').innerHTML=`<p class="draft-badge">${esc(statuses[e.status])} · Revisi ${e.revision}</p><h2>${esc(e.name)}</h2><dl><dt>Penyelenggara</dt><dd>${esc(e.organizationName)}</dd><dt>Program</dt><dd>${esc(e.programName??'Tanpa program')}</dd><dt>Mulai</dt><dd>${esc(when(e))}</dd><dt>Tempat</dt><dd>${esc(e.venue)}</dd><dt>PIC internal</dt><dd>${esc(e.picLabel)}</dd></dl>${e.status==='cancelled'?'<p>Alasan pembatalan: '+esc(e.cancellationReason)+'</p>':''}<p>ID pelayanan: ${esc(e.id)}</p>${r.capabilities.publish?'<button id="calendar-publish">Terbitkan pelayanan</button>':''}${r.capabilities.edit?'<button id="calendar-edit" class="secondary">Sunting pelayanan</button>':''}${r.capabilities.cancel?'<button id="calendar-cancel" class="secondary">Batalkan pelayanan</button>':''}`;
   $('calendar-detail').hidden=false;$('calendar-detail').focus();note('');
+  if(e.status==='published'){
+    $('calendar-detail').insertAdjacentHTML('beforeend','<section aria-labelledby="calendar-export-title"><h3 id="calendar-export-title">Tambahkan ke kalender</h3><p>Salinan manual ini tidak otomatis mengikuti perubahan atau pembatalan di MSA. Periksa MSA untuk jadwal terbaru.</p><form id="calendar-export-form"><label for="calendar-export-duration">Durasi untuk salinan kalender (menit)</label><input id="calendar-export-duration" type="number" inputmode="numeric" required min="1" step="1" aria-describedby="calendar-export-help"><p id="calendar-export-help">Isi durasi yang sudah Anda pastikan. Waktu selesai dihitung dari durasi ini; tidak ada durasi bawaan dan event MSA tidak diubah. Nama dan tempat memakai data pelayanan terbit, tanpa kontak PIC atau catatan internal.</p><button type="submit" name="format" value="google">Tambahkan ke Google Calendar</button><button class="secondary" type="submit" name="format" value="ics">Unduh .ics</button><p id="calendar-export-result" role="status" aria-live="polite"></p></form></section>');
+    $('calendar-export-form').onsubmit=exportCalendar;
+  }
   if($('calendar-publish'))$('calendar-publish').onclick=()=>confirmLifecycle('publish');if($('calendar-cancel'))$('calendar-cancel').onclick=()=>confirmLifecycle('cancel');
   if($('calendar-edit'))$('calendar-edit').onclick=()=>void action(async()=>{$('calendar-workspace').hidden=true;$('event-org').value=e.organizationId;await openOrganization();await detail(e.id,true);});
+}
+function exportCalendar(event){
+  event.preventDefault();if(busy||!calendarCurrent)return;const row=calendarCurrent.event,format=event.submitter?.value;if(!['google','ics'].includes(format))return;
+  let popup;if(format==='google'){
+    popup=window.open('about:blank','_blank');if(!popup){note('Browser memblokir tab baru. Izinkan tab baru untuk membuka Google Calendar.');$('feedback').focus();return;}popup.opener=null;
+  }
+  void action(async()=>{
+    try{
+      const v=await request(calendarPath(row.organizationId,row.id)+'/export',{expectedRevision:row.revision,durationMinutes:Number($('calendar-export-duration').value),format});
+      if(format==='google')popup.location.replace(v.googleUrl);
+      else{const url=URL.createObjectURL(new Blob([v.ics],{type:'text/calendar;charset=utf-8'})),link=document.createElement('a');link.href=url;link.download=v.filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}
+      note('');
+      $('calendar-export-result').textContent='Salinan disiapkan sampai '+new Date(v.endAt).toLocaleString('id-ID',{timeZone:v.timezone})+' ('+v.timezone+'). Perubahan MSA tidak tersinkron otomatis.';
+    }catch(error){popup?.close();throw error;}
+  });
 }
 function confirmLifecycle(operation){
   if(busy||!calendarCurrent)return;calendarPending={row:calendarCurrent.event,operation};$('calendar-confirm-form').reset();$('calendar-reason').readOnly=false;$('calendar-reason').value=operation==='publish'?'Pelayanan telah diperiksa dan siap diterbitkan.':'';$('calendar-dismiss').disabled=false;$('calendar-operation-feedback').textContent='';$('calendar-confirm-title').textContent=operation==='publish'?'Terbitkan pelayanan?':'Batalkan pelayanan?';$('calendar-confirm-copy').textContent=calendarCurrent.event.name+(operation==='publish'?'. Jadwal hanya terlihat oleh pengguna MSA berwenang.':'. Riwayat tetap disimpan dan pelayanan tidak dipulihkan otomatis.');$('calendar-apply').textContent=operation==='publish'?'Terbitkan pelayanan':'Batalkan pelayanan';$('calendar-confirm').showModal();$('calendar-dismiss').focus();

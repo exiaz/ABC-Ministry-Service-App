@@ -57,3 +57,27 @@ test('Stage 9B.1 permission loss before transaction write rolls back status/audi
   const f=await calendarFixture(t);await f.save('authority');let calls=0;const actor={...f.actor,check:async()=>++calls===1},c=createMsaCalendar({...f,core:f.core,events:f.events});await assert.rejects(c.transition(actor,coreOrgA,'authority','publish',coreControl({expectedRevision:1})),e=>e.status===403);assert.equal((await f.root.collection('msaServiceEvents').doc('authority').get()).data().status,'draft');assert.equal((await f.root.collection('msaEventAudit').where('eventId','==','authority').get()).size,1);
   const before=await snapshot(f);await f.transition('authority');assert.equal(await snapshot(f),before);await f.save('no-draft-cancel');assert.equal((await f.transition('no-draft-cancel','cancel')).status,409);
 });
+
+test('Manual calendar export uses approved published fields, explicit duration and stable ICS identity without database writes',async t=>{
+  const f=await calendarFixture(t);await f.save('manual',{name:'Pelayanan, "Anak"; Musik & Seni + 😀',venue:'Aula Timur; Lantai 2, Sayap \\ Kanan',startTime:'23:30',timezone:'Asia/Makassar'});await f.transition('manual');
+  await f.root.collection('msaServiceEvents').doc('manual').update({internalNotes:'PRIVATE-NOTE-MARKER',picContacts:{phone:'PRIVATE-CONTACT-MARKER'},studentInformation:'PRIVATE-STUDENT-MARKER'});
+  const all=async()=>{const tables={};for(const c of await f.root.listCollections())tables[c.id]=(await c.get()).docs.map(d=>({id:d.id,...d.data()}));return hash(JSON.stringify(tables));},before=await all(),path=f.calendarBase(coreOrgA,'manual')+'/export',value={expectedRevision:2,durationMinutes:90,format:'ics'};
+  for(const body of [{...value,durationMinutes:undefined},{...value,durationMinutes:0},{...value,durationMinutes:'90'},{...value,venue:'Unapproved override'},{...value,description:'PRIVATE-NOTE-MARKER'}])assert.equal((await f.request(path,body)).status,400);
+  const ics=await (await f.request(path,value)).json(),google=await (await f.request(path,{...value,format:'google'})).json(),url=new URL(google.googleUrl);assert.equal(url.searchParams.get('text'),'Pelayanan, "Anak"; Musik & Seni + 😀');assert.equal(url.searchParams.get('stz'),'Asia/Makassar');assert.equal(url.searchParams.get('dates'),'20261103T153000Z/20261103T170000Z');assert.match(ics.ics,/DTEND;TZID=Asia\/Makassar:20261104T010000/);assert.ok(!JSON.stringify({ics,google}).includes('PRIVATE-'));assert.equal(await all(),before);
+  const uid=ics.ics.replace(/\r\n /g,'').match(/UID:([^\r]+)/)[1];await f.save('manual',{expectedRevision:2,startDate:'2026-11-05'});assert.equal((await f.request(path,value)).status,409);const updated=await (await f.request(path,{...value,expectedRevision:3})).json();assert.equal(updated.ics.replace(/\r\n /g,'').match(/UID:([^\r]+)/)[1],uid);
+});
+
+test('Manual calendar export denies draft/cancelled/foreign/stale/revoked/suspended/recovery-locked and gate-off access',async t=>{
+  const f=await calendarFixture(t),u=await f.account(),s=await f.signIn(u);await f.grant(u,coreOrgA,'viewer');await f.eventGrant(u.uid,coreOrgA,['events:calendar:read']);await f.save('allowed');await f.transition('allowed');await f.save('draft-only');await f.save('foreign',{},coreOrgB);await f.transition('foreign','publish',{},coreOrgB);
+  const value={expectedRevision:2,durationMinutes:60,format:'ics'},call=(org,id,token=s.token)=>f.request(f.calendarBase(org,id)+'/export',value,token);
+  assert.equal((await call(coreOrgA,'allowed')).status,200);assert.equal((await call(coreOrgA,'allowed','')).status,401);assert.equal((await call(coreOrgA,'draft-only',f.token)).status,403);assert.equal((await call(coreOrgB,'foreign')).status,403);assert.equal((await f.request(f.calendarBase(coreOrgA,'allowed')+'/export?durationMinutes=60',value)).status,400);
+  await f.transition('allowed','cancel',{expectedRevision:2});assert.equal((await call(coreOrgA,'allowed')).status,403);await f.save('active');await f.transition('active');
+  await f.root.collection('msaEventGrants').doc(coreMembershipId(coreOrgA,u.uid)).update({status:'revoked'});assert.equal((await call(coreOrgA,'active')).status,403);
+  await f.root.collection('msaEventGrants').doc(coreMembershipId(coreOrgA,u.uid)).update({status:'active'});await f.root.collection('msaAccounts').doc(u.uid).update({recoveryLock:'fictional-lock'});assert.equal((await call(coreOrgA,'active')).status,401);await f.root.collection('msaAccounts').doc(u.uid).update({recoveryLock:null});
+  assert.equal((await f.request('/api/a1/accounts/'+u.uid+'/change',{state:'suspended',expectedRevision:3,requestId:randomUUID(),reason:'Suspensi fiktif untuk ekspor manual'})).status,200);assert.equal((await call(coreOrgA,'active')).status,401);delete process.env.ABC_MSA_STAGE9B1;assert.equal((await call(coreOrgA,'active',f.token)).status,503);
+});
+
+test('Manual calendar export revalidates live authority before returning generated content',async t=>{
+  const f=await calendarFixture(t);await f.save('live');await f.transition('live');let checks=0;const c=createMsaCalendar({...f,core:f.core,events:f.events}),actor={...f.actor,check:async()=>++checks===1};
+  await assert.rejects(c.exportEvent(actor,coreOrgA,'live',{expectedRevision:2,durationMinutes:60,format:'google'}),e=>e.status===403);assert.equal((await f.root.collection('msaEventAudit').where('eventId','==','live').get()).size,2);
+});

@@ -57,8 +57,8 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
       if([...url.searchParams.keys()].some(k=>!['organizationId','programId','from','to','status'].includes(k)||url.searchParams.getAll(k).length!==1))fail(400,'Filter tidak valid.');send(200,await c.agenda(actor,Object.fromEntries(url.searchParams)));return true;
     }
     if(url.search)fail(400,'Parameter tidak diizinkan.');
-    const match=/^\/api\/stage9b1\/organizations\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})\/events\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})(?:\/(publish|cancel))?$/.exec(path);
-    if(match){const [,org,eventId,operation]=match;if(!operation&&req.method==='GET'){send(200,await c.detail(actor,org,eventId));return true;}if(operation&&req.method==='POST'){send(200,await c.transition(actor,org,eventId,operation,await json(req)));return true;}}
+    const match=/^\/api\/stage9b1\/organizations\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})\/events\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})(?:\/(publish|cancel|export))?$/.exec(path);
+    if(match){const [,org,eventId,operation]=match;if(!operation&&req.method==='GET'){send(200,await c.detail(actor,org,eventId));return true;}if(operation==='export'&&req.method==='POST'){send(200,await c.exportEvent(actor,org,eventId,await json(req)));return true;}if(operation&&req.method==='POST'){send(200,await c.transition(actor,org,eventId,operation,await json(req)));return true;}}
     send(404,{error:'Tidak ditemukan.'});return true;
   }
   if(events){
