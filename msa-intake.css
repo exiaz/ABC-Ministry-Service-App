@@ -7,3 +7,4 @@
 @media(min-width:900px){.account-recovery .recovery-layout{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,2fr);align-items:start;gap:20px}.account-recovery .recovery-layout>*{min-width:0}}
 
 .msa-core summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-core .grid>section{min-width:0}
+.msa-events .secondary{background:white;color:#175c96}.msa-events summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-events .grid>*,.msa-events .event-layout>*{min-width:0}.msa-events dd{margin-left:0;margin-bottom:12px;overflow-wrap:anywhere}.msa-events dt{font-weight:600}.msa-events .draft-badge{font-weight:600;color:#175c96}.msa-events .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(min-width:900px){.msa-events .event-layout{display:grid;grid-template-columns:minmax(220px,2fr) minmax(0,3fr);gap:24px;align-items:start}}

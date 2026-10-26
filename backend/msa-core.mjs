@@ -54,6 +54,9 @@ export function createMsaCore({db,root,auth,repository,assertEnabled,now=Date.no
   }
   return {
     enabled,
+    // Internal transaction authority shared with the isolated event module;
+    // never exposed as an HTTP operation or a grant-provisioning endpoint.
+    authority:{member,subject,bound,bounded,selectedProgram},
     async catalog(actor){return db.runTransaction(async tx=>{
       const s=await principal(tx,actor),g=(await tx.get(col('msaCorePlatformGrants').doc(s.uid))).data(),isPlatform=bound(g,s)&&same(g.permissions,['organizations:manage']);
       const assignments=await bounded(tx,members.where('uid','==',s.uid)),organizations=[];

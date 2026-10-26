@@ -93,7 +93,7 @@ export function analyzeMigration(tables,providers,{now=Date.now()}={}){
 export function migrationCheckpoint(tables,providers,historyDigest){
   // Preserve pre-Stage-8 checkpoints when these tables have no records. Once
   // present, deleting/rolling them back necessarily changes the digest.
-  const securityCollections=[...migrationCollections,...['msaCoreOrganizations','msaCorePrograms','msaCoreMemberships','msaCorePlatformGrants','msaCoreLegacySources','msaCoreLegacyMappings'].filter(name=>(tables[name]??[]).length>0)];
+  const securityCollections=[...migrationCollections,...['msaCoreOrganizations','msaCorePrograms','msaCoreMemberships','msaCorePlatformGrants','msaCoreLegacySources','msaCoreLegacyMappings','msaEventGrants','msaServiceEvents','msaEventAudit'].filter(name=>(tables[name]??[]).length>0)];
   return {version:1,securityDigest:digest({tables:Object.fromEntries(securityCollections.map(n=>[n,(tables[n]??[]).slice().sort((a,b)=>a.id.localeCompare(b.id))])),providers:providers.slice().sort((a,b)=>a.uid.localeCompare(b.uid))}),historyDigest};
 }
 export function simulateUsernameMapping(tables,providers,proposals){

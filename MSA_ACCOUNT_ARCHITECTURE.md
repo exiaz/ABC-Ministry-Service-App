@@ -1,6 +1,37 @@
 # MSA — Kajian arsitektur akun personal
 
-**26 Oktober 2026 · Stage 8 core tersedia hanya pada fixture emulator dengan grant eksplisit; AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+**26 Oktober 2026 · Stage 9A draf tersedia dengan gate/grant terpisah; Stage 8 core tersedia hanya pada fixture emulator dengan grant eksplisit; AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+
+## Stage 9A — draf pelayanan terisolasi, 26 Oktober 2026
+
+**IMPLEMENTED hanya pada Auth/Firestore Emulator fiktif.** Gate `ABC_MSA_STAGE9A=1` independen, mati default, memerlukan Stage 8/A1/A2.2 valid dan namespace `test-*`. Auth Pilot memberi fixture peninjau grant event eksplisit per organisasi; bukan inheritance ownership atau jabatan legacy. Status pengujian aktual ada di PROJECT_STATUS.md. Stage 9B dan cutover produksi belum diizinkan.
+
+| Koleksi | Kontrak |
+|---|---|
+| `msaServiceEvents` | ID global stabil; organizationId immutable; name (2–120), venue (2–180); startDate/startTime/timezone/startAt UTC; picMembershipId eksplisit; programId null atau program aktif organisasi yang sama; status selalu draft; revision, createdBy/updatedBy dan createdAt/updatedAt |
+| `msaEventGrants` | Trusted grant per hash organisasi+UID, status active/revoked, revision, accountRevision/identityRevision/membershipRevision dan permissions eksplisit. Tidak ada API pemberian grant atau perluasan role melalui event |
+| `msaEventAudit` | Append-only eventId/organizationId/actorUid/operation/reason/previous/next/at. Fixture grant tercatat sebagai operasi terpisah tanpa eventId |
+| `msaEventReceipts` | Actor+UUID v4; fingerprint organisasi+eventId+body lengkap, result ID/revisi. Replay tidak menambah event/audit; reuse lintas target/body memberi 409 |
+
+Kebijakan provisional terbatas: `events:read`, `events:create`, `events:edit` diberikan terpisah, tanpa inheritance dari owner/manager/viewer maupun Admin/PIC lama. `events:pic` hanya kelayakan penanggung jawab; tidak memberi read/create/edit atau hak administratif. `events:publish` dicadangkan untuk Stage 9B, ditolak sebagai grant/tindakan saat ini. UI daftar organisasi memerlukan read; hak create/edit tetap diperiksa masing-masing di server. Grant event mengikat revisi membership sehingga revoke/regrant membership tidak menghidupkan grant event lama. Reaktivasi akun juga tidak memulihkan binding stale.
+
+PIC dipilih dengan ID membership organisasi yang beridentitas personal active/ready/verified atau binding legacy A2.1 terverifikasi, provider aktif, membership kanonik aktif dan grant `events:pic` sah. Server menyelesaikan UID melalui row tersebut, bukan pencocokan nama/nomor. Pilihan PIC memakai label pseudonim `Anggota <referensi>` dan penanda Anda; kebijakan direktori nama operasional belum disahkan. Data kontak siswa/mitra, alias provider, UID asli dan credential tidak dikirim. Audit detail menampilkan actorReference hash dan previous/next event yang terproyeksi.
+
+Waktu lokal wajib tanggal kalender valid **2000–2100** dan HH:mm (00:00–23:59). Zona tersimpan eksplisit dengan default `Asia/Jakarta`; pilot mendukung `Asia/Jakarta`, `Asia/Makassar`, `Asia/Jayapura` (UTC+7/+8/+9). Zona lain ditolak, tanpa inferensi timezone komputer atau konversi DST spekulatif. Filter tanggal inklusif memakai tanggal lokal event; daftar diurutkan startAt UTC lalu ID. Tidak ada pembatasan Jumat/sekolah/kelompok, recurrence, durasi atau service-type hardcoded.
+
+Route same-origin Admin `/api/stage9a/organizations`:
+
+- `GET /`: hanya organisasi yang memiliki membership dan grant read efektif sendiri, permissions event dan publishAvailable:false.
+- `GET /{organizationId}/options`: program aktif serta identitas PIC eligible organisasi tersebut.
+- `GET /{organizationId}/events?programId=&from=YYYY-MM-DD&to=YYYY-MM-DD`: filter program kosong berarti null; parameter program dihilangkan berarti semua. Filter asing/duplikat/rentang invalid ditolak. Satu organisasi per request, tanpa unified calendar.
+- `GET /{organizationId}/events/{eventId}`: detail draf dan audit terproyeksi, hanya dengan read organisasi yang sesuai.
+- `POST /{organizationId}/events/{eventId}`: create expectedRevision 0 atau edit revisi saat ini; body allowlist berisi field event serta requestId/reason/confirmed. organizationId/status/permissions/actor tidak diterima dari klien. Konflik revisi 409; reschedule tetap memakai ID yang sama.
+
+Transaksi memeriksa sesi/provider, subject, organisasi, membership/grant, program, PIC dan receipt sebelum write; memeriksa actor serta PIC ulang sebelum commit. Membership/subject/program/grant dibaca dalam transaksi sehingga perubahan bersamaan berkonflik; Auth provider tetap layanan terpisah dan tidak membentuk snapshot atomik bersama Firestore. Tidak ada event/audit/receipt parsial ketika authorization gagal. Query dibatasi 200 row dan menolak overflow; pagination/retensi diperlukan sebelum skala operasional. Checkpoint A2.4C menyertakan grant/event/audit yang berisi record; koleksi kosong tetap kompatibel dengan digest lama. Tidak ada restore/anti-rollback eksternal baru.
+
+UI `/msa-events.html` menyediakan organisasi, daftar/filter, detail/riwayat dan form Buat Pelayanan Baru. Program didisclosure opsional, satu aksi simpan utama, error koneksi mempertahankan isian dan retry dengan ID/requestId yang sama bila isi tetap. Konflik mempertahankan isian dan menyediakan muat ulang eksplisit. Perpindahan organisasi/auth loss atau pemeriksaan ulang izin membersihkan form/detail privat; token hanya di memori, tanpa offline write. PIC/referensi yang tidak lagi eligible harus dipilih ulang. Menyimpan draf tidak membuat program, attendance session/batch, role, credential/device grant atau penugasan relawan; tidak ada mapping/backfill legacy. Koleksi dan permissions Stage 8 tetap pada kontraknya.
+
+**Dependensi Stage 9B:** sahkan governance event/PIC/direktori dan provisioning grant, transisi draft→publish serta izin/revisi publikasi, canonical calendar/timezone lintas wilayah dan aturan recurrence. Tidak ada publikasi, public sharing, unified calendar, rundown/BibleMax, Sheets atau volunteer attendance/analytics pada Stage 9A. Owner transfer/recovery, identity reconciliation dan blocker produksi A2.4C tetap terbuka.
 
 ## Stage 8 — MSA multi-program core foundation
 
@@ -51,9 +82,9 @@ Adapter tidak menganggap pilihan organisasi atau nama/tanggal sama sebagai mappi
 
 Checkpoint A2.4C kini menyertakan tabel security Stage 8 yang berisi record (org/program/membership/platform/source/proposal). Jika semuanya belum ada/kosong, digest lama tetap kompatibel. Revokasi/penghapusan/stale snapshot yang mengubah authority Stage 8 memberi NO-GO; tidak ada restore atau sumber anti-rollback eksternal yang baru dibangun. Resolusi governance mapping namespace, canonical event, ownership, banyak sumber dan proof/review harus disetujui sebelum adapter dapat dipakai migrasi sesungguhnya.
 
-### Readiness Stage 9 dan batas produksi
+### Readiness setelah Stage 8 dan batas produksi
 
-**CONDITIONAL GO untuk lingkup Stage 9 terpisah pada fixture emulator setelah acceptance Stage 8 PASS.** Fondasi telah menyediakan organisasi, permission boundaries dan program nullable, tetapi belum membuat serviceEvents, jadwal/recurrence/unified calendar, rundown/BibleMax, Sheets, Christmas-specific schema atau volunteer attendance/analytics. Sebelum Stage 9: sahkan ownership/membership/platform policy sementara atau batasi tetap fiktif, tentukan PIC internal/izin create/publish/event-status/timezone, referensi program opsional, revisi/audit serta acceptance lintas organisasi. Identity/grant reconciliation dan owner transfer/recovery perlu kontrak tersendiri. Cutover auth/produksi tetap NO-GO sesuai A2.4C; contoh fixture bukan persetujuan data ownership nyata.
+**Stage 9A draf kini tersedia terpisah di atas hanya pada fixture emulator.** Fondasi menyediakan organisasi, permission boundaries dan program nullable; jadwal/recurrence/unified calendar, rundown/BibleMax, Sheets, Christmas-specific schema dan volunteer attendance/analytics belum tersedia. Sebelum Stage 9B/operasional: sahkan ownership/membership/platform policy, direktori/provisioning PIC serta kontrak dan izin publikasi; kebijakan Stage 9A tetap provisional dan fiktif. Identity/grant reconciliation dan owner transfer/recovery perlu kontrak tersendiri. Cutover auth/produksi tetap NO-GO sesuai A2.4C; contoh fixture bukan persetujuan data ownership nyata.
 
 ## AUTH A2.4C — migration readiness dan cutover dry run
 

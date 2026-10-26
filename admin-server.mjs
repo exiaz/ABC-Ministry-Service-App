@@ -21,7 +21,7 @@ assets.set('/msa-brand.js','msa-brand.js');
 assets.set('/username-login.js','username-login.js');
 for(const file of ['register.html','identity-review.html','msa-registration-ui.js','msa-intake.css'])assets.set('/'+file,file);
 for(const file of ['account-devices-ui.js','account-devices.css'])assets.set('/'+file,file);
-for(const file of ['account-recovery.html','account-recovery.js','migration-readiness.html','migration-readiness.js','msa-core.html','msa-core.js'])assets.set('/'+file,file);
+for(const file of ['account-recovery.html','account-recovery.js','migration-readiness.html','migration-readiness.js','msa-core.html','msa-core.js','msa-events.html','msa-events.js'])assets.set('/'+file,file);
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
 apiPaths.add('/api/admin/backup-assignments');
 // Same-origin admin shell + existing protected API handler/context. No CORS,
@@ -35,6 +35,7 @@ export function createAdminServer({adminAuthentication,pairing}){
       const url=new URL(req.url,'http://127.0.0.1');
       if(['/migration-readiness.html','/migration-readiness.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.migration){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.migration.enabled();}
       if(['/msa-core.html','/msa-core.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.core){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.core.enabled();}
+      if(['/msa-events.html','/msa-events.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.events){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.events.enabled();}
       const usernamePilot=url.pathname==='/username.html';
       if(['/account-recovery.html','/account-recovery.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1?.recovery){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.recovery.enabled();
@@ -44,7 +45,7 @@ export function createAdminServer({adminAuthentication,pairing}){
         if(!adminAuthentication?.a1?.registration||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
         adminAuthentication.a1.registration.enabled();
       }
-      if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')||url.pathname.startsWith('/api/a2-4/')||url.pathname.startsWith('/api/a2-4b/')||url.pathname.startsWith('/api/a2-4c/')||url.pathname.startsWith('/api/stage8/')){api.emit('request',req,res);return;}
+      if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')||url.pathname.startsWith('/api/a2-4/')||url.pathname.startsWith('/api/a2-4b/')||url.pathname.startsWith('/api/a2-4c/')||url.pathname.startsWith('/api/stage8/')||url.pathname.startsWith('/api/stage9a/')){api.emit('request',req,res);return;}
       if(['/a1.html','/msa-users.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
       }
