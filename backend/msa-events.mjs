@@ -19,7 +19,7 @@ export function eventInput(value){
 }
 const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;
 const denied=()=>fail(403,'Izin pelayanan atau PIC organisasi belum diizinkan.');
-const view=r=>({id:r.id,organizationId:r.organizationId,name:r.name,startDate:r.startDate,startTime:r.startTime,timezone:r.timezone,startAt:r.startAt,venue:r.venue,picMembershipId:r.picMembershipId,programId:r.programId,status:r.status,revision:r.revision,createdAt:r.createdAt,updatedAt:r.updatedAt,...(r.publishedAt===undefined?{}:{publishedAt:r.publishedAt}),...(r.cancelledAt===undefined?{}:{cancelledAt:r.cancelledAt,cancellationReason:r.cancellationReason})});
+const view=r=>({id:r.id,organizationId:r.organizationId,name:r.name,startDate:r.startDate,startTime:r.startTime,timezone:r.timezone,startAt:r.startAt,venue:r.venue,picMembershipId:r.picMembershipId,programId:r.programId,status:r.status,revision:r.revision,createdAt:r.createdAt,updatedAt:r.updatedAt,...(r.seriesId?{seriesId:r.seriesId,occurrenceIndex:r.occurrenceIndex}:{}),...(r.publishedAt===undefined?{}:{publishedAt:r.publishedAt}),...(r.cancelledAt===undefined?{}:{cancelledAt:r.cancelledAt,cancellationReason:r.cancellationReason})});
 
 export function createMsaEvents({db,root,auth,core,now=Date.now}){
   const col=n=>root.collection(n),events=col('msaServiceEvents'),grants=col('msaEventGrants'),{member,bound,bounded,selectedProgram}=core.authority;
@@ -44,7 +44,7 @@ export function createMsaEvents({db,root,auth,core,now=Date.now}){
     async catalog(actor){
       enabled();const catalog=await core.catalog(actor);const organizations=[];
       for(const o of catalog.organizations){try{const v=await db.runTransaction(tx=>access(tx,actor,o.id,'events:read'));organizations.push({id:o.id,name:o.name,permissions:v.g.permissions.filter(p=>p!=='events:pic')});}catch(e){if(e.status!==403)throw e;}}
-      enabled();if(!await actor.check())denied();return {organizations,policy:'provisional-fictional',publishAvailable:process.env.ABC_MSA_STAGE9B1==='1'};
+      enabled();if(!await actor.check())denied();return {organizations,policy:'provisional-fictional',publishAvailable:process.env.ABC_MSA_STAGE9B1==='1',schedulingAvailable:process.env.ABC_MSA_STAGE9B1==='1'&&process.env.ABC_MSA_STAGE9B2==='1'};
     },
     async options(actor,org){return db.runTransaction(async tx=>{
       await access(tx,actor,org,'events:read');const programs=await bounded(tx,col('msaCorePrograms').where('organizationId','==',org)),members=await bounded(tx,col('msaCoreMemberships').where('organizationId','==',org)),pics=[];
@@ -70,6 +70,8 @@ export function createMsaEvents({db,root,auth,core,now=Date.now}){
         await access(tx,actor,org,action);const receipt=col('msaEventReceipts').doc(hash(actor.uid+':'+value.requestId)),fingerprint=hash(JSON.stringify([org,eventId,stable(value)])),oldReceipt=(await tx.get(receipt)).data();
         if(oldReceipt){if(oldReceipt.fingerprint!==fingerprint)fail(409,'ID pengajuan telah digunakan.');await access(tx,actor,org,action);if(oldReceipt.publishedEdit){calendarEnabled();await access(tx,actor,org,'events:publish');}return oldReceipt.result;}
         const ref=events.doc(eventId),old=(await tx.get(ref)).data();if(old&&old.organizationId!==org)denied();if((old?.revision??0)!==value.expectedRevision)fail(409,'Draf sudah berubah. Muat ulang detail sebelum menyunting lagi.');
+        if(old?.seriesId&&old.startAt<=now())fail(409,'Pelayanan dalam seri yang sudah dimulai tidak dapat disunting.');
+        if(old?.seriesId&&fields.startAt<=now())fail(409,'Pelayanan dalam seri tidak dapat dipindahkan ke masa lalu.');
         if(old?.status==='published'){calendarEnabled();await access(tx,actor,org,'events:publish');}else if(old&&old.status!=='draft')fail(409,'Pelayanan yang dibatalkan tidak dapat disunting.');
         await selectedProgram(tx,org,fields.programId);const pic=await eligible(tx,org,fields.picMembershipId);
         const at=now(),next={...(old??{}),id:eventId,organizationId:org,...fields,status:old?.status??'draft',revision:(old?.revision??0)+1,createdAt:old?.createdAt??at,createdBy:old?.createdBy??actor.uid,updatedAt:at,updatedBy:actor.uid};

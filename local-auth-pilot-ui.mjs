@@ -1,11 +1,11 @@
 import http from 'node:http';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const css=`.pilot-nav{box-sizing:border-box;font:16px/1.5 system-ui,sans-serif;background:#fff5ce;color:#173252;padding:12px 16px;border-bottom:2px solid #e6c34a;overflow-wrap:anywhere}.pilot-nav nav{display:flex;flex-wrap:wrap;gap:8px}.pilot-nav a{display:inline-flex;align-items:center;min-height:44px;padding:4px 10px;color:#124fa8;text-decoration:underline}.pilot-guide{box-sizing:border-box;max-width:900px;margin:auto;padding:20px;font:16px/1.6 system-ui,sans-serif;color:#173252;overflow-wrap:anywhere}.pilot-guide li{margin:16px 0}.pilot-guide code{white-space:normal}.pilot-guide img{width:72px;height:auto}.pilot-guide h1{font-size:clamp(24px,5vw,36px)}.pilot-guide table{border-collapse:collapse;width:100%}.pilot-guide td,.pilot-guide th{padding:8px;border:1px solid #b8cce4;text-align:left}`;
+const css=`.pilot-nav{box-sizing:border-box;font:16px/1.5 system-ui,sans-serif;background:#fff5ce;color:#173252;padding:12px 16px;border-bottom:2px solid #e6c34a;overflow-wrap:anywhere}.pilot-nav nav{display:flex;flex-wrap:wrap;gap:8px}.pilot-nav a{display:inline-flex;align-items:center;min-height:44px;padding:4px 10px;color:#124fa8;text-decoration:underline}.pilot-nav summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.pilot-nav summary:focus-visible{outline:3px solid #175c96}.pilot-guide{box-sizing:border-box;max-width:900px;margin:auto;padding:20px;font:16px/1.6 system-ui,sans-serif;color:#173252;overflow-wrap:anywhere}.pilot-guide li{margin:16px 0}.pilot-guide code{white-space:normal}.pilot-guide img{width:72px;height:auto}.pilot-guide h1{font-size:clamp(24px,5vw,36px)}.pilot-guide table{border-collapse:collapse;width:100%}.pilot-guide td,.pilot-guide th{padding:8px;border:1px solid #b8cce4;text-align:left}`;
 
-export function pilotMarkup({mentorOrigin,adminOrigin}){
+export function pilotMarkup({mentorOrigin,adminOrigin,compact=false}){
   const links=[['Masuk Mentor',mentorOrigin+'/mentor-account.html'],['Daftar relawan',adminOrigin+'/register.html'],['Tinjau identitas',adminOrigin+'/identity-review.html'],['Pemulihan akun',adminOrigin+'/account-recovery.html'],['Kesiapan migrasi',adminOrigin+'/migration-readiness.html'],['Organisasi & program',adminOrigin+'/msa-core.html'],['Pelayanan & kalender',adminOrigin+'/msa-events.html'],['Admin / aktivasi',adminOrigin+'/username.html'],['Panduan pilot',mentorOrigin+'/pilot.html']];
-  return `<style>${css}</style><aside class="pilot-nav" aria-label="Pilot data fiktif"><strong>PILOT LOKAL · DATA FIKTIF SEMENTARA</strong><nav>${links.map(([label,url])=>`<a href="${escape(url)}"${label==='Admin / aktivasi'?' target="_blank" rel="noopener noreferrer"':''}>${label}</a>`).join('')}</nav></aside>`;
+  return `<style>${css}</style><aside class="pilot-nav" aria-label="Pilot data fiktif"><strong>PILOT LOKAL · DATA FIKTIF SEMENTARA</strong>${compact?'<details><summary>Navigasi pilot</summary>':''}<nav>${links.map(([label,url])=>`<a href="${escape(url)}"${label==='Admin / aktivasi'?' target="_blank" rel="noopener noreferrer"':''}>${label}</a>`).join('')}</nav>${compact?'</details>':''}</aside>`;
 }
 
 export function pilotGuide(options){
@@ -34,7 +34,7 @@ export function wrapPilotServer(inner,{mentor=false,...options}){
       return writeHead.call(this,status,...args);
     };
     res.end=function(body,...args){
-      if(body&&html)body=body.toString().replace(/<body\b[^>]*>/i,match=>match+pilotMarkup(options));
+      if(body&&html)body=body.toString().replace(/<body\b[^>]*>/i,match=>match+pilotMarkup({...options,compact:req.url==='/msa-events.html'}));
       return end.call(this,body,...args);
     };
     inner.emit('request',req,res);

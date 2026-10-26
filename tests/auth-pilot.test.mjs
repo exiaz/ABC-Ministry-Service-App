@@ -15,7 +15,7 @@ import {spawn} from 'node:child_process';
 test('Pilot uses fresh test namespace, isolated ports and scoped flags; invalid/cloud configuration fails closed',()=>{
   const base={ABC_EMULATOR_IMPORT_DIR:'ignored-regular-snapshot'},first=pilotEnvironment(base),second=pilotEnvironment(base);
   assert.match(first.ABC_FIRESTORE_NAMESPACE,/^test-auth-pilot-/);assert.notEqual(first.ABC_FIRESTORE_NAMESPACE,second.ABC_FIRESTORE_NAMESPACE);
-  for(const key of ['ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A','ABC_MSA_A2_4B','ABC_MSA_A2_4C','ABC_MSA_STAGE8','ABC_MSA_STAGE9A','ABC_MSA_STAGE9B1'])assert.equal(first[key],'1');
+  for(const key of ['ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A','ABC_MSA_A2_4B','ABC_MSA_A2_4C','ABC_MSA_STAGE8','ABC_MSA_STAGE9A','ABC_MSA_STAGE9B1','ABC_MSA_STAGE9B2'])assert.equal(first[key],'1');
   assert.equal(first.ABC_EMULATOR_IMPORT_DIR,undefined);assert.equal(base.ABC_EMULATOR_IMPORT_DIR,'ignored-regular-snapshot');
   assert.equal(first.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8280');assert.equal(first.FIREBASE_AUTH_EMULATOR_HOST,'127.0.0.1:9299');
   assert.notEqual(PILOT_ADDRESS,controllerPath());

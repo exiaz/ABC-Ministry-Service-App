@@ -27,6 +27,7 @@ export function createMsaCalendar({db,root,core,events,now=Date.now}){
   async function candidates(actor){enabled();return (await core.catalog(actor)).organizations;}
   return {
     enabled,
+    authority:{candidates,catalogRows},
     async catalog(actor){const source=await candidates(actor);return db.runTransaction(async tx=>{enabled();const organizations=await catalogRows(tx,actor,source);if(!await actor.check())denied();enabled();return {organizations,policy:'provisional-fictional',limit:200,maxDays:93};});},
     async agenda(actor,value){
       enabled();const filter=calendarFilter(value),source=await candidates(actor);return db.runTransaction(async tx=>{
@@ -50,7 +51,7 @@ export function createMsaCalendar({db,root,core,events,now=Date.now}){
         const v=await access(tx,actor,org,readActions),row=(await tx.get(col('msaServiceEvents').doc(eventId))).data();if(!row||row.organizationId!==org||!['draft','published','cancelled'].includes(row.status)||row.status==='draft'&&!v.g.permissions.includes('events:read'))denied();
         const program=row.programId===null?null:(await tx.get(col('msaCorePrograms').doc(row.programId))).data();await access(tx,actor,org,readActions);enabled();
         // Calendar-only readers never receive previous draft versions or actors.
-        return {event:{...view(row),organizationName:v.o.name,programName:program?.organizationId===org?program.name:null,picLabel:picLabel(row)},capabilities:{edit:v.g.permissions.includes('events:read')&&v.g.permissions.includes('events:edit')&&row.status!=='cancelled'&&(row.status==='draft'||v.g.permissions.includes('events:publish')),publish:row.status==='draft'&&v.g.permissions.includes('events:publish'),cancel:row.status==='published'&&v.g.permissions.includes('events:cancel')}};
+        return {event:{...view(row),organizationName:v.o.name,programName:program?.organizationId===org?program.name:null,picLabel:picLabel(row)},capabilities:{edit:!(row.seriesId&&row.startAt<=now())&&v.g.permissions.includes('events:read')&&v.g.permissions.includes('events:edit')&&row.status!=='cancelled'&&(row.status==='draft'||v.g.permissions.includes('events:publish')),publish:!(row.seriesId&&row.startAt<=now())&&row.status==='draft'&&v.g.permissions.includes('events:publish'),cancel:!(row.seriesId&&row.startAt<=now())&&row.status==='published'&&v.g.permissions.includes('events:cancel')}};
       });
     },
     async exportEvent(actor,org,eventId,value){
@@ -64,7 +65,7 @@ export function createMsaCalendar({db,root,core,events,now=Date.now}){
       return db.runTransaction(async tx=>{
         await access(tx,actor,org,action);const ref=col('msaServiceEvents').doc(eventId),receipt=col('msaEventReceipts').doc(hash(actor.uid+':'+value.requestId)),fingerprint=hash(JSON.stringify([operation,org,eventId,value.expectedRevision,value.reason,value.confirmed])),oldReceipt=(await tx.get(receipt)).data();
         if(oldReceipt){if(oldReceipt.fingerprint!==fingerprint)fail(409,'ID pengajuan telah digunakan.');await access(tx,actor,org,action);enabled();return oldReceipt.result;}
-        const old=(await tx.get(ref)).data();if(!old||old.organizationId!==org)denied();if(old.revision!==value.expectedRevision)fail(409,'Pelayanan sudah berubah. Muat ulang detail sebelum melanjutkan.');const status=publicationTransition(old.status,operation);
+        const old=(await tx.get(ref)).data();if(!old||old.organizationId!==org)denied();if(old.revision!==value.expectedRevision)fail(409,'Pelayanan sudah berubah. Muat ulang detail sebelum melanjutkan.');if(old.seriesId&&old.startAt<=now())fail(409,'Pelayanan dalam seri yang sudah dimulai tidak dapat diubah.');const status=publicationTransition(old.status,operation);
         if(operation==='publish'){
           const fields=eventInput({requestId:value.requestId,expectedRevision:value.expectedRevision,reason:value.reason,confirmed:true,...Object.fromEntries(['name','startDate','startTime','timezone','venue','picMembershipId','programId'].map(k=>[k,old[k]]))});
           if(fields.startAt!==old.startAt||fields.timezone!==old.timezone)fail(409,'Waktu pelayanan perlu diperiksa ulang sebelum diterbitkan.');await selectedProgram(tx,org,old.programId);await eligible(tx,org,old.picMembershipId);

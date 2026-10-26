@@ -1,6 +1,16 @@
 # ABC | Ministry Service App — Prototipe lokal
 
-## Pilot akun interaktif Windows — AUTH A1–A2.4C + Stage 8/9A/9B.1
+## Beranda dan jadwal berulang — pilot Stage 9B.2
+
+Pada MSA Auth Pilot, buka **Pelayanan & kalender** (`http://127.0.0.1:4277/msa-events.html`) lalu masuk sebagai peninjau. Beranda menampilkan pelayanan terbit mendatang 90 hari, penugasan PIC Anda, dan draf yang dapat Anda tindak. Tidak ada angka analitik. Jika hasil melebihi 200 pelayanan, gunakan **Agenda gabungan** untuk mempersempit rentang/organisasi; error tidak menyembunyikan pemotongan hasil.
+
+Pilih **Buat Pelayanan Baru**, pastikan penyelenggara, isi nama, tanggal/waktu/zona, tempat dan PIC. Program boleh kosong. **Sekali** memakai satu tanggal; **Setiap minggu** membuka pilihan hari dan tanggal akhir. Tanggal mulai harus cocok dengan hari pilihan; batas 12 tanggal dalam 90 hari inklusif. Tekan **Tinjau tanggal**, periksa seluruh tanggal, lalu **Konfirmasi & buat draf**. Semua tanggal masih draf; terbitkan satu per satu melalui detail dengan izin publish. Jika hasil simpan belum pasti, tekan konfirmasi lagi untuk meneruskan request yang sama. Jika data/izin berubah, kembali dan tinjau ulang.
+
+Setiap occurrence disunting sendiri melalui detail; tanggal lain tetap. Pembatalan mengikuti jalur pelayanan terbit, alasan/konfirmasi dan revisi. Occurrence yang sudah mulai tidak dapat diubah. Tidak ada edit seluruh seri atau publikasi otomatis. Google Calendar/ICS tetap salinan manual per pelayanan terbit, tidak tersinkron otomatis.
+
+Gate `ABC_MSA_STAGE9B2=1` independen dan mati default, memerlukan Stage 9B.1/9A/8/A1/A2.2 serta emulator demo/namespace `test-*`. Hanya proses Auth Pilot yang mengaktifkannya; launcher reguler dan datanya tetap. Regresi terarah: `npm.cmd run test:stage9b2`; penuh: `npm.cmd run test:stage6`; pilot interaktif: `node --test tests/auth-pilot-browser.mjs`. Hasil aktual dan batas platform ada pada PROJECT_STATUS.md. Produksi tetap NO-GO; Stage 10 belum dimulai.
+
+## Pilot akun interaktif Windows — AUTH A1–A2.4C + Stage 8/9A/9B.1/9B.2
 
 Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
 
@@ -36,7 +46,7 @@ Jalankan **Start MSA Auth Pilot.cmd**, pilih **Pelayanan & kalender**, lalu masu
 4. **Batalkan pelayanan** memerlukan grant cancel, alasan dan konfirmasi. Status menjadi **Dibatalkan** dan riwayat tetap disimpan. Tidak ada pemulihan otomatis, unpublish atau edit event batal. Gunakan filter **Dibatalkan** atau **Semua status yang diizinkan** untuk melihatnya kembali.
 5. Jika respons publish/cancel terputus, alasan tetap terkunci dan tombol tindakan yang sama melanjutkan UUID pengajuan sebelumnya; tunggu konfirmasi hasil sebelum tindakan lain. Konflik revisi mempertahankan alasan; kembali dan buka detail terbaru sebelum mencoba lagi. Form edit juga mempertahankan isian pada error yang dapat dipulihkan.
 
-Gate `ABC_MSA_STAGE9B1` mati pada startup reguler; hanya proses pilot/tes yang menyalakannya bersama fondasi sebelumnya dan grant fixture eksplisit. Restart memulai fixture baru. `npm.cmd run test:stage9b1` menjalankan unit/integrasi/Chrome terarah; `npm.cmd run test:stage6` menjalankan regresi penuh; `node --test tests/auth-pilot-browser.mjs` memeriksa launcher nyata. Status tes aktual ada di PROJECT_STATUS.md. Publikasi terpisah dari rundown, tidak memberi absensi/perangkat/assignment otomatis. Governance grant/PIC masih provisional; Stage 9B.2 dan produksi belum diizinkan.
+Gate `ABC_MSA_STAGE9B1` mati pada startup reguler; hanya proses pilot/tes yang menyalakannya bersama fondasi sebelumnya dan grant fixture eksplisit. Restart memulai fixture baru. `npm.cmd run test:stage9b1` menjalankan unit/integrasi/Chrome terarah; `npm.cmd run test:stage6` menjalankan regresi penuh; `node --test tests/auth-pilot-browser.mjs` memeriksa launcher nyata. Status tes aktual ada di PROJECT_STATUS.md. Publikasi terpisah dari rundown, tidak memberi absensi/perangkat/assignment otomatis. Governance grant/PIC masih provisional; perluasan Stage 9B.2 dijelaskan di atas, produksi tetap NO-GO.
 
 ### Tambahkan ke kalender — salinan manual
 

@@ -16,11 +16,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   const core=url.pathname.startsWith('/api/stage8/');
   const events=url.pathname.startsWith('/api/stage9a/');
   const calendar=url.pathname.startsWith('/api/stage9b1/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events&&!calendar)return false;
+  const scheduling=url.pathname.startsWith('/api/stage9b2/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events&&!calendar&&!scheduling)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(scheduling){if(!a1.scheduling){send(404,{error:'Tidak ditemukan.'});return true;}a1.scheduling.enabled();}
   if(calendar){if(!a1.calendar){send(404,{error:'Tidak ditemukan.'});return true;}a1.calendar.enabled();}
   if(events){if(!a1.events){send(404,{error:'Tidak ditemukan.'});return true;}a1.events.enabled();}
   if(core){if(!a1.core){send(404,{error:'Tidak ditemukan.'});return true;}a1.core.enabled();}
@@ -49,6 +51,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(scheduling){
+    if(url.search)fail(400,'Parameter tidak diizinkan.');const s=a1.scheduling;
+    if(path==='/api/stage9b2/dashboard'&&req.method==='GET'){send(200,await s.dashboard(actor));return true;}
+    const match=/^\/api\/stage9b2\/organizations\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})\/(preview|series)(?:\/([A-Za-z0-9][A-Za-z0-9_-]{0,95}))?$/.exec(path);
+    if(match&&req.method==='POST'){const [,org,operation,seriesId]=match;if(operation==='preview'&&!seriesId){send(200,await s.preview(actor,org,await json(req)));return true;}if(operation==='series'&&seriesId){send(200,await s.create(actor,org,seriesId,await json(req)));return true;}}
+    send(404,{error:'Tidak ditemukan.'});return true;
   }
   if(calendar){
     const c=a1.calendar;
