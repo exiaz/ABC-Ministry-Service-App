@@ -1,8 +1,12 @@
 # ABC | Ministry Service App — visi produk dan rencana arsitektur
 
-**Tanggal:** 24 Oktober 2026. **Perluasan modul MSA: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1/A2.1/A2.2/A2.3 akun fiktif/emulator di balik flag mati secara default serta branding dasar sudah IMPLEMENTED.** Kontrak aktual autentikasi ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
+**Tanggal kajian awal:** 24 Oktober 2026; status Stage 8 diperbarui 26 Oktober 2026 di bawah. **Modul lanjutan setelah fondasi Stage 8: PLANNED / NOT IMPLEMENTED. Pengecualian terbatas: fondasi AUTH A1/A2.1/A2.2/A2.3 akun fiktif/emulator di balik flag mati secara default serta branding dasar sudah IMPLEMENTED.** Kontrak aktual autentikasi ada pada [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal), bukti tes pada PROJECT_STATUS.md. Rincian kajian di bawah tetap arah lanjutan; tidak ada registrasi umum, migrasi akun/perangkat atau modul MSA yang diaktifkan.
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** kini diverifikasi pada lingkup lokal/emulator (hasil dan batasnya di PROJECT_STATUS.md); kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
+
+## Stage 8 — pembaruan status terbatas, 26 Oktober 2026
+
+Fondasi organisasi/program, ownership/membership berscope, grant platform terpisah dan adapter legacy baca-saja kini **IMPLEMENTED hanya pada namespace fiktif/emulator** dengan gate `ABC_MSA_STAGE8` mati default. Grant fixture diberikan eksplisit; contoh organisasi/program di visi tidak menetapkan kepemilikan operasional atau akses lintas organisasi. Kontrak aktual/koleksi/permission sementara ada di MSA_ACCOUNT_ARCHITECTURE.md bagian Stage 8; hasil tes di PROJECT_STATUS.md. AUTH A2.4C tetap asesmen tanpa cutover, dan produksi tetap NO-GO. Bagian konseptual di bawah adalah rencana lanjutan; event/rundown/Sheets/kehadiran relawan/Christmas workflow belum diimplementasikan. Stage 9 memerlukan lingkup tersendiri.
 
 ## AUTH A2.3 — pembaruan status terbatas
 

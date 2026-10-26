@@ -1,6 +1,6 @@
 # ABC | Ministry Service App — Prototipe lokal
 
-## Pilot akun interaktif Windows — AUTH A1–A2.4C
+## Pilot akun interaktif Windows — AUTH A1–A2.4C + Stage 8
 
 Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
 
@@ -25,6 +25,19 @@ Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.c
 **Data sementara:** tidak ada impor, ekspor, snapshot atau pemulihan pilot. Folder `.emulator-data/auth-pilot/run-*` hanya menyimpan konfigurasi/diagnostik emulator dan diabaikan Git; `.emulator-data/local-demo-launcher` tidak dibaca atau ditulis. Setiap restart menghapus konteks uji sebelumnya secara alami melalui emulator baru, membuat peninjau/kata sandi baru, dan memerlukan registrasi/aktivasi ulang. Jangan gunakan kredensial/perangkat dari run sebelumnya. Jika berganti tanggal WIB atau lupa kata sandi peninjau, hentikan lalu nyalakan pilot kembali. Namespace, snapshot, password dan akun demo reguler tidak diubah. Tidak ada endpoint provisioning publik atau izin penggunaan data nyata.
 
 Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
+
+## Stage 8 — organisasi, program dan izin anggota
+
+Gunakan **Start MSA Auth Pilot.cmd** yang sama, lalu pilih **Organisasi & program** (`http://127.0.0.1:4277/msa-core.html`). Masuk sebagai `peninjau.pilot` dengan kata sandi yang dibuat di launcher. Setup trusted memberi akun fixture ini grant platform dan ownership masing-masing organisasi secara eksplisit; jabatan Admin/PIC sendiri tidak memberikan izin Stage 8.
+
+1. Pilih **Organisasi Anda** untuk memeriksa program dan keanggotaan yang boleh dilihat. Fixture memuat ABC Movement/Yayasan Anak Bintang Cemerlang dan contoh program ABC Goes to School/Pojok Ceria/Bangkit Indonesia. Semua konfigurasi fiktif; tidak menetapkan kepemilikan data operasional dan tidak menghubungkan akses kedua organisasi secara otomatis.
+2. Pilih program untuk melihat deskripsinya. **Tanpa program** tetap tersedia; organisasi juga dapat belum memiliki program. Pilihan ini tidak membuat pelayanan, program tambahan atau sesi absensi.
+3. Owner/manager dapat mengisi **Tambah program**, alasan, lalu **Periksa penambahan** dan konfirmasi. Batal tidak menulis data; kegagalan koneksi mempertahankan isian dan intent retry. Viewer hanya membaca. Program baru tidak memberikan izin anggota. Owner mengelola membership lewat API terlindungi; UI tahap ini menampilkan status anggota saja, tanpa form pemberian hak atau transfer owner.
+4. **Administrasi platform** menampilkan katalog organisasi hanya bagi grant platform eksplisit. Hak ini terpisah dari akses operasional program/anggota. Pengguna terverifikasi tanpa membership melihat empty state; hubungi operator fixture, jangan menyimpulkan role dari nama/nomor atau jabatan lama.
+
+Absensi, aktivasi/proof perangkat, backup, recovery dan login lama tetap pada alur sebelumnya. Adapter legacy hanya membaca tuple sumber yang secara eksplisit diizinkan; data unmapped tidak diberi organisasi/program atau event otomatis. Tidak ada Stage 9 **Buat Pelayanan Baru**, jadwal/kalender baru, rundown, Sheets atau absensi relawan. Akun suspended/recovery-locked, membership revoked dan revision stale tetap ditolak; reaktivasi akun tidak memulihkan grant lama otomatis.
+
+Gate `ABC_MSA_STAGE8` independen dan mati default, hanya untuk A1/A2.2, namespace `test-*` dan konfigurasi emulator valid. Auth Pilot menyalakannya pada prosesnya sendiri; launcher/login reguler tidak berubah. Restart pilot memberi fixture fiktif baru. `npm.cmd run test:stage8` menjalankan unit, integrasi/core isolation dan Chrome 360/390/768/1365; regresi penuh tetap `npm.cmd run test:stage6`, dan `node --test tests/auth-pilot-browser.mjs` menguji launcher nyata. Hasil aktual serta keterbatasan ada di PROJECT_STATUS.md. Kebijakan role/ownership/platform masih provisional; cutover produksi NO-GO dan Stage 9 memerlukan lingkup terpisah.
 
 ## AUTH A2.4C — periksa kesiapan migrasi, tanpa menjalankan migrasi
 

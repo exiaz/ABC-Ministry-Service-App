@@ -13,11 +13,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   const lifecycle=url.pathname.startsWith('/api/a2-4/');
   const recovery=url.pathname.startsWith('/api/a2-4b/');
   const migration=url.pathname.startsWith('/api/a2-4c/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration)return false;
+  const core=url.pathname.startsWith('/api/stage8/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(core){if(!a1.core){send(404,{error:'Tidak ditemukan.'});return true;}a1.core.enabled();}
   if(migration){if(!a1.migration){send(404,{error:'Tidak ditemukan.'});return true;}a1.migration.enabled();if(url.search||req.method!=='GET'||path!=='/api/a2-4c/preflight')fail(405,'Preflight hanya mendukung pembacaan tanpa parameter.');}
   if(recovery){
     if(!a1.recovery){send(404,{error:'Tidak ditemukan.'});return true;}a1.recovery.enabled();
@@ -43,6 +45,21 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(core){
+    const match=/^\/api\/stage8\/organizations(?:\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})(?:\/(programs|memberships|legacy)(?:\/([A-Za-z0-9_-]{1,128}))?)?)?$/.exec(path);
+    if(!match){send(404,{error:'Tidak ditemukan.'});return true;}const [,organizationId,section,target]=match,c=a1.core;
+    if(url.search&&!(section==='legacy'&&!target&&req.method==='GET'))fail(400,'Parameter tidak diizinkan.');
+    if(!organizationId&&req.method==='GET'){send(200,await c.catalog(actor));return true;}
+    if(organizationId&&!section&&req.method==='POST'){send(200,await c.saveOrganization(actor,organizationId,await json(req)));return true;}
+    if(section==='programs'&&!target&&req.method==='GET'){send(200,await c.listPrograms(actor,organizationId));return true;}
+    if(section==='programs'&&target&&req.method==='POST'){send(200,await c.saveProgram(actor,organizationId,target,await json(req)));return true;}
+    if(section==='memberships'&&!target&&req.method==='GET'){send(200,await c.listMembers(actor,organizationId));return true;}
+    if(section==='memberships'&&target&&req.method==='POST'){send(200,await c.saveMember(actor,organizationId,target,await json(req)));return true;}
+    if(section==='legacy'&&!target&&req.method==='GET'){
+      if([...url.searchParams.keys()].some(k=>!['schoolId','groupId','serviceSessionId'].includes(k)||url.searchParams.getAll(k).length!==1))fail(400,'Referensi tidak valid.');send(200,await c.legacy(actor,organizationId,Object.fromEntries(url.searchParams)));return true;
+    }
+    send(405,{error:'Tindakan tidak tersedia.'});return true;
   }
   if(migration){send(200,await a1.migration.inspect(actor));return true;}
   if(recovery){

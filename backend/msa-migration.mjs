@@ -91,7 +91,10 @@ export function analyzeMigration(tables,providers,{now=Date.now()}={}){
 // security equality is deliberately conservative: checksums alone do not prove
 // revocation freshness. No restore/write/reconciliation action exists here.
 export function migrationCheckpoint(tables,providers,historyDigest){
-  return {version:1,securityDigest:digest({tables:Object.fromEntries(migrationCollections.map(n=>[n,(tables[n]??[]).slice().sort((a,b)=>a.id.localeCompare(b.id))])),providers:providers.slice().sort((a,b)=>a.uid.localeCompare(b.uid))}),historyDigest};
+  // Preserve pre-Stage-8 checkpoints when these tables have no records. Once
+  // present, deleting/rolling them back necessarily changes the digest.
+  const securityCollections=[...migrationCollections,...['msaCoreOrganizations','msaCorePrograms','msaCoreMemberships','msaCorePlatformGrants','msaCoreLegacySources','msaCoreLegacyMappings'].filter(name=>(tables[name]??[]).length>0)];
+  return {version:1,securityDigest:digest({tables:Object.fromEntries(securityCollections.map(n=>[n,(tables[n]??[]).slice().sort((a,b)=>a.id.localeCompare(b.id))])),providers:providers.slice().sort((a,b)=>a.uid.localeCompare(b.uid))}),historyDigest};
 }
 export function simulateUsernameMapping(tables,providers,proposals){
   const candidate=structuredClone(tables),issues=[],mapping=[],legacy=new Map((candidate.adminAccounts??[]).map(r=>[r.id,r])),users=new Map(providers.map(r=>[r.uid,r]));

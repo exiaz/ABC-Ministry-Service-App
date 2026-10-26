@@ -1,6 +1,59 @@
 # MSA — Kajian arsitektur akun personal
 
-**25 Oktober 2026 · AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+**26 Oktober 2026 · Stage 8 core tersedia hanya pada fixture emulator dengan grant eksplisit; AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+
+## Stage 8 — MSA multi-program core foundation
+
+**IMPLEMENTED untuk test/emulator; kebijakan organisasi/izin masih provisional dan cutover produksi tetap NO-GO.** Gate independen `ABC_MSA_STAGE8=1` memerlukan A1/A2.2 serta konfigurasi emulator demo dan namespace `test-*`. A2.3–A2.4C tetap dipertahankan, tidak menjadi izin migrasi. Startup reguler tidak menyalakan gate; Auth Pilot menyalakannya hanya pada proses miliknya.
+
+### Model, ownership dan authorization
+
+| Koleksi aktual | Kontrak Stage 8 |
+|---|---|
+| `msaCoreOrganizations` | ID stabil, name, status active/inactive, metadata.note tervalidasi, ownerUid, revision, createdAt/updatedAt. Ownership ditetapkan eksplisit dan immutable lewat API tahap ini. Tidak ada batas nama organisasi hardcoded |
+| `msaCorePrograms` | ID stabil global, organizationId wajib dan immutable, name/description/status/revision/timestamps. Nol atau beberapa program per organisasi. Referensi program eksplisit null valid setelah izin organisasi diperiksa; program asing/nonaktif ditolak |
+| `msaCoreMemberships` | Key hash organisasi+UID; UID, accountRevision, identityRevision, role, permissions kanonik server, active/revoked, revision/timestamps. Satu UID dapat berbeda role per organisasi |
+| `msaCorePlatformGrants` | Grant trusted eksplisit UID+revisi identitas/akun, status dan `organizations:manage`. Tidak diterbitkan melalui API dan tidak diwarisi dari role legacy/A1 |
+| `msaCoreAudit` / `msaCoreReceipts` | Audit append-only actor/operasi/organisasi/alasan/previous/next/waktu dan receipt actor/requestId/fingerprint operasi+organisasi+target+body. Tidak menyimpan password/token/alias provider |
+| `msaCoreLegacySources` | Izin trusted baca sumber fiktif per organisasi, namespace dan tuple sekolah/kelompok/pelayanan. Bukan mapping kepemilikan data |
+| `msaCoreLegacyMappings` | Hanya dibaca sebagai proposal belum disahkan; tidak ada API tulis/migrasi dan tidak ada event Stage 9 |
+
+Katalog A1 `msaOrganizations` tetap pada kontrak/fixture authorization lama. Stage 8 memakai koleksi tersendiri agar role A1/legacy tidak menjadi membership atau privilege baru. Tidak ada backfill/sinkronisasi otomatis antar-katalog. Governance perlu memutuskan sumber kanonik dan migrasi terpisah sebelum pemakaian operasional.
+
+Subject harus menunjuk UID personal A1 active/ready/verified tanpa recoveryLock, atau UID legacy aktif dengan binding identitas username A2.1 active/verified. UID tidak boleh sekaligus personal dan legacy. Sesi/password/provider tetap diverifikasi mekanisme lama; helper Stage 8 tidak menyimpan/mengubah password atau membuat UID. Grant/membership harus cocok dengan revisi akun dan identitas terkini. Provider disabled, suspension/recovery lock, identity/link revoked atau revisi stale tidak mengotorisasi operasi. Grant stale memerlukan re-review/regrant eksplisit; tidak otomatis pulih saat akun kembali aktif. Legacy email login tanpa bukti identitas A2.1 belum dapat memakai Stage 8 walaupun memiliki jabatan Admin/PIC.
+
+| Wewenang sementara | Akses yang diberikan |
+|---|---|
+| Platform grant eksplisit | Katalog metadata seluruh organisasi, create/update organisasi dan penetapan owner awal yang sudah terverifikasi. Tidak memberi akses program/anggota/legacy organisasi tanpa membership |
+| Owner organisasi | Baca organisasi/program/anggota, create/update program, grant/revoke manager/viewer, serta baca legacy jika sumber trusted persis mengizinkan |
+| Manager organisasi | Baca organisasi/program/anggota serta create/update program organisasi tersebut. Tidak mengelola membership, ownership atau platform |
+| Viewer organisasi | Baca metadata organisasi/program saja. Tidak membaca membership/legacy atau melakukan write |
+
+Role/permissions ini kebijakan fixture sementara, bukan keputusan governance produksi. Permissions tidak diterima dari browser dan harus cocok dengan role kanonik; role owner tidak dapat ditambahkan lewat endpoint membership. Transfer/revoke owner, recovery owner organisasi, distribusi grant platform dan kebijakan inactive→active organisasi masih memerlukan kontrak lanjutan. Organisasi nonaktif menolak akses operasional; pengaktifan eksplisit tidak mengubah status revoked/stale membership.
+
+### API, transaksi dan UI
+
+Semua route di `/api/stage8/` memakai same-origin Admin, gate hidup dan sesi lama/A1 berwenang; tidak ada CORS Mentor atau credential perangkat sebagai hak Stage 8. Semua query selain tuple legacy ditolak. Body strict allowlist menolak organizationId/permissions/role privilege yang tidak disediakan kontrak.
+
+- `GET /organizations`: organisasi dengan membership efektif sendiri, capabilities dan katalog platform hanya bila ada grant platform eksplisit. Pengguna terverifikasi tanpa grant menerima daftar kosong, bukan role baru.
+- `POST /organizations/{organizationId}`: create saat expectedRevision 0 atau update revisi yang sama. Nama/status wajib; metadata dapat diperbarui secara eksplisit dan dipertahankan jika dihilangkan. Owner baru harus UID yang sudah terverifikasi/provider aktif. Create menulis organisasi dan membership owner secara atomik dengan audit ownership. Owner yang sudah ada tidak dapat diganti melalui update.
+- `GET /organizations/{organizationId}/programs`: hanya anggota berizin. `POST .../programs/{programId}`: create/update sesuai revisi dengan organization reference server-derived. ID tidak berubah, program di organisasi lain ditolak, description dipertahankan bila tidak dikirim. Program tidak membuat membership/peran/session/event.
+- `GET .../memberships`: hanya owner/manager, proyeksi reference/hash dan role/permission/status/revision/effective tanpa kontak/alias. `POST .../memberships/{uid}`: owner dapat grant/regrant manager/viewer ke UID terverifikasi atau mencabut row lama, termasuk ketika target suspended. Revocation mempertahankan identitas/revisi historis dan tidak mengubah role. Owner/self mutation ditolak.
+- `GET .../legacy?schoolId=...&groupId=...&serviceSessionId=...`: hanya owner dengan izin sumber trusted persis; lihat kontrak adapter berikut.
+
+Mutasi memerlukan UUID v4 requestId, expectedRevision, reason 5–300 karakter tanpa kontrol/bidi dan confirmed:true. Semua authorization/entity/receipt dibaca dalam transaksi sebelum write; actor diperiksa ulang sebelum commit. Receipt terikat target program/UID selain actor/operasi/organisasi/body; reuse lintas target memberi 409, bukan replay palsu. Konflik revisi 409 tidak menimpa data baru; kegagalan/race revoke tidak membuat program/audit/receipt parsial. Maksimum 200 row per query pilot; pagination/retensi sebelum perluasan. Tidak ada delete data/histori.
+
+UI `/msa-core.html` memakai brand/CSS lama, login username dan seleksi organisasi/program, Tanpa program, empty/permission states, daftar anggota pseudonim dan program creation untuk role berizin. Katalog platform dipisahkan dan diberi penjelasan bahwa hak itu tidak memberikan akses operasional. Konfirmasi fokus Batal dan retry respons write hilang mempertahankan target/requestId/isian. Token hanya di memori. Error authorization menghapus area privat, fetch read menyembunyikan data lama sebelum memuat hasil baru, dan tidak ada write offline. UI inspeksi bukan panel pengelolaan grant platform/ownership/membership; mutasi tersebut diuji lewat API terlindungi.
+
+### Adapter legacy dan checkpoint
+
+Adapter tidak menganggap pilihan organisasi atau nama/tanggal sama sebagai mapping. Ia memeriksa membership owner dan source grant per root namespace+tuple, lalu memakai `repository.describe` lama untuk effective/default Mentor tanpa membuat sesi, batch, roster, student, code atau credential. Return hanya referensi ID legacy serta `mapping.state:unmapped` saat row kosong, atau `requires-review` saat proposal ada; organizationId/programId/eventId tetap null, `attendanceAccess:false`, `eventsImplemented:false`. Tidak mengirim data privat siswa. ID/histori dan Stage 6 backup/snapshot/resolver lama tidak ditulis ulang.
+
+Checkpoint A2.4C kini menyertakan tabel security Stage 8 yang berisi record (org/program/membership/platform/source/proposal). Jika semuanya belum ada/kosong, digest lama tetap kompatibel. Revokasi/penghapusan/stale snapshot yang mengubah authority Stage 8 memberi NO-GO; tidak ada restore atau sumber anti-rollback eksternal yang baru dibangun. Resolusi governance mapping namespace, canonical event, ownership, banyak sumber dan proof/review harus disetujui sebelum adapter dapat dipakai migrasi sesungguhnya.
+
+### Readiness Stage 9 dan batas produksi
+
+**CONDITIONAL GO untuk lingkup Stage 9 terpisah pada fixture emulator setelah acceptance Stage 8 PASS.** Fondasi telah menyediakan organisasi, permission boundaries dan program nullable, tetapi belum membuat serviceEvents, jadwal/recurrence/unified calendar, rundown/BibleMax, Sheets, Christmas-specific schema atau volunteer attendance/analytics. Sebelum Stage 9: sahkan ownership/membership/platform policy sementara atau batasi tetap fiktif, tentukan PIC internal/izin create/publish/event-status/timezone, referensi program opsional, revisi/audit serta acceptance lintas organisasi. Identity/grant reconciliation dan owner transfer/recovery perlu kontrak tersendiri. Cutover auth/produksi tetap NO-GO sesuai A2.4C; contoh fixture bukan persetujuan data ownership nyata.
 
 ## AUTH A2.4C — migration readiness dan cutover dry run
 

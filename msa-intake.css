@@ -5,3 +5,5 @@
 .account-recovery summary,.account-recovery a{display:inline-flex;align-items:center;min-height:44px;padding:8px 0}.account-recovery #request-screen{max-width:560px}.account-recovery .check{min-height:44px}
 
 @media(min-width:900px){.account-recovery .recovery-layout{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,2fr);align-items:start;gap:20px}.account-recovery .recovery-layout>*{min-width:0}}
+
+.msa-core summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-core .grid>section{min-width:0}
