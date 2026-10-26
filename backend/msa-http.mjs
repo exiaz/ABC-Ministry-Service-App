@@ -12,11 +12,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   const intake=url.pathname.startsWith('/api/a2-2/');
   const lifecycle=url.pathname.startsWith('/api/a2-4/');
   const recovery=url.pathname.startsWith('/api/a2-4b/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery)return false;
+  const migration=url.pathname.startsWith('/api/a2-4c/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(migration){if(!a1.migration){send(404,{error:'Tidak ditemukan.'});return true;}a1.migration.enabled();if(url.search||req.method!=='GET'||path!=='/api/a2-4c/preflight')fail(405,'Preflight hanya mendukung pembacaan tanpa parameter.');}
   if(recovery){
     if(!a1.recovery){send(404,{error:'Tidak ditemukan.'});return true;}a1.recovery.enabled();
     if(url.search)fail(400,'Parameter tidak diizinkan.');
@@ -42,6 +44,7 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
   }
+  if(migration){send(200,await a1.migration.inspect(actor));return true;}
   if(recovery){
     if(path==='/api/a2-4b/queue'&&req.method==='GET'){send(200,await a1.recovery.queue(actor));return true;}
     const match=/^\/api\/a2-4b\/requests\/([a-f0-9]{64})\/review$/.exec(path);

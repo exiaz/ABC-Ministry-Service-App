@@ -1,6 +1,51 @@
 # MSA — Kajian arsitektur akun personal
 
-**25 Oktober 2026 · AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+**25 Oktober 2026 · AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
+
+## AUTH A2.4C — migration readiness dan cutover dry run
+
+**IMPLEMENTED terbatas pada preflight/simulasi fiktif; bukan migrasi/cutover produksi.** Gate tambahan `ABC_MSA_A2_4C=1` memerlukan A1–A2.4B, namespace `test-*` dan konfigurasi Auth/Firestore demo. Default reguler tetap mati; Auth Pilot mengaktifkan gate pada prosesnya sendiri. Status tes aktual ada pada PROJECT_STATUS.md.
+
+### Inventaris baca-saja dan batas kepercayaan
+
+`GET /api/a2-4c/preflight` hanya untuk Superadmin aktif dengan sesi lama atau broker A1 yang tetap diotorisasi ulang sebelum query provider, dalam transaksi Firestore dan sebelum hasil dikembalikan. PIC, reviewer recovery terdelegasi dan sesi personal biasa tidak memperoleh hak inventaris global. Query/body/method mutasi tidak disediakan. Tidak ada endpoint publik untuk binding, apply, reconcile, path snapshot atau restore. Halaman `/migration-readiness.html` menyediakan shell login dan laporan yang diperiksa server; tidak menyimpan token/data ke localStorage/sessionStorage. Kegagalan refresh/otorisasi mengosongkan laporan sebelumnya.
+
+Inventaris mencakup `adminAccounts/adminSecurity/adminPairingPermissions`, personal accounts/organizations/username registry/legacy username links, Mentor identity links, devices/associations/credentials/backup assignments, persistent Mentor admissions serta recovery requests/locks. Masing-masing koleksi dibatasi 200; provider dibatasi satu halaman 1000 dan hasil terpotong ditolak, bukan diklaim lengkap. Firebase Auth berada pada realm emulator bersama: UID provider tanpa record namespace ditandai **perlu review realm**, bukan otomatis orphan operasional. Pembacaan Auth terpisah dari transaksi Firestore; tidak ada snapshot atomik lintas provider.
+
+Proyeksi allowlist hanya reference hash tipe/ID, jenis, status, kode alasan, penjelasan Indonesia dan remediasi. Tidak mengirim UID/username/deviceId asli, kontak/nama, provider alias, credential/recovery/session hashes, password atau siswa. Hash referensi adalah pseudonim untuk inspeksi, bukan bukti kepemilikan atau mekanisme otorisasi. Nama/HP serupa hanya warning duplikat dan tidak membuat mapping/link. Sesi opaque A1/Admin yang hanya berada di memori **tidak dienumerasi**; admission persisten diperiksa stale/state/revision/expiry. Restart masih menolak handle lama melalui mekanisme lama.
+
+Klasifikasi mempertimbangkan UID/provider/owner, canonical case-insensitive uniqueness, record role/scope/katalog/tindakan/grant, identity/provisioning/state/lock, inverse Mentor link dan penugasan default/efektif melalui resolver lama, marker/association/key-binding/credential/grant/expiry/revisi perangkat, unresolved legacy, recovery uncertainty serta backup yang tetap memerlukan pemeriksaan Stage 6. Record nonaktif/revoked/expired yang konsisten diberi **ready untuk mempertahankan penolakan**, bukan izin aktif. Asosiasi stale/inkonsisten atau perangkat legacy aktif tanpa atribusi menjadi blocker. Tidak ada rebind atau retirement otomatis.
+
+### Simulasi, snapshot dan rollback
+
+`simulateUsernameMapping` bekerja pada clone tabel detached. Proposal trusted tes memuat UID sasaran, username dan hasil pemeriksaan reautentikasi/identitas; field tersebut **bukan bukti identitas mandiri dan tidak diterima oleh API**. Planner menolak UID baru, UID personal yang bertabrakan, account/provider nonaktif, username tidak kanonik/conflict, serta link parsial. Ia hanya mensimulasikan dua row username/legacy link pada clone, mengembalikan referensi tersamarkan, hasil dan `mutations:0`; tidak memiliki apply method. Fixture menyiapkan binding aktual melalui A2.1 lama, memverifikasi ulang password asli dan mempertahankan owner/PIC UID serta izin. `momor1n` hanya fixture Superadmin fiktif pada UID owner yang sama, tanpa Superadmin baru atau binding operasional.
+
+`migrationCheckpoint` menghasilkan digest security tables/provider dan digest histori yang disiapkan operator tes. Helper trusted `verifyMigrationRollback` membaca `migration-checkpoint.json` dari **salinan snapshot tes**, memakai `verifySnapshotContents`/seal SHA-256 yang sudah ada dan membandingkan checkpoint terkini, format digest, mapping verified dan histori. Checkpoint disertakan sebelum snapshot disegel; perubahan sesudah seal ditolak. Integrasi membuat export Auth/Firestore nyata dari Hub emulator terisolasi ke folder tes baru, membuktikan export tidak mengubah domain/Auth, lalu menolak checkpoint lama sesudah revoke, termasuk setelah gate A2.4C off. Tidak mengimpor snapshot atau menjalankan restore.
+
+Perbandingan sengaja konservatif: perubahan security tables/provider termasuk metadata dapat meminta review meskipun bukan revokasi. `GO` pada pemeriksaan checkpoint hanya berarti bukti yang diperiksa sama; hasil selalu `restoreAuthorized:false`. Seal membuktikan integritas berkas, **bukan freshness, autentisitas operator atau anti-rollback eksternal**. Tidak ada izin restore dari feature flag, checksum, kesamaan digest saja, atau hasil planner.
+
+### Checklist dan kriteria keputusan
+
+| Gate | Bukti yang harus diperiksa | Kondisi sekarang |
+|---|---|---|
+| Snapshot sebelum migrasi | Export Auth/Firestore, seal, checkpoint terikat salinan, baseline trusted dan quiescence/fencing lintas provider | Format/seal/checkpoint tes tersedia; snapshot produksi tidak dinilai |
+| Expected mapping | UID/owner/role/actions/scope/username/Mentor/device persis baseline, tanpa UID privileged baru | Planner detached dan fixture A2.1 teruji; mapping operasional belum ada |
+| Rekonsiliasi dry run | Digest domain/Auth/histori sebelum/sesudah, uniqueness dan konflik; nol write pada preflight/planner | Tersedia pada fixture terisolasi |
+| Enrollment | Pemilik reautentikasi dan verifikasi independen, review duplikat/konflik, semua sasaran terdaftar | Operasional belum dilaksanakan; nama/HP bukan bukti |
+| Recovery readiness | Tidak ada lock/hasil uncertain; trusted owner/delivery/step-up dan worker fencing yang dapat dipulihkan | Blocker lintas proses tetap terbuka |
+| Retirement legacy | Atribusi key/owner dan keputusan retirement/rebind eksplisit; perangkat unresolved tetap tidak diklaim | Belum dilaksanakan; tidak ada auto-rebind |
+| Rollback/revokasi | Sumber epoch/revokasi yang tidak ikut mundur, checkpoint terkini dan prosedur operator | Sumber eksternal/fencing belum tersedia; snapshot lama tidak boleh menghidupkan akses |
+| Regresi sesudah migrasi | Login lama/username, scoped Mentor/backup, absensi/history, suspend/revoke/recovery serta uji lintas organisasi sesuai revisi | Runner tes fiktif ada; bukan hasil migrasi produksi |
+
+- **GO:** hanya untuk pemeriksaan struktur/plan/checkpoint dalam lingkup tes yang dinyatakan, seluruh kondisi wajib tersedia dan valid, tanpa record blocked/review. Tidak mengizinkan cutover atau restore.
+- **CONDITIONAL GO:** hanya inspeksi/perencanaan lokal dengan record perlu review dan tanpa blocker pada lingkup itu; selesaikan remediasi sebelum memperluas tahap. Hasil tidak boleh dipakai untuk memberi akses.
+- **NO-GO:** ada konflik/lock/uncertainty, bukti belum lengkap/tidak valid, UID/role/scope/history berubah tak sesuai, unresolved legacy aktif atau snapshot security stale. **Cutover produksi selalu NO-GO saat ini** karena fencing/recovery lintas proses, trusted owner/delivery/step-up, external revocation dan legacy retirement/enrollment belum tersedia.
+
+### Recovery reconciliation dan Stage 8
+
+Tidak menambah mutasi reconciliation atau auto-unlock. Tes worker proses nyata mati setelah `auth.updateUser` berhasil sebelum completion Firestore; password provider baru terbukti berlaku di verifier, tetapi akun/sesi/device tetap ditolak karena lock. Retry worker/proses baru, server authentication instance baru dan suspension bersamaan tidak membuka akses. Operator trusted perlu menahan/fence semua worker, membuktikan hasil provider serta revision/epoch terkini, mencatat keputusan independen dan menyetujui rekonsiliasi dalam lingkup terpisah. Unknown outcome tidak boleh disamakan dengan write gagal. A2.4B tetap otoritas fail-closed, tanpa perubahan provider/lock implementasinya.
+
+**Stage 8: CONDITIONAL GO untuk perencanaan fondasi dan fixture berikutnya; NOT IMPLEMENTED.** A2.4C menyediakan alat asesmen, bukan model organisasi/keanggotaan baru. Sebelum implementasi Stage 8 perlu lingkup disetujui, kepemilikan data dan mapping organization/program/legacy IDs yang otoritatif, serta acceptance penolakan lintas organisasi. Stage 8 tidak otomatis mengizinkan username-only cutover; semua blocker produksi di atas tetap berlaku. Acuan roadmap: MSA_PRODUCT_VISION.md bagian tahapan setelah Stage 7.
 
 ## AUTH A2.4B — kontrak recovery terisolasi
 

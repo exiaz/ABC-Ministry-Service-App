@@ -1,6 +1,6 @@
 # ABC | Ministry Service App — Prototipe lokal
 
-## Pilot akun interaktif Windows — AUTH A1–A2.4B
+## Pilot akun interaktif Windows — AUTH A1–A2.4C
 
 Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
 
@@ -20,11 +20,23 @@ Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.c
 | Admin / penerbitan kode aktivasi | `http://127.0.0.1:4277/username.html` |
 | Pengelolaan akun uji / penangguhan | `http://127.0.0.1:4277/a1.html` (pilih login username) |
 
-**Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2, A2.3, A2.4A dan A2.4B hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua hanya melaporkan pilot sudah aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
+**Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2, A2.3, A2.4A, A2.4B dan A2.4C hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua hanya melaporkan pilot sudah aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
 
 **Data sementara:** tidak ada impor, ekspor, snapshot atau pemulihan pilot. Folder `.emulator-data/auth-pilot/run-*` hanya menyimpan konfigurasi/diagnostik emulator dan diabaikan Git; `.emulator-data/local-demo-launcher` tidak dibaca atau ditulis. Setiap restart menghapus konteks uji sebelumnya secara alami melalui emulator baru, membuat peninjau/kata sandi baru, dan memerlukan registrasi/aktivasi ulang. Jangan gunakan kredensial/perangkat dari run sebelumnya. Jika berganti tanggal WIB atau lupa kata sandi peninjau, hentikan lalu nyalakan pilot kembali. Namespace, snapshot, password dan akun demo reguler tidak diubah. Tidak ada endpoint provisioning publik atau izin penggunaan data nyata.
 
 Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
+
+## AUTH A2.4C — periksa kesiapan migrasi, tanpa menjalankan migrasi
+
+Gunakan **Start MSA Auth Pilot.cmd** yang sama, lalu pilih **Kesiapan migrasi** pada navigasi pilot (`http://127.0.0.1:4277/migration-readiness.html`). Masuk sebagai `peninjau.pilot` dengan kata sandi yang dibuat di launcher. Hanya Superadmin aktif dapat membaca laporan; PIC atau reviewer terdelegasi tidak memperoleh akses global.
+
+Laporan menampilkan jumlah **siap / perlu ditinjau / terblokir**, alasan, remediasi dan checklist. Referensi tersamarkan bukan UID/username/deviceId atau bukti identitas. Nama/HP serupa tidak ditautkan otomatis; perangkat legacy unresolved tetap tidak diklaim. Gunakan **Periksa ulang** sesudah fixture berubah; jika koneksi/izin gagal, laporan lama dibersihkan. Tidak ada tombol apply, binding, reset, rebind atau restore pada halaman ini.
+
+**Cutover produksi: NO-GO.** GO pada simulasi mapping/checkpoint hanya berlaku untuk bukti/lingkup tes yang diperiksa. Fencing recovery lintas proses, trusted owner/delivery/step-up, retirement/enrollment legacy dan revokasi tahan rollback masih blocker. Mematikan flag atau memiliki snapshot/checksum tidak memberi izin menghidupkan akses dicabut. Jika recovery uncertain, tetap terkunci dan minta operator memeriksa; jangan hapus lock. Stage 8 baru siap untuk perencanaan terarah dan memerlukan lingkup tersendiri.
+
+Jalankan `npm.cmd run test:msa-a2-4c` untuk inventaris, duplicate/binding, fixture `momor1n` pada UID Superadmin fiktif lama, planner tanpa write, crash worker recovery, export snapshot tes nyata dan penolakan rollback stale, serta Chrome pada 360/390/768/1365 px. Fixture/setup tes terpisah dari operasi preflight/dry run; preflight/planner sendiri tidak mengubah domain/Auth. `npm.cmd run test:stage6` mencakup regresi penuh; `node --test tests/auth-pilot-browser.mjs` menguji launcher nyata. Semua data/port/namespace/export tes terisolasi; snapshot dan akun reguler tidak dipakai. Hasil aktual: `PROJECT_STATUS.md`; kontrak/checklist/operator: `MSA_ACCOUNT_ARCHITECTURE.md` bagian A2.4C.
+
+Batas: sesi opaque yang hanya berada dalam memori tidak dapat diinventarisasi; admission persisten diperiksa. Auth dan Firestore tidak dibaca dalam satu snapshot atomik. Inventaris menolak hasil melebihi batas pilot, bukan menampilkan hasil parsial sebagai lengkap. Android fisik, browser selain Chrome dan cutover operasional belum diverifikasi. Gate `ABC_MSA_A2_4C` mati secara default pada startup reguler; hanya proses Auth Pilot mengaktifkannya bersama gate sebelumnya.
 
 ## AUTH A2.4B — lupa kata sandi tanpa email, khusus pilot
 
