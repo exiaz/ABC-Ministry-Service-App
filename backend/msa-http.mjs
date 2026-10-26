@@ -15,11 +15,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   const migration=url.pathname.startsWith('/api/a2-4c/');
   const core=url.pathname.startsWith('/api/stage8/');
   const events=url.pathname.startsWith('/api/stage9a/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events)return false;
+  const calendar=url.pathname.startsWith('/api/stage9b1/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events&&!calendar)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(calendar){if(!a1.calendar){send(404,{error:'Tidak ditemukan.'});return true;}a1.calendar.enabled();}
   if(events){if(!a1.events){send(404,{error:'Tidak ditemukan.'});return true;}a1.events.enabled();}
   if(core){if(!a1.core){send(404,{error:'Tidak ditemukan.'});return true;}a1.core.enabled();}
   if(migration){if(!a1.migration){send(404,{error:'Tidak ditemukan.'});return true;}a1.migration.enabled();if(url.search||req.method!=='GET'||path!=='/api/a2-4c/preflight')fail(405,'Preflight hanya mendukung pembacaan tanpa parameter.');}
@@ -47,6 +49,17 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(calendar){
+    const c=a1.calendar;
+    if(path==='/api/stage9b1/catalog'&&req.method==='GET'&&!url.search){send(200,await c.catalog(actor));return true;}
+    if(path==='/api/stage9b1/calendar'&&req.method==='GET'){
+      if([...url.searchParams.keys()].some(k=>!['organizationId','programId','from','to','status'].includes(k)||url.searchParams.getAll(k).length!==1))fail(400,'Filter tidak valid.');send(200,await c.agenda(actor,Object.fromEntries(url.searchParams)));return true;
+    }
+    if(url.search)fail(400,'Parameter tidak diizinkan.');
+    const match=/^\/api\/stage9b1\/organizations\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})\/events\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})(?:\/(publish|cancel))?$/.exec(path);
+    if(match){const [,org,eventId,operation]=match;if(!operation&&req.method==='GET'){send(200,await c.detail(actor,org,eventId));return true;}if(operation&&req.method==='POST'){send(200,await c.transition(actor,org,eventId,operation,await json(req)));return true;}}
+    send(404,{error:'Tidak ditemukan.'});return true;
   }
   if(events){
     const match=/^\/api\/stage9a\/organizations(?:\/([A-Za-z0-9][A-Za-z0-9_-]{0,95})\/(events|options)(?:\/([A-Za-z0-9][A-Za-z0-9_-]{0,95}))?)?$/.exec(path);

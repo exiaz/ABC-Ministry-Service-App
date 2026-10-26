@@ -2,8 +2,9 @@ import {randomUUID} from 'node:crypto';
 import {hash,fail} from './msa-accounts.mjs';
 import {coreMembershipId,coreMutationInput} from './msa-core.mjs';
 
-// Provisional trusted grants only. Publication is deliberately ungrantable.
+// Provisional trusted grants only; lifecycle powers require their own gate.
 export const eventPermissions=Object.freeze(['events:read','events:create','events:edit','events:pic']);
+export const calendarPermissions=Object.freeze(['events:calendar:read','events:publish','events:cancel']);
 export const eventTimezones=Object.freeze({'Asia/Jakarta':7,'Asia/Makassar':8,'Asia/Jayapura':9});
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/.test(v);
 const clean=(v,max)=>typeof v==='string'&&v.trim().length>=2&&v.length<=max&&!/[\p{Cc}\p{Cf}\p{Cs}]/u.test(v);
@@ -18,14 +19,16 @@ export function eventInput(value){
 }
 const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;
 const denied=()=>fail(403,'Izin pelayanan atau PIC organisasi belum diizinkan.');
-const view=r=>({id:r.id,organizationId:r.organizationId,name:r.name,startDate:r.startDate,startTime:r.startTime,timezone:r.timezone,startAt:r.startAt,venue:r.venue,picMembershipId:r.picMembershipId,programId:r.programId,status:r.status,revision:r.revision,createdAt:r.createdAt,updatedAt:r.updatedAt});
+const view=r=>({id:r.id,organizationId:r.organizationId,name:r.name,startDate:r.startDate,startTime:r.startTime,timezone:r.timezone,startAt:r.startAt,venue:r.venue,picMembershipId:r.picMembershipId,programId:r.programId,status:r.status,revision:r.revision,createdAt:r.createdAt,updatedAt:r.updatedAt,...(r.publishedAt===undefined?{}:{publishedAt:r.publishedAt}),...(r.cancelledAt===undefined?{}:{cancelledAt:r.cancelledAt,cancellationReason:r.cancellationReason})});
 
 export function createMsaEvents({db,root,auth,core,now=Date.now}){
   const col=n=>root.collection(n),events=col('msaServiceEvents'),grants=col('msaEventGrants'),{member,bound,bounded,selectedProgram}=core.authority;
   const enabled=()=>{core.enabled();if(process.env.ABC_MSA_STAGE9A!=='1'||!root.id.startsWith('test-'))fail(503,'Draf pelayanan uji tidak aktif.');};
+  const calendarEnabled=()=>{enabled();if(process.env.ABC_MSA_STAGE9B1!=='1')fail(503,'Kalender pelayanan uji tidak aktif.');};
   async function access(tx,actor,org,action){
     enabled();const v=await member(tx,actor,org,'organization:read'),g=(await tx.get(grants.doc(coreMembershipId(org,actor.uid)))).data();
-    if(!bound(g,v.s)||g.organizationId!==org||g.membershipRevision!==v.m.revision||!Array.isArray(g.permissions)||!g.permissions.length||new Set(g.permissions).size!==g.permissions.length||g.permissions.some(p=>!eventPermissions.includes(p))||!g.permissions.includes(action))denied();return {...v,g};
+    const allowed=[...eventPermissions,...(process.env.ABC_MSA_STAGE9B1==='1'?calendarPermissions:[])];
+    if(!bound(g,v.s)||g.organizationId!==org||g.membershipRevision!==v.m.revision||!Array.isArray(g.permissions)||!g.permissions.length||new Set(g.permissions).size!==g.permissions.length||g.permissions.some(p=>!allowed.includes(p))||!(Array.isArray(action)?action:[action]).some(p=>g.permissions.includes(p)))denied();return {...v,g};
   }
   const targetActor=uid=>({uid,check:async()=>{try{return !(await auth.getUser(uid)).disabled;}catch{return false;}}});
   async function eligible(tx,org,membershipId){
@@ -35,10 +38,13 @@ export function createMsaEvents({db,root,auth,core,now=Date.now}){
   }
   return {
     enabled,
+    calendarEnabled,
+    // Internal transaction helpers, never public permission-management routes.
+    authority:{access,eligible,view},
     async catalog(actor){
       enabled();const catalog=await core.catalog(actor);const organizations=[];
       for(const o of catalog.organizations){try{const v=await db.runTransaction(tx=>access(tx,actor,o.id,'events:read'));organizations.push({id:o.id,name:o.name,permissions:v.g.permissions.filter(p=>p!=='events:pic')});}catch(e){if(e.status!==403)throw e;}}
-      enabled();if(!await actor.check())denied();return {organizations,policy:'provisional-fictional',publishAvailable:false};
+      enabled();if(!await actor.check())denied();return {organizations,policy:'provisional-fictional',publishAvailable:process.env.ABC_MSA_STAGE9B1==='1'};
     },
     async options(actor,org){return db.runTransaction(async tx=>{
       await access(tx,actor,org,'events:read');const programs=await bounded(tx,col('msaCorePrograms').where('organizationId','==',org)),members=await bounded(tx,col('msaCoreMemberships').where('organizationId','==',org)),pics=[];
@@ -62,12 +68,14 @@ export function createMsaEvents({db,root,auth,core,now=Date.now}){
       enabled();if(!id(eventId))fail(400,'ID pelayanan tidak valid.');const fields=eventInput(value),action=value.expectedRevision===0?'events:create':'events:edit';
       return db.runTransaction(async tx=>{
         await access(tx,actor,org,action);const receipt=col('msaEventReceipts').doc(hash(actor.uid+':'+value.requestId)),fingerprint=hash(JSON.stringify([org,eventId,stable(value)])),oldReceipt=(await tx.get(receipt)).data();
-        if(oldReceipt){if(oldReceipt.fingerprint!==fingerprint)fail(409,'ID pengajuan telah digunakan.');await access(tx,actor,org,action);return oldReceipt.result;}
-        const ref=events.doc(eventId),old=(await tx.get(ref)).data();if(old&&old.organizationId!==org)denied();if((old?.revision??0)!==value.expectedRevision)fail(409,'Draf sudah berubah. Muat ulang detail sebelum menyunting lagi.');if(old&&old.status!=='draft')denied();
+        if(oldReceipt){if(oldReceipt.fingerprint!==fingerprint)fail(409,'ID pengajuan telah digunakan.');await access(tx,actor,org,action);if(oldReceipt.publishedEdit){calendarEnabled();await access(tx,actor,org,'events:publish');}return oldReceipt.result;}
+        const ref=events.doc(eventId),old=(await tx.get(ref)).data();if(old&&old.organizationId!==org)denied();if((old?.revision??0)!==value.expectedRevision)fail(409,'Draf sudah berubah. Muat ulang detail sebelum menyunting lagi.');
+        if(old?.status==='published'){calendarEnabled();await access(tx,actor,org,'events:publish');}else if(old&&old.status!=='draft')fail(409,'Pelayanan yang dibatalkan tidak dapat disunting.');
         await selectedProgram(tx,org,fields.programId);const pic=await eligible(tx,org,fields.picMembershipId);
-        const at=now(),next={id:eventId,organizationId:org,...fields,status:'draft',revision:(old?.revision??0)+1,createdAt:old?.createdAt??at,createdBy:old?.createdBy??actor.uid,updatedAt:at,updatedBy:actor.uid};
+        const at=now(),next={...(old??{}),id:eventId,organizationId:org,...fields,status:old?.status??'draft',revision:(old?.revision??0)+1,createdAt:old?.createdAt??at,createdBy:old?.createdBy??actor.uid,updatedAt:at,updatedBy:actor.uid};
         await access(tx,actor,org,action);await eligible(tx,org,pic.m.id);enabled();if(!await actor.check())denied();
-        const result={updated:true,id:eventId,revision:next.revision};tx.set(ref,next);tx.create(col('msaEventAudit').doc(randomUUID()),{eventId,organizationId:org,actorUid:actor.uid,operation:old?'draft-edited':'draft-created',reason:value.reason.trim(),previous:old??null,next,at});tx.create(receipt,{fingerprint,result});return result;
+        if(old?.status==='published'){calendarEnabled();await access(tx,actor,org,'events:publish');}
+        const result={updated:true,id:eventId,revision:next.revision};tx.set(ref,next);tx.create(col('msaEventAudit').doc(randomUUID()),{eventId,organizationId:org,actorUid:actor.uid,operation:old?.status==='published'?'published-edited':old?'draft-edited':'draft-created',reason:value.reason.trim(),previous:old??null,next,at});tx.create(receipt,{fingerprint,result,...(old?.status==='published'?{publishedEdit:true}:{})});return result;
       });
     }
   };

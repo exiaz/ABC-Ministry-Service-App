@@ -19,6 +19,8 @@ import {fixtureRecords} from './tests/emulator/fixture.mjs';
 import {jakartaToday} from './dates.js';
 import {SCHOOL_CONFIG,GROUP_CONFIG} from './group-config.js';
 import {wrapPilotServer} from './local-auth-pilot-ui.mjs';
+import {seedCalendarFixture} from './tests/fixtures/msa-calendar.mjs';
+import {calendarPermissions,eventPermissions} from './backend/msa-events.mjs';
 import {seedEventGrant} from './tests/fixtures/msa-events.mjs';
 import {seedStage8Fixture} from './tests/fixtures/msa-core.mjs';
 
@@ -33,7 +35,7 @@ export function pilotEnvironment(base=process.env,{ports=PILOT_PORTS,id=randomUU
   if(!/^[a-f0-9-]{36}$/.test(id)||ports.length!==8||new Set(ports).size!==8||ports.some(p=>!Number.isSafeInteger(p)||p<1024||p>65535||[4173,4175,4176,4177,8080,9099,4400,4500,9150].includes(p)))throw safe('Konfigurasi port atau identitas pilot tidak valid.');
   for(const key of ['FIRESTORE_EMULATOR_HOST','FIREBASE_AUTH_EMULATOR_HOST'])if(base[key]&&!/^127\.0\.0\.1:[1-9]\d{0,4}$/.test(base[key]))throw safe('Alamat emulator dari lingkungan tidak aman.');
   const [firestore,auth,,,,api,admin,mentor]=ports;
-  const env={...base,ABC_ROSTER_ADAPTER:'firestore-emulator',ABC_ADMIN_AUTH_MODE:'firebase-auth-emulator',ABC_FIREBASE_PROJECT_ID:'demo-abc-attendance',GCLOUD_PROJECT:'demo-abc-attendance',GOOGLE_CLOUD_PROJECT:'demo-abc-attendance',FIRESTORE_EMULATOR_HOST:'127.0.0.1:'+firestore,FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:'+auth,ABC_FIRESTORE_NAMESPACE:'test-auth-pilot-'+id,ABC_ADMIN_UIDS:JSON.stringify(['pilot-reviewer-'+id]),ABC_ROSTER_PORT:String(api),ABC_ADMIN_PORT:String(admin),ABC_MENTOR_PORT:String(mentor),ABC_API_ORIGIN:'http://127.0.0.1:'+api,ABC_MENTOR_ORIGIN:'http://127.0.0.1:'+mentor,ABC_MSA_A1:'1',ABC_MSA_USERNAME_PILOT:'1',ABC_MSA_A2_2:'1',ABC_MSA_A2_3:'1',ABC_MSA_A2_4A:'1',ABC_MSA_A2_4B:'1',ABC_MSA_A2_4C:'1',ABC_MSA_STAGE8:'1',ABC_MSA_STAGE9A:'1',ABC_JAVA_TCP_FALLBACK:'1'};
+  const env={...base,ABC_ROSTER_ADAPTER:'firestore-emulator',ABC_ADMIN_AUTH_MODE:'firebase-auth-emulator',ABC_FIREBASE_PROJECT_ID:'demo-abc-attendance',GCLOUD_PROJECT:'demo-abc-attendance',GOOGLE_CLOUD_PROJECT:'demo-abc-attendance',FIRESTORE_EMULATOR_HOST:'127.0.0.1:'+firestore,FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:'+auth,ABC_FIRESTORE_NAMESPACE:'test-auth-pilot-'+id,ABC_ADMIN_UIDS:JSON.stringify(['pilot-reviewer-'+id]),ABC_ROSTER_PORT:String(api),ABC_ADMIN_PORT:String(admin),ABC_MENTOR_PORT:String(mentor),ABC_API_ORIGIN:'http://127.0.0.1:'+api,ABC_MENTOR_ORIGIN:'http://127.0.0.1:'+mentor,ABC_MSA_A1:'1',ABC_MSA_USERNAME_PILOT:'1',ABC_MSA_A2_2:'1',ABC_MSA_A2_3:'1',ABC_MSA_A2_4A:'1',ABC_MSA_A2_4B:'1',ABC_MSA_A2_4C:'1',ABC_MSA_STAGE8:'1',ABC_MSA_STAGE9A:'1',ABC_MSA_STAGE9B1:'1',ABC_JAVA_TCP_FALLBACK:'1'};
   delete env.ABC_EMULATOR_IMPORT_DIR;return env;
 }
 
@@ -69,7 +71,8 @@ export async function preparePilot(context,{auth,adminAuthentication,password,ch
   try{await adminAuthentication.a1.legacyPilot.claim({header:'Bearer '+token,username:PILOT_USERNAME,password,expectedUid:uid,reason:'Penyiapan peninjau fiktif melalui peluncur lokal terisolasi',confirmed:true});}
   finally{adminAuthentication.revoke(token);}
   if(process.env.ABC_MSA_STAGE8==='1')await seedStage8Fixture(context,{uid,fictional:true,confirmed:true,scope:{schoolId:'s1',groupId:'g1',serviceSessionId:'fictional-a23-current'}});
-  if(process.env.ABC_MSA_STAGE9A==='1')for(const organizationId of ['fictional-abc-movement','fictional-yayasan-abc'])await seedEventGrant(context,{uid,organizationId,fictional:true,confirmed:true});
+  if(process.env.ABC_MSA_STAGE9A==='1')for(const organizationId of ['fictional-abc-movement','fictional-yayasan-abc'])await seedEventGrant(context,{uid,organizationId,permissions:process.env.ABC_MSA_STAGE9B1==='1'?[...eventPermissions,...calendarPermissions]:eventPermissions,fictional:true,confirmed:true});
+  if(process.env.ABC_MSA_STAGE9B1==='1')await seedCalendarFixture(context,{uid,auth,events:adminAuthentication.a1.events,calendar:adminAuthentication.a1.calendar,fictional:true,confirmed:true});
   check();
 }
 

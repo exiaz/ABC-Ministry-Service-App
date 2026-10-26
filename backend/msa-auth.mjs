@@ -8,6 +8,7 @@ import {createMsaRecovery} from './msa-recovery.mjs';
 import {createMsaMigration} from './msa-migration.mjs';
 import {createMsaCore} from './msa-core.mjs';
 import {createMsaEvents} from './msa-events.mjs';
+import {createMsaCalendar} from './msa-calendar.mjs';
 
 export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,mentorAccounts,now=Date.now}){
   const sessions=new Map(),accounts=createMsaAccounts({db,root,auth,assertLocal,now});
@@ -92,5 +93,6 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
   if(api.recovery&&process.env.ABC_MSA_A2_4C==='1')api.migration=createMsaMigration({db,root,auth,registration,repository,now,assertEnabled:()=>{assertLocal();api.recovery.enabled();}});
   if(registration&&process.env.ABC_MSA_STAGE8==='1')api.core=createMsaCore({db,root,auth,repository,now,assertEnabled:()=>{assertLocal();registration.enabled();}});
   if(api.core&&process.env.ABC_MSA_STAGE9A==='1')api.events=createMsaEvents({db,root,auth,core:api.core,now});
+  if(api.events&&process.env.ABC_MSA_STAGE9B1==='1')api.calendar=createMsaCalendar({db,root,core:api.core,events:api.events,now});
   return api;
 }

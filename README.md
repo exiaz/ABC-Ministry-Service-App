@@ -1,6 +1,6 @@
 # ABC | Ministry Service App — Prototipe lokal
 
-## Pilot akun interaktif Windows — AUTH A1–A2.4C + Stage 8/9A
+## Pilot akun interaktif Windows — AUTH A1–A2.4C + Stage 8/9A/9B.1
 
 Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.cmd`**. Prasyarat sama dengan demo reguler: Windows, Node.js 22+, Java JDK 21+, dependensi proyek dan cache Firestore Emulator yang sudah disiapkan operator. Launcher tidak memasang atau mengunduh dependensi.
 
@@ -26,15 +26,27 @@ Untuk mencoba alur akun melalui browser, klik dua kali **`Start MSA Auth Pilot.c
 
 Verifikasi khusus launcher: `node --test tests/auth-pilot.test.mjs` dan `node --test tests/auth-pilot-browser.mjs` (memerlukan prasyarat lokal dan Chrome seperti runner yang sudah ada). Regresi penuh tetap `npm.cmd run test:stage6`. Hasil aktual dan batas uji native Explorer/perangkat fisik dicatat di `PROJECT_STATUS.md`.
 
+## Stage 9B.1 — pelayanan terbit dan agenda gabungan
+
+Jalankan **Start MSA Auth Pilot.cmd**, pilih **Pelayanan & kalender**, lalu masuk sebagai `peninjau.pilot` dengan kata sandi launcher. Halaman awal **Agenda gabungan** menampilkan dua pelayanan fiktif dari organisasi berbeda pada hari ini: 09:00 WIB dan 10:00 WITA, waktu UTC yang sama. Salah satunya tanpa program; keduanya tetap event terpisah.
+
+1. Gunakan **7 hari sebelumnya / Minggu ini / 7 hari berikutnya**. Buka **Filter jadwal** untuk memilih organisasi, program termasuk **Tanpa program**, status dan rentang tanggal, lalu **Tampilkan jadwal**. Batasnya 93 hari dan 200 hasil; hasil berlebih ditolak, bukan dipotong. **Per hari** mengelompokkan kartu berdasarkan tanggal lokal masing-masing pelayanan; zona waktu tetap terlihat.
+2. Pilih **Lihat detail** pada kartu. Pengguna berizin kalender terbatas hanya melihat event terbit/batal; draf dan audit lama tetap memerlukan izin internal tersendiri. Penetapan PIC tidak memberikan hak akun baru.
+3. Pilih **Kelola pelayanan** untuk membuat draf atau menyunting seperti Stage 9A. Dari detail, **Lihat di kalender** membuka tindakan event. **Terbitkan pelayanan** memeriksa kembali data/PIC/program dan memerlukan grant publish. Ini hanya menerbitkan di MSA bagi pengguna berwenang, bukan tautan publik. **Sunting pelayanan** pada event terbit memerlukan edit+publish; ID/status tetap.
+4. **Batalkan pelayanan** memerlukan grant cancel, alasan dan konfirmasi. Status menjadi **Dibatalkan** dan riwayat tetap disimpan. Tidak ada pemulihan otomatis, unpublish atau edit event batal. Gunakan filter **Dibatalkan** atau **Semua status yang diizinkan** untuk melihatnya kembali.
+5. Jika respons publish/cancel terputus, alasan tetap terkunci dan tombol tindakan yang sama melanjutkan UUID pengajuan sebelumnya; tunggu konfirmasi hasil sebelum tindakan lain. Konflik revisi mempertahankan alasan; kembali dan buka detail terbaru sebelum mencoba lagi. Form edit juga mempertahankan isian pada error yang dapat dipulihkan.
+
+Gate `ABC_MSA_STAGE9B1` mati pada startup reguler; hanya proses pilot/tes yang menyalakannya bersama fondasi sebelumnya dan grant fixture eksplisit. Restart memulai fixture baru. `npm.cmd run test:stage9b1` menjalankan unit/integrasi/Chrome terarah; `npm.cmd run test:stage6` menjalankan regresi penuh; `node --test tests/auth-pilot-browser.mjs` memeriksa launcher nyata. Status tes aktual ada di PROJECT_STATUS.md. Publikasi terpisah dari rundown, tidak memberi absensi/perangkat/assignment otomatis. Governance grant/PIC masih provisional; Stage 9B.2 dan produksi belum diizinkan.
+
 ## Stage 9A — draf pelayanan
 
-Jalankan **Start MSA Auth Pilot.cmd**, pilih **Draf pelayanan** (`http://127.0.0.1:4277/msa-events.html`), lalu masuk sebagai `peninjau.pilot` dengan kata sandi launcher. Fixture memberi izin event dan kelayakan PIC secara eksplisit pada dua organisasi fiktif; relawan baru tidak mendapatkannya otomatis.
+Jalankan **Start MSA Auth Pilot.cmd**, pilih **Pelayanan & kalender** (`http://127.0.0.1:4277/msa-events.html`), masuk sebagai `peninjau.pilot` dengan kata sandi launcher, lalu pilih **Kelola pelayanan**. Fixture memberi izin event dan kelayakan PIC secara eksplisit pada dua organisasi fiktif; relawan baru tidak mendapatkannya otomatis.
 
 1. Pilih **Penyelenggara / organisasi**, lalu **Buat Pelayanan Baru**. Isi nama, tanggal/waktu, tempat dan pilih PIC internal berizin. WIB/Asia/Jakarta menjadi default; WITA/WIT tersedia. Identitas PIC ditampilkan sebagai referensi anggota fiktif, dengan penanda Anda untuk akun sendiri.
 2. Buka **Program (opsional)** bila diperlukan. **Tanpa program** sah. Pilih **Simpan draf**; detail menunjukkan status Draf dan ID tetap. Pilih **Sunting draf** untuk melengkapi atau mengganti waktu. Menyimpan tidak menerbitkan jadwal atau membuka absensi.
 3. Gunakan filter program dan rentang tanggal inklusif pada daftar organisasi terpilih. Jika koneksi simpan terputus, biarkan isian tetap lalu tekan **Simpan draf** lagi; pengajuan yang sama tidak membuat draf/audit ganda. Saat konflik revisi, isian tetap terlihat; **Muat ulang detail** menggantinya dengan versi server terbaru agar dapat disunting kembali.
 
-Gate `ABC_MSA_STAGE9A` mati default dan hanya dinyalakan dalam proses pilot/tes fiktif bersama Stage 8/A1/A2.2. Tidak mengubah launcher/login reguler, membership, izin absensi atau data historis. Hak baca/buat/edit dan kelayakan PIC terpisah; tidak ada UI pemberian grant, publikasi, kalender gabungan atau perulangan. `npm.cmd run test:stage9a` menjalankan unit, integrasi dan Chrome terarah; regresi penuh `npm.cmd run test:stage6`. Kebijakan provisional, batas 200 row/query, zona Indonesia dan governance lanjutan dirinci di MSA_ACCOUNT_ARCHITECTURE.md; hasil tes ada di PROJECT_STATUS.md. Produksi tetap NO-GO.
+Gate `ABC_MSA_STAGE9A` mati default dan hanya dinyalakan dalam proses pilot/tes fiktif bersama Stage 8/A1/A2.2. Tidak mengubah launcher/login reguler, membership, izin absensi atau data historis. Hak baca/buat/edit dan kelayakan PIC terpisah; tidak ada UI pemberian grant atau perulangan. Publikasi/kalender tersedia melalui gate/grant Stage 9B.1 di atas. `npm.cmd run test:stage9a` menjalankan unit, integrasi dan Chrome terarah; regresi penuh `npm.cmd run test:stage6`. Kebijakan provisional, batas 200 row/query, zona Indonesia dan governance lanjutan dirinci di MSA_ACCOUNT_ARCHITECTURE.md; hasil tes ada di PROJECT_STATUS.md. Produksi tetap NO-GO.
 
 ## Stage 8 — organisasi, program dan izin anggota
 
@@ -45,7 +57,7 @@ Gunakan **Start MSA Auth Pilot.cmd** yang sama, lalu pilih **Organisasi & progra
 3. Owner/manager dapat mengisi **Tambah program**, alasan, lalu **Periksa penambahan** dan konfirmasi. Batal tidak menulis data; kegagalan koneksi mempertahankan isian dan intent retry. Viewer hanya membaca. Program baru tidak memberikan izin anggota. Owner mengelola membership lewat API terlindungi; UI tahap ini menampilkan status anggota saja, tanpa form pemberian hak atau transfer owner.
 4. **Administrasi platform** menampilkan katalog organisasi hanya bagi grant platform eksplisit. Hak ini terpisah dari akses operasional program/anggota. Pengguna terverifikasi tanpa membership melihat empty state; hubungi operator fixture, jangan menyimpulkan role dari nama/nomor atau jabatan lama.
 
-Absensi, aktivasi/proof perangkat, backup, recovery dan login lama tetap pada alur sebelumnya. Adapter legacy hanya membaca tuple sumber yang secara eksplisit diizinkan; data unmapped tidak diberi organisasi/program atau event otomatis. Draf pelayanan Stage 9A memakai halaman dan grant terpisah di atas; jadwal/kalender gabungan, rundown, Sheets dan absensi relawan belum tersedia. Akun suspended/recovery-locked, membership revoked dan revision stale tetap ditolak; reaktivasi akun tidak memulihkan grant lama otomatis.
+Absensi, aktivasi/proof perangkat, backup, recovery dan login lama tetap pada alur sebelumnya. Adapter legacy hanya membaca tuple sumber yang secara eksplisit diizinkan; data unmapped tidak diberi organisasi/program atau event otomatis. Draf Stage 9A serta publikasi/kalender Stage 9B.1 memakai gate/grant terpisah di atas; recurrence, rundown, Sheets dan absensi relawan belum tersedia. Akun suspended/recovery-locked, membership revoked dan revision stale tetap ditolak; reaktivasi akun tidak memulihkan grant lama otomatis.
 
 Gate `ABC_MSA_STAGE8` independen dan mati default, hanya untuk A1/A2.2, namespace `test-*` dan konfigurasi emulator valid. Auth Pilot menyalakannya pada prosesnya sendiri; launcher/login reguler tidak berubah. Restart pilot memberi fixture fiktif baru. `npm.cmd run test:stage8` menjalankan unit, integrasi/core isolation dan Chrome 360/390/768/1365; regresi penuh tetap `npm.cmd run test:stage6`, dan `node --test tests/auth-pilot-browser.mjs` menguji launcher nyata. Hasil aktual serta keterbatasan ada di PROJECT_STATUS.md. Kebijakan role/ownership/platform masih provisional; cutover produksi NO-GO; Stage 9A draf memiliki gate/grant terpisah.
 
