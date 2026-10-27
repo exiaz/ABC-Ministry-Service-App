@@ -37,7 +37,7 @@ test('Failed prerequisites stop before provisioning/browser and release the pilo
 });
 test('Windows Start launcher refuses production configuration before starting services',{skip:process.platform!=='win32'},async()=>{
   const result=await new Promise((resolve,reject)=>{
-    let output='';const child=spawn('cmd.exe',['/d','/c','Start MSA Auth Pilot.cmd'],{cwd:path.resolve(import.meta.dirname,'..'),env:{...process.env,NODE_ENV:'production'},windowsHide:true});
+    let output='';const child=spawn('cmd.exe',['/d','/c','Start MSA.cmd'],{cwd:path.resolve(import.meta.dirname,'..'),env:{...process.env,NODE_ENV:'production'},windowsHide:true});
     child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.stdin.end('\n');child.once('error',reject);child.once('exit',code=>resolve({code,output}));
   });
   assert.equal(result.code,1);assert.match(result.output,/Mode cloud\/produksi terdeteksi/);
@@ -59,7 +59,7 @@ test('Pilot mentor root is gated personal login while regular mentor root and la
     assert.match((await read(pilot,'/pilot.html')).body,/peninjau.pilot/);assert.equal((await read(regular,'/pilot.html')).status,404);
     delete process.env.ABC_MSA_A2_4B;assert.doesNotMatch((await read(pilot)).body,/Lupa kata sandi/);assert.equal((await read(pilot,'/account-recovery.html')).status,404);process.env.ABC_MSA_A2_4B='1';
     delete process.env.ABC_MSA_A2_3;assert.equal((await read(pilot)).status,404);
-    const launcher=await readFile(new URL('../Start ABC Attendance.cmd',import.meta.url),'utf8');assert.match(launcher,/local-demo.mjs/);assert.doesNotMatch(launcher,/auth-pilot|ABC_MSA_A/);
+    const launcher=await readFile(new URL('../Start MSA.cmd',import.meta.url),'utf8');assert.match(launcher,/local-msa.mjs/);assert.doesNotMatch(launcher,/local-demo.mjs/);
   }finally{
     await Promise.all([pilot,regular].map(s=>new Promise(resolve=>{s.close(resolve);s.closeAllConnections();})));
     for(const key of Object.keys(process.env))if(!(key in prior))delete process.env[key];Object.assign(process.env,prior);

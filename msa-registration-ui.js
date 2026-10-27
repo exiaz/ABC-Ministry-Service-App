@@ -1,3 +1,4 @@
+import {msaFetch,resumeMsaSession} from './msa-session.js';
 import {msaBrand} from './msa-brand.js';
 import {createAccountDevicesUI} from './account-devices-ui.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,7 +9,7 @@ let deviceManagement=false;
 const feedback=text=>{$('feedback').textContent=text;};
 const labels={pending:'Menunggu',active:'Disetujui',rejected:'Ditolak',suspended:'Ditangguhkan',disabled:'Nonaktif'};
 async function request(path,body){
-  const response=await fetch(path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const response=await msaFetch(path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
   const value=await response.json();if(!response.ok){if([401,403].includes(response.status)&&token){token='';devicesUI?.reset();if(deviceRoot)deviceRoot.hidden=true;$('review-workspace').hidden=true;$('review-login').hidden=false;$('queue').replaceChildren();$('detail').hidden=true;$('account-info').textContent='';$('history').replaceChildren();selected=undefined;pending=undefined;$('confirmation').close();}throw Error(value.error??'Permintaan belum dapat diproses.');}return value;
 }
 async function action(fn){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn();}catch(e){feedback(e.name==='TimeoutError'?'Koneksi terputus. Coba lagi dengan pengajuan yang sama.':e.message);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
@@ -19,6 +20,7 @@ if($('registration')){
     try{const result=await request('/api/a2-2/register',{...value,requestId});feedback(result.message);$('registration').reset();requestId=crypto.randomUUID();inputKey='';}finally{$('password').value='';}
   });};
 }else{
+  void resumeMsaSession(async(_profile,marker)=>{token=marker;await action(async()=>{await load();$('review-login').hidden=true;});});
   const base=uid=>'/api/a2-2/accounts/'+uid;
   async function load(){const data=await request('/api/a2-2/queue');deviceManagement=!!data.deviceManagement;$('delegate-option').disabled=!data.superadmin;$('review-workspace').hidden=false;$('queue').innerHTML=data.accounts.map(a=>`<article><h3>${esc(a.fullName)}</h3><p>@${esc(a.username)} · ${esc(labels[a.state])}</p><button data-account="${esc(a.uid)}">Tinjau akun</button></article>`).join('')||'<p>Tidak ada akun dalam cakupan tinjauan Anda.</p>';}
   async function detail(uid){

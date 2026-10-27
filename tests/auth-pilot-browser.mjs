@@ -22,7 +22,7 @@ test('Interactive pilot real lifecycle, onboarding, review/link, username login,
   let browser;
   try{
     const f=await ready,{mentorOrigin,adminOrigin}=f.options,namespace=f.context.config.namespace;
-    const duplicate=[];await runPilot({open:async()=>assert.fail('Duplicate must not open another browser'),log:s=>duplicate.push(s)});assert.match(duplicate.join(' '),/Pilot sudah berjalan/);
+    const duplicate=[];await runPilot({open:async options=>assert.ok(options.adminOrigin),log:s=>duplicate.push(s)});assert.match(duplicate.join(' '),/Pilot sudah berjalan/);
     assert.match(namespace,/^test-auth-pilot-/);assert.ok(PILOT_PORTS.every(p=>!['4173','4175','4176','4177'].includes(String(p))));
     browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
     const context=await browser.newContext({locale:'id-ID',timezoneId:'Asia/Jakarta',viewport:{width:390,height:900}}),page=await context.newPage(),review=await context.newPage(),admin=await context.newPage(),errors=[];
@@ -79,7 +79,7 @@ test('Interactive pilot real lifecycle, onboarding, review/link, username login,
   }finally{
     await browser?.close();
     if(process.platform==='win32'&&await controlRequest(PILOT_ADDRESS,'status')){
-      const result=await new Promise((resolve,reject)=>{let data='';const child=spawn('cmd.exe',['/d','/c','Stop MSA Auth Pilot.cmd'],{windowsHide:true});child.stdout.on('data',d=>data+=d);child.once('error',reject);child.once('exit',code=>resolve({code,data}));});
+      const result=await new Promise((resolve,reject)=>{let data='';const child=spawn('cmd.exe',['/d','/c','Stop MSA.cmd'],{windowsHide:true});child.stdout.on('data',d=>data+=d);child.once('error',reject);child.once('exit',code=>resolve({code,data}));});
       assert.equal(result.code,0);assert.match(result.data,/Pilot berhenti/);
     }else await stopPilot({log:()=>{}});
     await running;await waitFor(async()=>!(await Promise.all(PILOT_PORTS.map(portOccupied))).some(Boolean),{timeout:10000});
@@ -101,7 +101,7 @@ test('Interactive pilot real lifecycle, onboarding, review/link, username login,
   if(process.platform==='win32'){
     const unrelated=await listen(createServer(socket=>socket.end()),PILOT_PORTS[5]);
     try{
-      const result=await new Promise((resolve,reject)=>{let output='';const child=spawn('cmd.exe',['/d','/c','Start MSA Auth Pilot.cmd'],{windowsHide:true});child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.stdin.end('\n');child.once('error',reject);child.once('close',code=>resolve({code,output}));});
+      const result=await new Promise((resolve,reject)=>{let output='';const child=spawn('cmd.exe',['/d','/c','Start MSA.cmd'],{windowsHide:true});child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.stdin.end('\n');child.once('error',reject);child.once('close',code=>resolve({code,output}));});
       assert.equal(result.code,1);assert.match(result.output,/port 4275 sedang digunakan/);assert.equal(unrelated.listening,true);
       assert.equal(await portOccupied(PILOT_PORTS[0]),false);
     }finally{await new Promise(resolve=>unrelated.close(resolve));}

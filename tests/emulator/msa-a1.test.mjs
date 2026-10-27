@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {msaFixture} from './msa-a1-fixture.mjs';
 import {createMsaAccounts} from '../../backend/msa-accounts.mjs';
-import {createLocalAdminAuthentication} from '../../backend/admin-auth.mjs';
+import {createLocalAdminAuthentication,adminAuthConfig} from '../../backend/admin-auth.mjs';
+import {createMsaAuthentication} from '../../backend/msa-auth.mjs';
 import {createAdminServer} from '../../admin-server.mjs';
 import {once} from 'node:events';
 
@@ -88,9 +89,12 @@ test('A1 last Superadmin, self mutation, concurrent removal, rate limit persiste
   assert.equal((await f.change(second.uid,{role:'superadmin',scope:{organizationId:null}},sa.token)).status,200);
   await f.auth.updateUser(second.uid,{disabled:true});assert.equal((await f.change(first.uid,{expectedRevision:2,role:'superadmin',scope:{organizationId:null},status:'revoked'})).status,409);await f.auth.updateUser(second.uid,{disabled:false});
   const removals=await Promise.all([first,second].map(u=>f.change(u.uid,{expectedRevision:2,role:'superadmin',scope:{organizationId:null},status:'revoked'})));assert.deepEqual(removals.map(r=>r.status).sort(),[200,409]);
-  for(let i=0;i<8;i++)assert.equal((await f.signIn({username:'guess-fictitious',password:'incorrect-password'})).response.status,401);
-  assert.equal((await f.signIn({username:'guess-fictitious',password:'incorrect-password'})).response.status,429);
-  const restarted=await createLocalAdminAuthentication();try{await assert.rejects(restarted.a1.login({username:'guess-fictitious',password:'incorrect-password'}),e=>e.status===429);}finally{await restarted.close();}
+  // Pin only this limiter exercise's existing clock seam. Real wall-clock
+  // attempts can straddle a minute and legitimately enter a fresh window.
+  const fixedNow=Date.now(),rateOptions={db:f.db,root:f.root,auth:f.auth,config:adminAuthConfig(),assertLocal:()=>assert.equal(process.env.ABC_MSA_A1,'1'),now:()=>fixedNow};
+  const limited=createMsaAuthentication(rateOptions),guess={username:'guess-fictitious',password:'incorrect-password'};
+  try{for(let i=0;i<8;i++)await assert.rejects(limited.login(guess),e=>e.status===401);await assert.rejects(limited.login(guess),e=>e.status===429);}finally{limited.close();}
+  const restarted=createMsaAuthentication(rateOptions);try{await assert.rejects(restarted.login(guess),e=>e.status===429);}finally{restarted.close();}
   delete process.env.ABC_MSA_A1;
   const disabled=await createLocalAdminAuthentication(),server=createAdminServer({adminAuthentication:disabled});server.listen(0,'127.0.0.1');await once(server,'listening');
   try{

@@ -1,3 +1,4 @@
+import {msaFetch,resumeMsaSession} from './msa-session.js';
 import {msaBrand} from './msa-brand.js';
 import {usernameFields} from './username-login.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,7 +9,7 @@ const labels={superadmin:'Superadmin',admin:'Admin / Pengelola Tim',pic:'PIC',vo
 let token='',data={accounts:[],organizations:[]},selected='',busy=false,pending;
 const feedback=text=>{$('msa-feedback').textContent=text;};
 async function request(path,body){
-  const response=await fetch(path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(8000),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const response=await msaFetch(path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(8000),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
   const value=await response.json();
   if(!response.ok){if(response.status===401&&token){token='';$('msa-management').hidden=true;$('msa-session').hidden=true;$('msa-login').hidden=false;$('msa-detail').innerHTML='';$('msa-history').innerHTML='';data={accounts:[],organizations:[]};}throw Error(value.error??'Permintaan gagal.');}return value;
 }
@@ -47,3 +48,5 @@ $('msa-apply').onclick=()=>void action(async()=>{if(!pending)return;const p=pend
 $('msa-audit').onclick=()=>void action(async()=>{const result=await request('/api/a1/audit');$('msa-history').innerHTML='<h3>Audit perubahan terakhir</h3>'+result.events.map(e=>`<article><p>${esc(new Date(e.at).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))} WIB</p><p>Pelaku: <code>${esc(e.actorUid)}</code><br>Target: <code>${esc(e.targetUid)}</code></p><p>${esc(e.reason)}</p><pre>${esc(JSON.stringify({sebelum:e.previous,sesudah:e.next},null,2))}</pre></article>`).join('');});
 const verify=()=>{if(token&&!busy)void action(()=>request('/api/a1/session'));};
 window.addEventListener('focus',verify);setInterval(verify,45000);
+
+void resumeMsaSession(async(profile,marker)=>{token=marker;$('msa-actor').textContent='@'+profile.username;$('msa-login').hidden=true;$('msa-session').hidden=false;await action(load);});

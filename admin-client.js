@@ -1,6 +1,7 @@
-// Bearer lives only in this closure. No storage, cookie, refresh token, demo flag
-// or decoded client claim supplies authority; every operation verifies backend.
-export function createAdminClient(onChange,{request=fetch}={}){
+import {msaFetch,isMsaPortal,portalMarker} from './msa-session.js';
+// Legacy bearer lives only in this closure. Portal UI uses a marker for its
+// server cookie adapter; every operation still verifies backend authority.
+export function createAdminClient(onChange,{request=msaFetch}={}){
   let token=null,logoutToken=null,generation=0,state={phase:'signed-out',message:'Gunakan email dan kata sandi akun Anda.'};
   const publish=next=>{state=next;onChange({...state});};
   const call=(path,options={})=>request(path,{...options,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(8000)});
@@ -49,6 +50,11 @@ export function createAdminClient(onChange,{request=fetch}={}){
     readActivationCodes(){return deviceRequest('/api/admin/activation-codes');},
     revokeDevice(id){return deviceRequest('/api/admin/devices/'+deviceId(id)+'/revoke',{});},
     revokePairingCode(id){if(typeof id!=='string'||!/^[a-f0-9]{64}$/.test(id))throw Error('ID kode tidak valid.');return deviceRequest('/api/admin/pairing-codes/'+id+'/revoke',{});},
+    async resumePortal(){
+      const g=++generation;token='portal-session';
+      try{const identity=await session(token,g);if(g===generation&&identity)publish({phase:'active',message:'Identitas dan izin admin diverifikasi server.',...identity});}
+      catch{denied();}
+    },
     async login(email,password,{username=false}={}){
       if(['loading','checking','signing-out'].includes(state.phase)||token||logoutToken)return;
       const g=++generation;token=null;publish({phase:'loading',message:'Memeriksa akun dan izin admin…'});
@@ -56,16 +62,17 @@ export function createAdminClient(onChange,{request=fetch}={}){
         const response=await call(username?'/api/a1/login':'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(username?{username:email,password}:{email,password})});
         password='';
         if(g!==generation)return;
-        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?(username?'Username atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin.':'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.'):response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start ABC Attendance.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
+        if(!response.ok){publish({phase:[401,403].includes(response.status)?'invalid':'error',message:[401,403].includes(response.status)?(username?'Username atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin.':'Email atau kata sandi tidak sesuai, atau akun belum diizinkan sebagai Admin. Periksa kembali isian Anda.'):response.status===429?'Terlalu banyak percobaan. Tunggu satu menit sebelum masuk lagi.':'Server Admin belum siap atau setup belum selesai. Buka Start MSA.cmd, tunggu "Demo siap", lalu coba lagi.'});return;}
         const result=await response.json();
         if(g!==generation)return;
-        if(typeof result?.token!=='string'||result.token.length>16384||!(username?/^[A-Za-z0-9_-]{43}$/:/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?$/).test(result.token))throw Error();
+        const portalResult=isMsaPortal()&&result?.token===portalMarker;
+        if(!portalResult&&(typeof result?.token!=='string'||result.token.length>16384||!(username?/^[A-Za-z0-9_-]{43}$/:/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.(?:~[A-Za-z0-9_-]{43})?$/).test(result.token)))throw Error();
         token=result.token;
         const identity=await session(token,g);
         if(g!==generation||!identity)return;
         if(identity.uid!==result.uid)throw Error();
         publish({phase:'active',message:'Identitas dan izin admin diverifikasi server.',...identity});
-      }catch{if(g===generation)publish({phase:'error',canVerify:!!token,message:token?'Sesi belum dapat diverifikasi. Periksa kembali sesi setelah server pulih.':'Server Admin tidak dapat dihubungi. Buka Start ABC Attendance.cmd dan tunggu "Demo siap", lalu coba masuk lagi.'});}
+      }catch{if(g===generation)publish({phase:'error',canVerify:!!token,message:token?'Sesi belum dapat diverifikasi. Periksa kembali sesi setelah server pulih.':'Server Admin tidak dapat dihubungi. Buka Start MSA.cmd dan tunggu "Demo siap", lalu coba masuk lagi.'});}
       finally{password='';}
     },
     async verify(){

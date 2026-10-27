@@ -11,6 +11,7 @@ const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=
 const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
 // Legacy fictional prototype only. The protected roster API runs separately.
 allowed.add('msa-brand.js');
+allowed.add('msa-session.js');
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175'}={}){
   if(mentorMode)localOrigin(apiOrigin);
   const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);

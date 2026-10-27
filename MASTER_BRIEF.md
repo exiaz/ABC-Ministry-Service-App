@@ -2,6 +2,10 @@
 
 **Status revisi 25 Oktober 2026:** prototipe lokal dengan jalur Admin/Mentor aman pada Auth/Firestore Emulator, termasuk Stage 1–6 (hasil verifikasi pada PROJECT_STATUS.md). Bukan sistem operasional/produksi. Nama sekolah, kelompok, dan mentor mengikuti direktori yang diberikan pengguna; siswa, jadwal awal dan catatan kehadiran tetap fiktif. Simulasi frontend lama masih terpisah; tambahan tahap di bawah mengatur jalur emulator, sedangkan bagian legacy mendokumentasikan perilaku prototipe awal. Status terverifikasi ada pada revisi terbaru `PROJECT_STATUS.md`.
 
+## Portal lokal MSA — batas implementasi 27 Oktober 2026
+
+Launcher Windows utama menyediakan satu portal username, sesi pengelolaan same-origin dan shortcut berdasarkan capabilities server. Setup peninjau/PIC memakai identitas fiktif terpisah serta grant eksplisit dalam namespace emulator fresh; jabatan legacy tidak otomatis memberikan izin Stage 8/9. Data/snapshot operasional tidak diimpor, password tidak disimpan aplikasi, dan aktivasi/proof perangkat Mentor tetap terpisah. Backend/histori legacy dipertahankan untuk regresi; berhenti sebelum Stage 10A. Status verifikasi dan keterbatasan tetap mengacu PROJECT_STATUS.md.
+
 ## Stage 9B.2 — jadwal berulang terbatas dan beranda, 26 Oktober 2026
 
 Gate independen `ABC_MSA_STAGE9B2` mati default, khusus Auth/Firestore Emulator fiktif dan bergantung Stage 9B.1/9A/8. Jadwal sekali/mingguan wajib tanggal mulai/hari/zona eksplisit/tanggal akhir, maksimal 12 occurrence dalam 90 hari inklusif, pratinjau semua tanggal dan konfirmasi sebelum transaksi atomik. Semua event mulai sebagai draf dan memiliki ID stabil, parent seriesId, revisi serta audit sendiri. PIC/program/organisasi/grant diperiksa ulang server; preview stale ditolak, retry memakai receipt tanpa duplikasi. Edit/publish/cancel individual mengikuti kontrak lama; occurrence historis tidak ditulis ulang. Tidak ada edit seluruh seri, publikasi otomatis, sesi absensi atau assignment baru.

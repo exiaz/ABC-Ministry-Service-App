@@ -4,6 +4,10 @@
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** kini diverifikasi pada lingkup lokal/emulator (hasil dan batasnya di PROJECT_STATUS.md); kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
 
+## Portal MSA lokal — 27 Oktober 2026
+
+Launcher utama Start MSA / Stop MSA menggantikan shortcut demo/pilot lama. Portal username tanpa pilihan peran memakai sesi server bersama pada origin Admin, dengan modul dari capabilities terverifikasi. Peninjau dan PIC terbatas dibuat lewat setup terminal trusted dengan password berbeda, membership/grants eksplisit dan data fresh fiktif. Backend serta snapshot legacy tetap untuk regresi/migrasi; tidak ada cutover operasional. Alur Mentor tetap memerlukan aktivasi/proof perangkat terpisah. Kontrak sesi ada di MSA_ACCOUNT_ARCHITECTURE.md, penggunaan di README.md, bukti aktual di PROJECT_STATUS.md. Berhenti sebelum Stage 10A.
+
 ## Stage 9B.2 — jadwal berulang terbatas dan beranda, 26 Oktober 2026
 
 Implementasi terbatas melalui gate independen `ABC_MSA_STAGE9B2` mati default, khusus Auth/Firestore Emulator fiktif dan bergantung Stage 9B.1/9A/8. Jadwal sekali/mingguan wajib tanggal mulai/hari/zona eksplisit/tanggal akhir, maksimal 12 occurrence dalam 90 hari inklusif, pratinjau semua tanggal dan konfirmasi sebelum transaksi atomik. Semua event mulai sebagai draf dan memiliki ID stabil, parent seriesId, revisi serta audit sendiri. PIC/program/organisasi/grant diperiksa ulang server; preview stale ditolak, retry memakai receipt tanpa duplikasi. Edit/publish/cancel individual mengikuti kontrak lama; occurrence historis tidak ditulis ulang. Tidak ada edit seluruh seri, publikasi otomatis, sesi absensi atau assignment baru.

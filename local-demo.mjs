@@ -249,7 +249,7 @@ export async function runDemo({open=openPages,log=console.log,address=controller
       if(emulator&&canSave)await unlink(path.join(state,'active.json')).catch(error=>{if(error.code!=='ENOENT')throw error;});
       terminal?.close();phase='stopped';control.close();process.removeListener('SIGINT',onSignal);process.removeListener('SIGTERM',onSignal);
       log('Demo berhenti.'+(canSave?' Data lokal tersimpan.':'')+(emulator?'':' Layanan manual tidak diubah.'));finish();
-    })().catch(error=>{phase='save-error';stopping=null;if(error.demoSafe)log(error.message);log('Demo belum ditutup: penyimpanan/penghentian belum terkonfirmasi. Snapshot dan layanan yang masih hidup dipertahankan. Tekan Enter atau jalankan Stop ABC Attendance.cmd untuk mencoba lagi.');});return stopping;
+    })().catch(error=>{phase='save-error';stopping=null;if(error.demoSafe)log(error.message);log('Demo belum ditutup: penyimpanan/penghentian belum terkonfirmasi. Snapshot dan layanan yang masih hidup dipertahankan. Tekan Enter atau jalankan node local-demo.mjs stop untuk mencoba lagi.');});return stopping;
   };
   const onSignal=()=>void stop();
   try{control=await createController(address,async command=>{if(command==='stop')await stop();return {phase,...(phase==='ready'?{signature,ports:apps.servers.map(s=>s.address().port)}:{})};});}
@@ -303,7 +303,7 @@ export async function runDemo({open=openPages,log=console.log,address=controller
     // Recheck after emulator/provisioning work; never attach to a changed instance.
     for(const [index,service] of reused.entries())if(service){const current=await inspectLocalService(service.port,['api','admin','mentor'][index]);if(current.kind!=='compatible'||current.status.instance!==service.status.instance)throw fail('Server yang akan dipakai ulang berubah. Coba Start lagi.');}
     apps={servers:[],auths:[]};await startDemoServers(context,{ports,check,reused,resources:apps});check();await appsReady(apps);await checkHub();check();
-    phase='ready';log('4/4 · Demo siap. Login Admin: '+DEMO_ADMIN.email+'\nGunakan password Anda. Lupa password? Klik Reset Admin Password.cmd.\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik Stop ABC Attendance.cmd.');
+    phase='ready';log('4/4 · Demo siap. Login Admin: '+DEMO_ADMIN.email+'\nGunakan password Anda. Lupa password? Klik Reset Admin Password.cmd.\nTekan Enter di jendela ini untuk menyimpan dan berhenti, atau klik node local-demo.mjs stop.');
     try{await open();}catch{log('Browser belum terbuka. Buka http://127.0.0.1:4177 dan http://127.0.0.1:4176 secara manual.');}
   })();
   try{await bootstrap;}catch(error){log(error.demoSafe?error.message:recover?'Pemulihan belum terkonfirmasi. Password mungkin sudah berubah. Periksa koneksi lalu ulangi Reset Admin Password.cmd; absensi dan izin tetap.':'Demo belum siap. Periksa koneksi emulator, konfirmasi password dan akun demo. Password baru harus sama pada kedua isian dan minimal 12 karakter. Data tidak direset otomatis.');process.exitCode=1;await stop();}
@@ -348,6 +348,6 @@ export async function stopDemo({address=controllerPath(),log=console.log}={}){
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const command=process.argv[2];
-  const work=process.platform!=='win32'?Promise.reject(fail('Peluncur ini khusus Windows.')):command==='start'?runDemo():command==='stop'?stopDemo():command==='recover'?recoverAndRun():Promise.reject(fail('Gunakan Start ABC Attendance.cmd, Stop ABC Attendance.cmd atau Reset Admin Password.cmd.'));
+  const work=process.platform!=='win32'?Promise.reject(fail('Peluncur ini khusus Windows.')):command==='start'?runDemo():command==='stop'?stopDemo():command==='recover'?recoverAndRun():Promise.reject(fail('Gunakan node local-demo.mjs start, node local-demo.mjs stop atau Reset Admin Password.cmd.'));
   work.catch(error=>{console.error(error.demoSafe?error.message:'Peluncur gagal. Periksa Node.js, Java JDK 21+, dependensi proyek dan layanan lokal. Tidak ada password/token yang dicetak.');process.exitCode=1;});
 }
