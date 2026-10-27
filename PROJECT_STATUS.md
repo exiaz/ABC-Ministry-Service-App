@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 27 Oktober 2026 — UI/UX Refinement Phase 3A
+
+**IMPLEMENTED dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Pelayanan dan kalender pada portal memakai token Phase 2, status berlabel, tampilan aktif, agenda lebih padat, rentang tanggal yang terlihat dan navigasi kembali dari detail. Detail/formulir berada sebelum daftar dalam urutan baca; empty dan error daftar dibedakan. Event bertumpuk tetap terpisah. Route, sesi, RBAC, model/API, recurrence, ekspor dan histori tidak diubah; interior Organisasi/Pengguna/Mentor tidak didesain ulang.
+
+Verifikasi aktual: `npm.cmd run check` PASS 213 modul. `npm.cmd run test:stage9b2` PASS: unit 200/200, integrasi 22/22 dan Chrome 3/3; meliputi create/edit, event bertumpuk, recurrence dan konfirmasi/retry, izin, empty/offline, ekspor ICS/Google dengan navigasi eksternal dicegat. `node --test tests/msa-portal-browser.mjs` PASS 1/1 dengan akun Superadmin dan Admin fiktif: seluruh navigasi tanpa login ulang, kalender berisi/kosong/error, detail, formulir, unduhan ICS dan edit draf Admin. Respons kosong/error kalender distub hanya untuk UI; izin dan sesi lain memakai emulator. Screenshot kalender, kosong, detail dan formulir kedua peran serta edit Admin diperiksa pada 360/390/768/1365 px; assertion memeriksa overflow horizontal serta tinggi tombol, tautan dan summary terlihat minimal 44 px. Pemeriksaan keyboard pada fokus detail/formulir dan konfirmasi tercakup; pasangan kontras teks/status yang dihitung 6,78:1 atau lebih. Screenshot ada di `.emulator-data/msa-portal-qa/screenshots/`; runner Stage 9B.2 di `.emulator-data/stage3-tests/run-wFK0kJ`. Emulator tes ditutup.
+
+**Batas:** Chrome desktop emulasi bukan perangkat fisik; browser lain, screen reader, zoom/spacing dan audit aksesibilitas formal belum diuji. Ekspor Google dicegat dalam tes; impor nyata ke aplikasi kalender belum diverifikasi. Tidak ada commit/push/deploy atau perubahan branch.
+
 ## 27 Oktober 2026 — UI/UX Refinement Phase 2
 
 **IMPLEMENTED dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Beranda portal memakai token warna/spacing dan hierarki baru, sidebar berkelompok dan menu Modul pada ponsel, serta kartu tanggal untuk pelayanan mendatang, tanggung jawab dan draf dari API berizin. Kartu navigasi modul duplikat di beranda dihapus; seluruh tujuan tetap berasal dari capabilities server. Loading, kosong dan error tetap dibedakan; tombol buat bergantung pada `canCreate`. Aset logo, route, sesi, RBAC, API dan data tidak diubah. Interaksi menghormati reduced motion.

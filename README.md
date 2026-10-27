@@ -50,6 +50,8 @@ Pemeriksaan referensi hanya pada materi publik, bukan akun live BP/Planning Cent
 
 ## Beranda dan jadwal berulang — pilot Stage 9B.2
 
+Pada portal, pilih **Pelayanan** untuk beranda pelayanan, **Kalender** untuk agenda, atau **Kelola pelayanan** untuk daftar dan formulir sesuai izin. Agenda menampilkan rentang tanggal aktif; gunakan tombol tujuh hari atau **Filter jadwal** untuk mengubahnya. Setiap pelayanan tetap terpisah meskipun waktunya bertepatan. Buka **Lihat detail**, lalu gunakan **Kembali ke agenda** untuk kembali ke hasil kalender. Formulir dan detail ditampilkan sebelum daftar agar mudah ditemukan pada ponsel.
+
 Masuk portal MSA sebagai peninjau, lalu buka **Beranda pelayanan & kalender** (`http://127.0.0.1:4277/msa-events.html`). Beranda menampilkan pelayanan terbit mendatang 90 hari, penugasan PIC Anda, dan draf yang dapat Anda tindak. Tidak ada angka analitik. Jika hasil melebihi 200 pelayanan, gunakan **Agenda gabungan** untuk mempersempit rentang/organisasi; error tidak menyembunyikan pemotongan hasil.
 
 Pilih **Buat Pelayanan Baru**, pastikan penyelenggara, isi nama, tanggal/waktu/zona, tempat dan PIC. Program boleh kosong. **Sekali** memakai satu tanggal; **Setiap minggu** membuka pilihan hari dan tanggal akhir. Tanggal mulai harus cocok dengan hari pilihan; batas 12 tanggal dalam 90 hari inklusif. Tekan **Tinjau tanggal**, periksa seluruh tanggal, lalu **Konfirmasi & buat draf**. Semua tanggal masih draf; terbitkan satu per satu melalui detail dengan izin publish. Jika hasil simpan belum pasti, tekan konfirmasi lagi untuk meneruskan request yang sama. Jika data/izin berubah, kembali dan tinjau ulang.

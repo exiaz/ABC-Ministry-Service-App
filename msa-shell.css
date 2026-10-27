@@ -159,3 +159,56 @@ body[data-msa-portal].msa-shell-active.msa-portal main.intake{max-width:1200px}
 body[data-msa-portal] main a.msa-primary{padding:10px 16px}
 
 @media(max-width:899px){html:has(body[data-msa-portal].msa-shell-active){scroll-padding-bottom:100px}}
+
+/* Service and calendar workspace, using the portal tokens. */
+body[data-msa-portal].msa-events #event-brand{display:none}
+body[data-msa-portal].msa-events #event-heading{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0}
+body[data-msa-portal].msa-events #event-intro{color:var(--msa-muted);margin:8px 0 16px}
+body[data-msa-portal].msa-events .event-account-actions{display:flex;gap:8px;flex-wrap:wrap}
+body[data-msa-portal].msa-events .event-account-actions button{margin:0}
+body[data-msa-portal].msa-events #calendar-nav{margin:16px 0 24px;gap:4px}
+body[data-msa-portal].msa-events #calendar-nav button{margin:0;background:transparent;border-color:transparent;color:var(--msa-muted);font-weight:650;border-radius:6px}
+body[data-msa-portal].msa-events #calendar-nav button[aria-pressed=true]{background:#e7f1f5;color:var(--msa-ink);box-shadow:inset 0 -3px var(--msa-red)}
+body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization,#dashboard-workspace)>h2{margin:0 0 8px}
+body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization)>p{color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters,#event-form,#event-detail,#calendar-detail){background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px;box-shadow:none}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters){padding:16px;margin:8px 0 16px}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) label{margin:4px 0 6px;font-size:14px;font-weight:650}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) .grid{gap:12px 16px}
+body[data-msa-portal].msa-events #calendar-filter-details>summary{font-weight:650;text-decoration:none}
+body[data-msa-portal].msa-events .calendar-date-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+body[data-msa-portal].msa-events .calendar-date-nav button{margin:0}
+body[data-msa-portal].msa-events #calendar-range{font-weight:700;color:var(--msa-ink);margin:16px 0 4px}
+body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result,#event-empty,#event-read-only,#feedback){color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result){font-size:14px;margin:4px 0 18px}
+body[data-msa-portal].msa-events .calendar-day{border-top:2px solid var(--msa-ink);padding-top:10px;margin:20px 0}
+body[data-msa-portal].msa-events .calendar-day>h3{margin:0 0 10px;font-size:16px}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article){background:var(--msa-paper);border:1px solid var(--msa-line);border-left:3px solid var(--msa-red);border-radius:8px;padding:16px;margin:8px 0}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) :is(h3,h4){margin:5px 0;line-height:1.3}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) p{margin:6px 0;font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events .draft-badge{display:inline-block;font-size:12px!important;font-weight:750;letter-spacing:.03em;color:var(--msa-blue)!important;background:#e7f1f5;border-radius:4px;padding:3px 8px}
+body[data-msa-portal].msa-events .draft-badge[data-status=cancelled]{color:#8a2530!important;background:#f9e9e6}
+body[data-msa-portal].msa-events .draft-badge[data-status=draft]{color:#694800!important;background:#faedc5}
+body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:20px;margin:12px 0 20px}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) h2{margin:8px 0 16px;overflow-wrap:anywhere}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:6px 16px}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dt{font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin:0;min-width:0}
+body[data-msa-portal].msa-events :is(#event-form,#calendar-export-form) label{font-size:14px;font-weight:650}
+body[data-msa-portal].msa-events #calendar-export-form{padding:16px;margin:8px 0;background:#f1f3ee;border:0}
+body[data-msa-portal].msa-events :is(#pic-help,#calendar-export-help){font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#event-conflict,#calendar-operation-feedback,#recurrence-feedback):not(:empty){border-left:3px solid var(--msa-red);padding:8px 12px;background:#fbf1ec}
+body[data-msa-portal].msa-events #dashboard-content>section{border-top:2px solid var(--msa-ink);padding-top:4px}
+body[data-msa-portal].msa-events #dashboard-content>section>p{background:#f0f0e9;border-radius:6px;padding:14px;color:var(--msa-muted);font-size:14px}
+body[data-msa-portal].msa-events dialog{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
+@media(min-width:900px){
+ body[data-msa-portal].msa-events .event-layout{grid-template-columns:minmax(0,3fr) minmax(220px,2fr);align-items:start}
+ body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden]))){display:none}
+ body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden])))+#event-list{grid-column:1/-1}
+ body[data-msa-portal].msa-events #calendar-list:not(.calendar-days) .calendar-day{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+ body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:16px}
+ body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{grid-template-columns:1fr;gap:2px}
+ body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin-bottom:10px}
+}
