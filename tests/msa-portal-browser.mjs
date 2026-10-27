@@ -25,13 +25,26 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     const context=await browser.newContext({locale:'id-ID',viewport:{width:390,height:900}}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const screenshots=path.resolve('.emulator-data/msa-portal-qa/screenshots');await mkdir(screenshots,{recursive:true});
     const capture=async(name,target=page)=>{for(const width of [360,390,768,1365]){await target.setViewportSize({width,height:900});await target.screenshot({path:path.join(screenshots,name+'-'+width+'.png'),fullPage:true});assert.equal(await target.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.ok(await target.locator('input:visible').evaluateAll(nodes=>nodes.every(n=>parseFloat(getComputedStyle(n).fontSize)>=16)));assert.deepEqual(await target.locator('button:visible,a:visible,summary:visible').evaluateAll(nodes=>nodes.filter(n=>n.getBoundingClientRect().height<44).map(n=>({text:n.textContent,height:n.getBoundingClientRect().height,html:n.outerHTML}))),[]);}};
+    const emptyDashboard=async name=>{
+      const pattern='**/api/portal/dispatch/api/stage9b2/dashboard';
+      await page.route(pattern,route=>route.fulfill({status:200,json:{organizations:[],horizonDays:90,upcoming:[],assigned:[],drafts:[]}}));
+      await page.goto(origin+'/');await page.waitForFunction(()=>document.querySelectorAll('#portal-schedule .msa-empty').length===3);await capture(name+'-empty');
+      assert.equal(await page.locator('#portal-new').isVisible(),false);await page.unroute(pattern);await page.goto(origin+'/');await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));
+    };
+    const failedDashboard=async()=>{
+      const pattern='**/api/portal/dispatch/api/stage9b2/dashboard';
+      await page.route(pattern,route=>route.fulfill({status:503,json:{error:'Koneksi uji tidak tersedia.'}}));
+      await page.goto(origin+'/');await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.includes('Jadwal belum dapat dimuat'));
+      assert.equal(await page.locator('#portal-schedule article').count(),0);assert.match(await page.locator('#portal-service-state').textContent(),/Periksa ulang izin/);
+      await page.unroute(pattern);await page.locator('#portal-refresh').click();await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));
+    };
     const login=async(username,value)=>{await page.goto(origin+'/');await page.locator('#portal-username').fill(username);await page.locator('#portal-password').fill(value);await page.locator('#portal-login button[type=submit]').click();await page.waitForSelector('#portal-workspace:not([hidden])');};
     await page.goto(origin+'/');assert.equal(await page.locator('select').count(),0);await page.locator('#portal-username').focus();await page.keyboard.press('Tab');assert.equal(await page.locator('#portal-password').evaluate(n=>n===document.activeElement),true);await page.locator('#portal-show').click();assert.equal(await page.locator('#portal-password').getAttribute('type'),'text');await capture('login');
     await page.locator('#portal-username').fill(PILOT_USERNAME);await page.locator('#portal-password').fill('incorrect-fictional-password');await page.locator('#portal-login button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#portal-feedback').textContent.includes('tidak valid'));assert.equal(await page.locator('#portal-workspace').isVisible(),false);
     assert.equal(await page.locator('#portal-title').textContent(),'ABC Ministry Service App');assert.equal(await page.locator('#portal-login input').count(),2);
-    await login(PILOT_USERNAME,password);assert.equal(await page.locator('#portal-modules a').count(),7);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('superadmin');
+    await login(PILOT_USERNAME,password);assert.equal(await page.locator('#msa-navigation .msa-nav-group a').count(),6);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('superadmin');await emptyDashboard('superadmin');await failedDashboard();
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Superadmin');assert.equal(await page.locator('#portal-new').isVisible(),true);
-    await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation a:visible').count(),4);
+    await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation .msa-nav-primary a:visible').count(),3);assert.equal(await page.locator('#modul summary').isVisible(),true);
     const api=async(route,body)=>page.evaluate(async({route,body})=>{const {msaFetch}=await import('/msa-session.js');const r=await msaFetch(route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});return {status:r.status,body:await r.json()};},{route,body});
     const profile=await api('/api/portal/session');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
     const verifyDestination=async route=>{
@@ -58,11 +71,11 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       try{for(const module of profile.modules){
         const route=module.href;console.log('NAVIGATION '+profile.role+' '+route);
         const checked=async source=>{await verifyDestination(route);navigation.push({role:profile.role,route,source,url:page.url(),origin:new URL(page.url()).origin,contentLoaded:true});};
-        await page.goto(origin+'/');await page.locator('#portal-modules a[href="'+route+'"]').click();await checked('module-card');
-        await page.reload();await checked('refresh');
-        await page.locator('#msa-navigation a[href="/"]').click();await page.waitForSelector('#portal-modules a');
-        await page.goBack();await checked('back');await page.goForward();await page.waitForSelector('#portal-modules a');await page.goBack();await checked('back-after-forward');
-        await page.locator('#msa-navigation a[href="'+route+'"]').click();await checked('sidebar');
+        await page.goto(origin+'/');await page.waitForSelector('#msa-navigation');await page.locator('#msa-navigation a[href="'+route+'"]').first().click();await checked('navigation');
+        if(route===profile.modules[0].href){
+          await page.reload();await checked('refresh');await page.locator('#msa-navigation a[href="/"]').click();await page.waitForSelector('#msa-navigation');
+          await page.goBack();await checked('back');await page.goForward();await page.waitForSelector('#msa-navigation');
+        }
         await page.goto(origin+route);await checked('direct');
       }}finally{page.off('request',track);}
       assert.deepEqual(loginRequests,[]);assert.equal((await api('/api/portal/session')).body.uid,profile.uid);
@@ -78,19 +91,17 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       if(['/msa-core.html','/a1.html','/username.html'].includes(route))await capture(route.includes('core')?'organizations':route.includes('a1')?'users':'devices');
     }
     await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
-    await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#portal-modules a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#portal-modules a[href="/migration-readiness.html"]').count(),0);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');
+    await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/migration-readiness.html"]').count(),0);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');await emptyDashboard('pic');
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
     await page.setViewportSize({width:1365,height:900});await auditNavigation((await api('/api/portal/session')).body);
-    for(const route of ['/a1.html','/identity-review.html','/migration-readiness.html']){await page.goto(origin+route);await page.waitForURL(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');assert.equal(await page.locator('#portal-modules a[href="'+route+'"]').count(),0);}
+    for(const route of ['/a1.html','/identity-review.html','/migration-readiness.html']){await page.goto(origin+route);await page.waitForURL(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');assert.equal(await page.locator('#msa-navigation a[href="'+route+'"]').count(),0);}
     await page.goto(origin+'/msa-events.html#kalender');await page.waitForSelector('#calendar-workspace:not([hidden])');await page.waitForFunction(()=>!document.querySelector('#calendar-result').textContent.includes('Memuat'));await capture('calendar');
     await page.goto(origin+'/msa-events.html#baru');await page.waitForSelector('#event-form:not([hidden])');assert.equal(await page.locator('#draft-name').evaluate(n=>n===document.activeElement),true);await capture('new-service');
     await page.locator('#event-cancel').click();
-    await page.setViewportSize({width:390,height:900});await page.locator('#msa-navigation a[href="/#modul"]').click();
-    // scrollIntoView is clamped at the document end. The destination heading
-    // must be visible above the bottom navigation, not necessarily at y=0.
-    await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang')&&document.querySelector('#portal-modules-title').getBoundingClientRect().top>=0&&document.querySelector('#portal-modules-title').getBoundingClientRect().bottom<innerHeight-100);
-    await page.screenshot({path:path.join(screenshots,'module-destination-390.png')});
-    assert.equal(await page.locator('#msa-navigation a[aria-current=page]').textContent(),'Modul');
+    await page.setViewportSize({width:390,height:900});await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');
+    await page.locator('#modul summary').click();assert.equal(await page.locator('#msa-navigation a[href="/msa-core.html"]').isVisible(),true);
+    await page.screenshot({path:path.join(screenshots,'module-menu-390.png')});await page.locator('#msa-navigation a[href="/msa-core.html"]').focus();assert.equal(await page.locator('#msa-navigation a[href="/msa-core.html"]').evaluate(n=>n===document.activeElement),true);await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('#msa-navigation a[href="/msa-core.html"]').evaluate(n=>getComputedStyle(n).transitionDuration),'0s');await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('#modul summary').click();
+    await page.waitForFunction(()=>document.querySelector('#portal-schedule a[href*="event="]'));
     await page.locator('#portal-schedule a[href*="event="]').first().click();await page.waitForSelector('#calendar-detail:not([hidden])');assert.equal(await page.locator('#calendar-detail h2').textContent(),'Pelayanan PIC Fiktif');assert.equal(await page.locator('#calendar-publish').count(),0);
     const catalog=await api('/api/stage9a/organizations');assert.deepEqual(catalog.body.organizations.map(o=>o.id),['fictional-abc-movement']);assert.ok(!catalog.body.organizations[0].permissions.includes('events:publish'));assert.ok(!catalog.body.organizations[0].permissions.includes('events:cancel'));
     for(const route of ['/api/a1/accounts','/api/a2-4c/preflight','/api/stage9a/organizations/fictional-yayasan-abc/options'])assert.equal((await api(route)).status,403);
@@ -111,7 +122,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     // UI-only empty-profile case. This stub gives no server admission/grants;
     // all actual cookie, role and device boundaries above use the real emulator.
     await page.route('**/api/portal/session',route=>route.fulfill({status:200,json:{uid:'fictional-moduleless',username:'fictional-mentor',role:'volunteer',modules:[],expiresAt:Date.now()+60000}}));
-    await page.goto(origin+'/');await page.waitForSelector('#portal-personal:not([hidden])');assert.equal(await page.locator('#portal-personal a').getAttribute('href'),f.options.mentorOrigin+'/');assert.equal(await page.locator('#portal-modules a').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
+    await page.goto(origin+'/');await page.waitForSelector('#portal-personal:not([hidden])');assert.equal(await page.locator('#portal-personal a').getAttribute('href'),f.options.mentorOrigin+'/');assert.equal(await page.locator('#msa-navigation .msa-nav-group a').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
     assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>/token|password|session/i.test(k))),false);assert.ok(messages.every(s=>!s.includes(password)&&!s.includes(picPassword)));
     console.log('PASS unified MSA portal screenshots: '+screenshots);
   }finally{await browser?.close();await stopPilot({log:()=>{}});await running;await waitFor(async()=>!(await Promise.all(PILOT_PORTS.map(portOccupied))).some(Boolean),{timeout:10000});}

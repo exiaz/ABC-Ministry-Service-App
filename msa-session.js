@@ -41,11 +41,14 @@ export async function resumeMsaSession(ready,{redirect=true}={}){
 }
 
 export const msaRoleLabel=role=>({superadmin:'Superadmin',admin:'Admin',pic:'Admin',volunteer:'Mentor / Volunteer'}[role]??'Akun pelayanan');
+let navigationMedia, navigationMediaChange;
 export function clearMsaShell(){
+  if(navigationMediaChange)navigationMedia.removeEventListener('change',navigationMediaChange);navigationMediaChange=undefined;
   document.getElementById('msa-navigation')?.remove();document.getElementById('msa-skip')?.remove();document.body.classList.remove('msa-shell-active');
 }
 function updateMsaNavigation(){
   const current=location.pathname==='/'?(location.hash==='#modul'?'/#modul':'/'):location.pathname==='/msa-events.html'&&location.hash==='#kalender'?'/msa-events.html#kalender':location.pathname;
+  if(location.hash==='#modul'){const menu=document.getElementById('modul');if(menu)menu.open=true;}
   document.querySelectorAll('#msa-navigation a').forEach(a=>{if(a.getAttribute('href')===current)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
 }
 if(typeof window!=='undefined')window.addEventListener('hashchange',updateMsaNavigation);
@@ -60,10 +63,19 @@ export function mountMsaShell(profile){
   const account=document.createElement('p');account.className='msa-shell-account';account.textContent=msaRoleLabel(profile.role)+' · @'+profile.username;
   const nav=document.createElement('nav');nav.setAttribute('aria-label','Navigasi utama MSA');
   const events=profile.modules.some(m=>m.href==='/msa-events.html');
-  const entries=[{href:'/',label:'Beranda'},...(events?[{href:'/msa-events.html',label:'Pelayanan'},{href:'/msa-events.html#kalender',label:'Kalender'}]:[]),{href:'/#modul',label:'Modul'}];
-  const add=(item,extra=false)=>{const a=document.createElement('a');a.href=item.href;a.textContent=item.label;if(extra)a.className='msa-extra-module';
-    if(location.pathname===item.href.split('#')[0]&&(item.href.includes('#')?location.hash===('#'+item.href.split('#')[1]):!location.hash))a.setAttribute('aria-current','page');nav.append(a);};
-  entries.forEach(item=>add(item));profile.modules.filter(m=>m.href!=='/msa-events.html').forEach(item=>add(item,true));
+  const icons={'/':'⌂','/msa-events.html':'▤','/msa-events.html#kalender':'▦','/msa-core.html':'◇','/a1.html':'♙','/identity-review.html':'✓','/account-recovery.html':'↻','/migration-readiness.html':'≡','/username.html':'▣'};
+  const add=(parent,item)=>{const a=document.createElement('a'),icon=document.createElement('span'),label=document.createElement('span');a.href=item.href;icon.className='msa-nav-icon';icon.setAttribute('aria-hidden','true');icon.textContent=icons[item.href]??'•';label.textContent=item.label;a.append(icon,label);parent.append(a);};
+  const primary=document.createElement('div');primary.className='msa-nav-primary';
+  add(primary,{href:'/',label:'Beranda'});if(events){add(primary,{href:'/msa-events.html',label:'Pelayanan'});add(primary,{href:'/msa-events.html#kalender',label:'Kalender'});}nav.append(primary);
+  const menu=document.createElement('details');menu.id='modul';menu.className='msa-nav-menu';
+  const summary=document.createElement('summary');summary.textContent='Modul';menu.append(summary);
+  const panel=document.createElement('div');panel.className='msa-nav-panel';menu.append(panel);
+  const groups=[['Ruang kerja',['/msa-core.html','/username.html']],['Pengelolaan',['/a1.html','/identity-review.html','/account-recovery.html','/migration-readiness.html']]];
+  const remaining=profile.modules.filter(m=>m.href!=='/msa-events.html');menu.hidden=remaining.length===0;
+  for(const [title,paths] of groups){const items=remaining.filter(m=>paths.includes(m.href));if(!items.length)continue;const group=document.createElement('div'),heading=document.createElement('p');group.className='msa-nav-group';heading.textContent=title;group.append(heading);items.forEach(item=>add(group,item));panel.append(group);}
+  const other=remaining.filter(m=>!groups.some(([,paths])=>paths.includes(m.href)));if(other.length){const group=document.createElement('div');group.className='msa-nav-group';other.forEach(item=>add(group,item));panel.append(group);}
+  nav.append(menu);menu.open=matchMedia('(min-width: 900px)').matches||location.hash==='#modul';
+  navigationMedia=matchMedia('(min-width: 900px)');navigationMediaChange=()=>{menu.open=navigationMedia.matches;};navigationMedia.addEventListener('change',navigationMediaChange);
   const local=document.createElement('p');local.className='msa-shell-local';local.textContent='Uji lokal · data fiktif';shell.append(logo,brand,account,nav,local);
   document.body.prepend(skip,shell);document.body.classList.add('msa-shell-active');
   updateMsaNavigation();

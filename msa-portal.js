@@ -4,18 +4,9 @@ const $=id=>document.getElementById(id);
 $('portal-brand').innerHTML=msaBrand();
 let busy=false,expiry,generation=0;
 const note=text=>{$('portal-feedback').textContent=text;};
-const descriptions={
-  '/msa-events.html':'Jadwal mendatang, tanggung jawab dan draf pelayanan.',
-  '/msa-core.html':'Organisasi, program dan keanggotaan yang dapat Anda akses.',
-  '/a1.html':'Tinjau pengguna, status akun dan izin yang diberikan.',
-  '/identity-review.html':'Periksa pengajuan identitas dan tautan Mentor.',
-  '/account-recovery.html':'Tinjau permintaan pemulihan sesuai kewenangan.',
-  '/migration-readiness.html':'Periksa kesiapan sistem melalui laporan baca saja.',
-  '/username.html':'Aktivasi, perangkat, absensi dan backup Mentor.'
-};
 function clear(){
   generation++;clearTimeout(expiry);clearMsaShell();
-  $('portal-workspace').hidden=true;$('portal-modules').replaceChildren();$('portal-account').textContent='';$('portal-personal').hidden=true;
+  $('portal-workspace').hidden=true;$('portal-account').textContent='';$('portal-personal').hidden=true;
   $('portal-schedule').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
   $('portal-title').textContent='ABC Ministry Service App';$('portal-eyebrow').textContent='SELAMAT DATANG';
   $('portal-intro').textContent='Masuk untuk melihat jadwal dan mengelola pelayanan Anda.';
@@ -26,20 +17,14 @@ function clear(){
 async function show(profile){
   const current=++generation;clearTimeout(expiry);
   $('portal-login').hidden=true;$('portal-workspace').hidden=false;$('portal-local').hidden=true;
-  $('portal-title').textContent=profile.role==='pic'?'Pelayanan Anda':'Beranda';$('portal-eyebrow').textContent=msaRoleLabel(profile.role);
+  $('portal-title').textContent='Beranda';$('portal-eyebrow').textContent=msaRoleLabel(profile.role);
   $('portal-intro').textContent='Selamat melayani. Mulai dari jadwal atau ruang pelayanan Anda.';$('portal-account').textContent='@'+profile.username;
   document.title='ABC Ministry Service App | Beranda';mountMsaShell(profile);
-  if(profile.role==='superadmin')$('portal-services').before($('modul'));else $('modul').before($('portal-services'));
-  const modules=[...profile.modules],order=['/msa-core.html','/a1.html','/identity-review.html','/account-recovery.html','/msa-events.html','/username.html','/migration-readiness.html'];
-  if(profile.role==='superadmin')modules.sort((a,b)=>order.indexOf(a.href)-order.indexOf(b.href));
-  $('portal-modules').replaceChildren(...modules.map(m=>{
-    const a=document.createElement('a'),title=document.createElement('strong'),copy=document.createElement('span');
-    a.href=m.href;title.textContent=m.label;copy.textContent=descriptions[m.href]??'Buka modul pelayanan.';a.append(title,copy);return a;
-  }));
+  const modules=profile.modules;
   note(modules.length?'':'Belum ada modul pengelolaan yang diizinkan. Hubungi Admin.');
   $('portal-personal').hidden=modules.length>0;
   expiry=setTimeout(()=>{clear();note('Sesi berakhir. Masuk kembali.');},Math.max(0,profile.expiresAt-Date.now()));
-  if(!modules.some(m=>m.href==='/msa-events.html')){if(location.hash==='#modul')$('modul').scrollIntoView({block:'start'});return;}
+  if(!modules.some(m=>m.href==='/msa-events.html'))return;
   $('portal-services').hidden=false;$('portal-service-state').textContent='Memuat jadwal pelayanan…';$('portal-schedule').replaceChildren();$('portal-new').hidden=true;
   try{
     const r=await request('dispatch/api/stage9b2/dashboard');if(current!==generation)return;
@@ -50,16 +35,18 @@ async function show(profile){
       const section=document.createElement('section'),heading=document.createElement('h3');heading.textContent=title;section.append(heading);
       if(!rows.length){const p=document.createElement('p');p.className='msa-empty';p.textContent=empty;section.append(p);}
       for(const row of rows.slice(0,2)){
-        const card=document.createElement('article'),date=document.createElement('p'),name=document.createElement('h4'),venue=document.createElement('p'),a=document.createElement('a');
-        date.className='msa-event-date';date.textContent=(row.status==='draft'?'Draf':'Terbit')+' · '+new Date(row.startDate+'T12:00:00Z').toLocaleDateString('id-ID',{timeZone:'UTC',day:'numeric',month:'short'})+' · '+row.startTime+' · '+row.timezone;
+        const card=document.createElement('article'),date=document.createElement('div'),day=document.createElement('strong'),month=document.createElement('span'),content=document.createElement('div'),status=document.createElement('p'),name=document.createElement('h4'),venue=document.createElement('p'),a=document.createElement('a');
+        const eventDate=new Date(row.startDate+'T12:00:00Z');
+        card.className='portal-event';date.className='portal-date';day.textContent=eventDate.toLocaleDateString('id-ID',{timeZone:'UTC',day:'numeric'});month.textContent=eventDate.toLocaleDateString('id-ID',{timeZone:'UTC',month:'short'});date.append(day,month);
+        content.className='portal-event-content';status.className='msa-event-date';status.textContent=(row.status==='draft'?'Draf':'Terbit')+' · '+row.startTime+' · '+row.timezone;
         name.textContent=row.name;venue.textContent=row.organizationName+' · '+row.venue;
-        a.href='/msa-events.html#'+new URLSearchParams({organization:row.organizationId,event:row.id});a.textContent='Lihat pelayanan';card.append(date,name,venue,a);section.append(card);
+        a.href='/msa-events.html#'+new URLSearchParams({organization:row.organizationId,event:row.id});a.textContent='Lihat pelayanan →';content.append(status,name,venue,a);card.append(date,content);section.append(card);
       }
       if(rows.length>2){const a=document.createElement('a');a.href='/msa-events.html';a.textContent='Lihat semua '+rows.length+' pelayanan';section.append(a);}
       return section;
     }));
-  }catch(e){if(current===generation)$('portal-service-state').textContent='Jadwal belum dapat dimuat. '+e.message;}
-  if(current===generation&&location.hash==='#modul')$('modul').scrollIntoView({block:'start'});
+  }catch(e){if(current===generation)$('portal-service-state').textContent='Jadwal belum dapat dimuat. '+e.message+' Gunakan Periksa ulang izin untuk mencoba kembali.';}
+
 }
 async function request(path,body){
   const r=await msaFetch('/api/portal/'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)}),v=await r.json();

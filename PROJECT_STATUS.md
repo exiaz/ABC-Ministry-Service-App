@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 27 Oktober 2026 — UI/UX Refinement Phase 2
+
+**IMPLEMENTED dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Beranda portal memakai token warna/spacing dan hierarki baru, sidebar berkelompok dan menu Modul pada ponsel, serta kartu tanggal untuk pelayanan mendatang, tanggung jawab dan draf dari API berizin. Kartu navigasi modul duplikat di beranda dihapus; seluruh tujuan tetap berasal dari capabilities server. Loading, kosong dan error tetap dibedakan; tombol buat bergantung pada `canCreate`. Aset logo, route, sesi, RBAC, API dan data tidak diubah. Interaksi menghormati reduced motion.
+
+Verifikasi aktual: `npm.cmd run check` PASS 213 modul; `npm.cmd test` PASS 200/200 dengan akses loopback. Percobaan awal unit dan portal dalam sandbox gagal `EACCES` pada loopback dan tidak dihitung lulus. `node --test tests/msa-portal.test.mjs tests/msa-portal-browser.mjs` PASS 2/2 pada run awal; acceptance final `node --test tests/msa-portal-browser.mjs` PASS 1/1 setelah perubahan akhir: tujuan Superadmin/Admin, navigasi tanpa login berulang, penolakan izin, reload/history, menu ponsel, fokus dan reduced motion. Respons kosong/error distub hanya untuk UI; izin dan sesi memakai emulator. Screenshot berisi/kosong kedua peran diperiksa pada 360/390/768/1365 px; assertion memeriksa overflow horizontal, input >=16 px dan tinggi kontrol terlihat >=44 px. Menu ponsel diperiksa terpisah. Kontras beberapa pasangan teks/token dihitung 6,33:1 atau lebih; bukan audit menyeluruh. Screenshot tersimpan pada `.emulator-data/msa-portal-qa/screenshots/` dan emulator uji berhenti.
+
+**Batas:** Chrome desktop emulasi bukan perangkat Android/iOS fisik; browser lain, screen reader, zoom/spacing dan audit aksesibilitas formal belum diuji. Tidak ada perubahan pada interior modul atau klaim kesiapan produksi. Tidak ada commit/push/deploy atau perubahan branch.
+
 **27 Oktober 2026 · Stabilisasi navigasi portal · emulator/data fiktif saja**
 
 ## Reuse launcher harus kompatibel dengan sesi portal

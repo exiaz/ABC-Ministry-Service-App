@@ -18,7 +18,7 @@ Regresi portal: `node --test tests/msa-portal.test.mjs` dan `node --test tests/m
 
 `Start MSA.cmd` hanya boleh memakai ulang instance dengan protokol launcher, mode portal, fingerprint sumber aplikasi dan port yang sama. Instance pilot lama atau proses dari versi kode sebelumnya ditolak dengan petunjuk **Stop MSA.cmd → Start MSA.cmd**. Launcher tidak mematikan, mengubah, atau memigrasikan instance tersebut secara otomatis. Selesaikan pengujian yang sedang berlangsung sebelum Stop; restart tetap membuat akun/data fiktif baru sesuai kontrak launcher.
 
-Pada mode terpadu, gunakan origin dari launcher, secara default `http://127.0.0.1:4277`, dan tautan katalog server berikut. Satu login berlaku saat klik kartu/sidebar, refresh, URL langsung dan back/forward selama sesi serta izin masih sah.
+Pada mode terpadu, gunakan origin dari launcher, secara default `http://127.0.0.1:4277`, dan tautan katalog server berikut. Satu login berlaku saat menggunakan navigasi, refresh, URL langsung dan back/forward selama sesi serta izin masih sah.
 
 | Route | Konten tujuan |
 |---|---|
@@ -34,9 +34,9 @@ Daftar di atas bukan pemberian izin. Fixture Superadmin memperoleh tujuh modul; 
 
 ## Tampilan dan navigasi terpadu — 27 Oktober 2026
 
-Login menampilkan nama lengkap **ABC Ministry Service App** dan logo ABC asli. Beranda memuat jadwal mendatang, tanggung jawab sendiri, draf yang dapat ditindak, serta ruang pelayanan dari izin server. Superadmin mendapat urutan modul organisasi/pengguna/tinjauan lebih dahulu. Admin tetap hanya melihat modul yang diizinkan; label Admin menggantikan PIC aplikasi tanpa mengubah ID role `pic`, scope atau grants. Penanggung jawab event disebut **Penanggung Jawab Pelayanan**, terpisah dari peran aplikasi.
+Login menampilkan nama lengkap **ABC Ministry Service App** dan logo ABC asli. Beranda menampilkan pelayanan terbit mendatang, tanggung jawab sendiri dan draf yang dapat ditindak sesuai data dan izin server. Tombol **Buat Pelayanan Baru** muncul hanya ketika server memberi izin. Keadaan kosong dan kegagalan pemuatan ditampilkan secara terpisah; **Periksa ulang izin** memuat ulang sesi dan beranda.
 
-Ponsel memakai navigasi bawah Beranda/Pelayanan/Kalender/Modul; desktop memakai sidebar. Kalender membuka agenda gabungan, **Buat Pelayanan Baru** membuka formulir hanya setelah pemeriksaan canCreate server. Halaman organisasi, pengguna, tinjauan dan administrasi menggunakan shell dan sesi bersama. Halaman Mentor memakai navigasi Jadwal saya/Perangkat/Absensi; Absensi muncul setelah perangkat terverifikasi. Backend tetap memeriksa setiap tindakan.
+Desktop memakai sidebar berkelompok; ponsel memakai navigasi bawah dan menu **Modul** untuk tujuan lain yang diizinkan. Pilih **Kalender** untuk agenda gabungan. Setiap tujuan memakai sesi pengelolaan yang sama, dengan pemeriksaan server pada setiap tindakan. Label Admin menggantikan PIC aplikasi tanpa mengubah ID role `pic`, scope atau grants. Penanggung jawab event terpisah dari peran aplikasi. Halaman Mentor mempertahankan alur dan pemeriksaan perangkatnya sendiri.
 
 **Batas sesi Mentor:** halaman pengelolaan berada pada port 4277, UI Mentor pada 4276 dan API proof pada 4275. Cookie pengelolaan hanya berlaku pada `/api/portal/` dan tidak dikirim sebagai sesi Mentor. Masuk kembali di halaman Mentor masih diperlukan; tidak ada pertukaran bearer lintas origin, token di URL/storage atau perubahan CORS. Penyatuan sesi perangkat penuh memerlukan kontrak keamanan tersendiri. Tidak ada cutover username operasional, akun baru per peran atau perluasan izin.
 
