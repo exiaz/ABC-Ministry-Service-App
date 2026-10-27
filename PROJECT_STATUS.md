@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 27 Oktober 2026 — UI/UX Refinement Phase 3B.1
+
+**IMPLEMENTED untuk tampilan Organisasi/Program/Membership dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Konteks organisasi, status, daftar program, hak baca/tambah dan daftar anggota memakai token workspace; hak tindakan tetap berasal dari respons server. Dialog konfirmasi memiliki nama aksesibel dan fokus kembali setelah batal. Loading, kosong, akses terbatas dan error ditampilkan tanpa menambah grant, API, penyediaan akun, data atau perubahan histori. Label di halaman menegaskan bahwa pilihan organisasi bersifat lokal pada halaman; pilihan belum diteruskan otomatis antar-modul.
+
+Verifikasi aktual: `npm.cmd run check` PASS 213 modul. `npm.cmd run test:stage8` PASS: unit 200/200, integrasi 6/6 dan Chrome 1/1, termasuk isolasi organisasi, viewer, penolakan, revokasi, retry idempoten dan dialog. Acceptance `node --test tests/msa-portal-browser.mjs` PASS 1/1 pada run final: akun Superadmin/Admin fiktif, pergantian organisasi dan refresh, navigasi/sesi, akses baca saja dan penolakan daftar anggota, kegagalan/pemulihan, serta nama dan fokus dialog. Skenario tanpa program di portal memakai respons program yang dikosongkan hanya untuk UI; integrasi Stage 8 juga menguji organisasi tanpa program yang sebenarnya. Screenshot Superadmin berisi/kosong dan Admin diperiksa pada 360/390/768/1365 px setelah data siap; assertion memeriksa overflow horizontal dan tinggi tombol/tautan/summary terlihat >=44 px. Kontras pasangan teks/status yang dihitung 5,98:1 atau lebih. Screenshot tersedia di `.emulator-data/msa-portal-qa/screenshots/`; runner Stage 8 di `.emulator-data/stage3-tests/run-Wgjnxw`. Emulator tes ditutup.
+
+**Batas:** Tidak ada pencarian atau filter baru; modul menggunakan selector program yang ada. Pilihan organisasi tidak dipertahankan antar-modul atau setelah reload; periksa ulang pada modul tujuan. Chrome desktop emulasi bukan perangkat fisik; browser lain, screen reader, zoom/spacing dan audit aksesibilitas formal belum diuji. Tidak ada commit/push/deploy atau perubahan branch.
+
 ## 27 Oktober 2026 — UI/UX Refinement Phase 3A
 
 **IMPLEMENTED dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Pelayanan dan kalender pada portal memakai token Phase 2, status berlabel, tampilan aktif, agenda lebih padat, rentang tanggal yang terlihat dan navigasi kembali dari detail. Detail/formulir berada sebelum daftar dalam urutan baca; empty dan error daftar dibedakan. Event bertumpuk tetap terpisah. Route, sesi, RBAC, model/API, recurrence, ekspor dan histori tidak diubah; interior Organisasi/Pengguna/Mentor tidak didesain ulang.

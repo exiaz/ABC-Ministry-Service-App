@@ -51,6 +51,25 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       assert.equal(await page.locator('#draft-show').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#recurrence-frequency').isVisible(),true);await capture('phase3-'+role+'-form');
       await page.locator('#event-cancel').click();await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');
     };
+    const coreScreens=async role=>{
+      await page.goto(origin+'/msa-core.html');await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent.length>0);
+      const ready=()=>page.waitForFunction(()=>!document.querySelector('#core-organization').hidden&&document.querySelector('#core-workspace').getAttribute('aria-busy')==='false');await ready();
+      const select=page.locator('#core-org'),options=await select.locator('option').evaluateAll(nodes=>nodes.map(n=>n.value));
+      if(role==='superadmin'){
+        assert.ok(options.length>=2);const emptyPattern='**/api/portal/dispatch/api/stage8/organizations/fictional-yayasan-abc/programs';
+        await page.route(emptyPattern,async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,programs:[]}});});
+        await select.selectOption('fictional-yayasan-abc');await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent.includes('Yayasan'));
+        await ready();assert.match(await page.locator('#core-program-list').textContent(),/Belum ada program/);await capture('phase3b-owner-empty');await page.unroute(emptyPattern);
+        await page.locator('#core-refresh').click();await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent.includes('Yayasan'));assert.equal(await select.inputValue(),'fictional-yayasan-abc');
+        await select.selectOption('fictional-abc-movement');await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent==='ABC Movement');await ready();assert.ok(await page.locator('#core-program-list li').count()>0);await capture('phase3b-owner');
+        await page.locator('#core-program-name').fill('Program uji fiktif');await page.locator('#core-reason').fill('Alasan pengujian fiktif');await page.locator('#core-program-form button').click();assert.equal(await page.locator('#core-cancel').evaluate(n=>n===document.activeElement),true);assert.equal(await page.getByRole('dialog',{name:'Tambahkan program?'}).isVisible(),true);await page.locator('#core-cancel').click();assert.equal(await page.locator('#core-program-form button').evaluate(n=>n===document.activeElement),true);assert.equal(await page.locator('#core-program-name').inputValue(),'Program uji fiktif');
+        const pattern='**/api/portal/dispatch/api/stage8/organizations/*/programs';await page.route(pattern,route=>route.fulfill({status:503,json:{error:'Gangguan uji fiktif'}}));await page.locator('#core-refresh').click();await page.waitForFunction(()=>document.querySelector('#feedback').textContent.includes('Gangguan uji'));assert.equal(await page.locator('#core-organization').isVisible(),false);await page.unroute(pattern);await page.locator('#core-refresh').click();await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent==='ABC Movement');
+      }else{
+        assert.equal(options.length,1);assert.equal(await page.locator('#core-program-form').isVisible(),false);assert.match(await page.locator('#core-program-access').textContent(),/baca saja/);assert.match(await page.locator('#core-member-list').textContent(),/tidak memiliki izin/);await capture('phase3b-admin');
+      }
+      await page.reload();await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent.length>0);assert.equal(await page.locator('input[type=password]:visible').count(),0);
+      await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');
+    };
     const login=async(username,value)=>{await page.goto(origin+'/');await page.locator('#portal-username').fill(username);await page.locator('#portal-password').fill(value);await page.locator('#portal-login button[type=submit]').click();await page.waitForSelector('#portal-workspace:not([hidden])');};
     await page.goto(origin+'/');assert.equal(await page.locator('select').count(),0);await page.locator('#portal-username').focus();await page.keyboard.press('Tab');assert.equal(await page.locator('#portal-password').evaluate(n=>n===document.activeElement),true);await page.locator('#portal-show').click();assert.equal(await page.locator('#portal-password').getAttribute('type'),'text');await capture('login');
     await page.locator('#portal-username').fill(PILOT_USERNAME);await page.locator('#portal-password').fill('incorrect-fictional-password');await page.locator('#portal-login button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#portal-feedback').textContent.includes('tidak valid'));assert.equal(await page.locator('#portal-workspace').isVisible(),false);
@@ -59,7 +78,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Superadmin');assert.equal(await page.locator('#portal-new').isVisible(),true);
     await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation .msa-nav-primary a:visible').count(),3);assert.equal(await page.locator('#modul summary').isVisible(),true);
     const api=async(route,body)=>page.evaluate(async({route,body})=>{const {msaFetch}=await import('/msa-session.js');const r=await msaFetch(route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});return {status:r.status,body:await r.json()};},{route,body});
-    const profile=await api('/api/portal/session');await serviceScreens('superadmin');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
+    const profile=await api('/api/portal/session');await coreScreens('superadmin');await serviceScreens('superadmin');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
     const verifyDestination=async route=>{
       await page.waitForURL(origin+route);await page.waitForSelector('#msa-navigation');
       if(route==='/username.html'){
@@ -105,7 +124,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     }
     await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
     await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/migration-readiness.html"]').count(),0);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');await emptyDashboard('pic');
-    await serviceScreens('admin');assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
+    await coreScreens('admin');await serviceScreens('admin');assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
     await page.setViewportSize({width:1365,height:900});await auditNavigation((await api('/api/portal/session')).body);
     for(const route of ['/a1.html','/identity-review.html','/migration-readiness.html']){await page.goto(origin+route);await page.waitForURL(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');assert.equal(await page.locator('#msa-navigation a[href="'+route+'"]').count(),0);}
     await page.goto(origin+'/msa-events.html#kalender');await page.waitForSelector('#calendar-workspace:not([hidden])');await page.waitForFunction(()=>!document.querySelector('#calendar-result').textContent.includes('Memuat'));await capture('calendar');
