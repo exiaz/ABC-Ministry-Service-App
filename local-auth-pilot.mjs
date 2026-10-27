@@ -76,7 +76,7 @@ export async function preparePilot(context,{auth,adminAuthentication,password,pi
   if(process.env.ABC_MSA_STAGE9A==='1')for(const organizationId of ['fictional-abc-movement','fictional-yayasan-abc'])await seedEventGrant(context,{uid,organizationId,permissions:process.env.ABC_MSA_STAGE9B1==='1'?[...eventPermissions,...calendarPermissions]:eventPermissions,fictional:true,confirmed:true});
   if(process.env.ABC_MSA_STAGE9B1==='1')await seedCalendarFixture(context,{uid,auth,events:adminAuthentication.a1.events,calendar:adminAuthentication.a1.calendar,fictional:true,confirmed:true});
   if(picPassword){
-    if(picPassword===password)throw safe('Kata sandi PIC harus berbeda dari peninjau.');
+    if(picPassword===password)throw safe('Kata sandi Admin harus berbeda dari peninjau.');
     const ownerToken=await adminAuthentication.signIn({email,password});
     try{
       const checkOwner=async()=>(await adminAuthentication.authorize('Bearer '+ownerToken)).kind==='ok';
@@ -164,7 +164,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       recovery=adminAuthentication.a1.recovery;
       let picPassword;
       try{
-        if(unified){log('Buat kata sandi PIC fiktif terpisah (12–128 karakter), lalu ulangi.');picPassword=await askPicPassword({input,output,signal:abort.signal});if(typeof picPassword!=='string'||picPassword.length<12||picPassword.length>128||picPassword===password)throw safe('Kata sandi PIC harus 12–128 karakter dan berbeda dari peninjau.');}
+        if(unified){log('Buat kata sandi Admin fiktif terpisah (12–128 karakter), lalu ulangi.');picPassword=await askPicPassword({input,output,signal:abort.signal});if(typeof picPassword!=='string'||picPassword.length<12||picPassword.length>128||picPassword===password)throw safe('Kata sandi Admin harus 12–128 karakter dan berbeda dari peninjau.');}
         await preparePilot(context,{auth:getAuth(app),adminAuthentication,password,picPassword,check});
       }finally{picPassword='';}
       log('3/4 · Menyiapkan halaman Mentor dan peninjau…');
@@ -172,10 +172,10 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       const apiAuthentication=await createLocalAdminAuthentication(context);resources.auths.push(apiAuthentication);
       resources.servers.push(await listen(createRosterServer({...context,adminAuthentication:apiAuthentication,mentorOrigin:options.mentorOrigin}),api));
       resources.servers.push(await listen(wrapPilotServer(createAdminServer({adminAuthentication,pairing:context.pairing,portal:unified}),{...options,unified}),admin));
-      resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api}),{...options,mentor:true}),mentor));
+      resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api}),{...options,mentor:true,unified}),mentor));
       check();await ready();await appsReady(resources);phase='ready';
       log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+' (kata sandi yang baru Anda buat).\nMentor: '+options.mentorOrigin+'/\nPanduan: '+options.mentorOrigin+'/pilot.html\nPendaftaran: '+options.adminOrigin+'/register.html\nTinjauan: '+options.adminOrigin+'/identity-review.html\nPemulihan: '+options.adminOrigin+'/account-recovery.html\nAdmin / aktivasi: '+options.adminOrigin+'/username.html\nSesudah review pemulihan disetujui, operator tepercaya mengetik: pulihkan <username>. Pemilik mengisi kata sandi baru sendiri tanpa tampil.\nTekan Enter untuk berhenti atau klik Stop MSA.cmd. Semua data pilot sementara.');
-      if(unified)log('Portal MSA: '+options.adminOrigin+'/ · PIC: '+PIC_USERNAME+' (kata sandi PIC yang baru dibuat).');
+      if(unified)log('Portal MSA: '+options.adminOrigin+'/ · Admin: '+PIC_USERNAME+' (kata sandi Admin yang baru dibuat).');
       await onReady?.({context,options,resources,state,stop});
       try{await open(options);}catch{log('Browser belum terbuka. Gunakan tautan pilot di atas.');}
       monitor=setInterval(()=>{if(phase==='ready')void ready().then(()=>appsReady(resources)).then(check).catch(()=>{log('Layanan pilot terputus. Akses ditutup; nyalakan ulang untuk memakai data fiktif baru.');void stop();});},5000);monitor.unref();

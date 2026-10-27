@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 title ABC Ministry Service App
 echo Menyiapkan MSA lokal. Semua akun dan data fiktif dimulai dari awal.
-echo Biarkan jendela terbuka. Buat kata sandi peninjau dan PIC secara terpisah.
+echo Biarkan jendela terbuka. Buat kata sandi Superadmin dan Admin secara terpisah.
 echo Input kata sandi tidak ditampilkan. Konflik port membatalkan startup.
 where node >nul 2>nul
 if errorlevel 1 (

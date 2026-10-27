@@ -21,6 +21,7 @@ assets.set('/msa-users.js','msa-users.js');
 assets.set('/msa-brand.js','msa-brand.js');
 assets.set('/username-login.js','username-login.js');
 assets.set('/msa-session.js','msa-session.js');
+assets.set('/msa-shell.css','msa-shell.css');
 for(const file of ['register.html','identity-review.html','msa-registration-ui.js','msa-intake.css'])assets.set('/'+file,file);
 for(const file of ['account-devices-ui.js','account-devices.css'])assets.set('/'+file,file);
 for(const file of ['account-recovery.html','account-recovery.js','migration-readiness.html','migration-readiness.js','msa-core.html','msa-core.js','msa-events.html','msa-events.js'])assets.set('/'+file,file);
@@ -67,6 +68,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}
       let content=await readFile(path.join(root,file));
       if(portal&&file.endsWith('.html'))content=content.toString().replace(/<body\b/, '<body data-msa-portal="true"');
+      if(portal&&file.endsWith('.html')&&file!=='msa-portal.html')content=content.toString().replace('</head>','<link rel="stylesheet" href="/msa-shell.css"></head>');
       if(portal&&file.endsWith('.html'))content=content.toString().replace('</head>','<style>body[data-msa-portal] :is(#core-login,#event-login,#msa-login,#review-login,#migration-login,#recovery-login){display:none!important}</style></head>');
       if(portal&&file.endsWith('.html')&&file!=='msa-portal.html')content=content.toString().replace('</main>','<p><a class="btn" href="/">Beranda MSA</a></p></main>');
       if(file==='account-recovery.html')content=content.toString('utf8').replace('__RECOVERY_API__','');

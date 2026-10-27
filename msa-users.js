@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,
 $('msa-brand').innerHTML=msaBrand();
 const legacyFields=$('msa-fields').innerHTML;
 $('msa-mode').onchange=()=>{$('msa-fields').innerHTML=$('msa-mode').value==='username'?usernameFields({nameId:'msa-name',passwordId:'msa-password'}):legacyFields;};
-const labels={superadmin:'Superadmin',admin:'Admin / Pengelola Tim',pic:'PIC',volunteer:'Mentor / Relawan',active:'Aktif',pending:'Menunggu',rejected:'Ditolak',suspended:'Ditangguhkan',disabled:'Nonaktif',revoked:'Dicabut'};
+const labels={superadmin:'Superadmin',admin:'Admin',pic:'Admin',volunteer:'Mentor / Volunteer',active:'Aktif',pending:'Menunggu',rejected:'Ditolak',suspended:'Ditangguhkan',disabled:'Nonaktif',revoked:'Dicabut'};
 let token='',data={accounts:[],organizations:[]},selected='',busy=false,pending;
 const feedback=text=>{$('msa-feedback').textContent=text;};
 async function request(path,body){

@@ -1,5 +1,39 @@
 # ABC Attendance — status revisi
 
+**27 Oktober 2026 · Penyelarasan UI/UX portal MSA · emulator/data fiktif saja · sebelum Stage 10A**
+
+## Login, dashboard dan navigasi sesuai izin
+
+**IMPLEMENTED dan TESTED; regresi penuh dan acceptance akhir lokal/fiktif PASS. Sesi Mentor lintas origin tetap terpisah.** Implementasi launcher/sesi yang sudah ada dipakai ulang; tidak membuat sistem autentikasi kedua, akun per peran atau migrasi data.
+
+- **Login:** headline lengkap **ABC Ministry Service App**, logo ABC asli, username/kata sandi, tampil/sembunyikan, Masuk, recovery, loading/error dan umpan balik keyboard. Tidak ada selector role/email/provider alias pada login utama. Mentor memakai headline dan kontrol password yang sama pada origin tersendiri.
+- **Dashboard:** portal memuat API Stage 9B.2 berizin untuk jadwal terbit, tanggung jawab sendiri dan draf perhatian. Status/tanggal/waktu/zona/tempat/organisasi ditampilkan tanpa KPI buatan. Superadmin mendahulukan organisasi/pengguna/tinjauan; Admin hanya memperoleh modul dan canCreate hasil server. Detail dan buat/kalender membuka tujuan sebenarnya. Loading/kosong/koneksi/izin tetap tersedia.
+- **Shell:** token visual ringan dari warna/aset ABC, sidebar desktop dan maksimal empat tujuan bawah mobile; dipakai ulang pada modul pelayanan/kalender, organisasi, pengguna, identitas, recovery, migrasi dan administrasi kompatibel. Indikator aktif mengikuti tujuan URL, Modul terlihat di atas navigasi setelah data selesai dimuat, tautan/form/tombol dapat dipakai keyboard. Mentor mempunyai Jadwal saya/Perangkat/Absensi; Absensi tersembunyi sebelum proof dan saat offline. Mode terpadu menghilangkan banner pilot dengan tautan Admin statis dari halaman Mentor; tautan kembali hanya menuju portal publik. Mode pilot terpisah tetap mempertahankan panduan pengujiannya.
+- **Istilah/keamanan:** role aplikasi `pic` ditampilkan sebagai Admin. Field event memakai Penanggung Jawab Pelayanan. Identifier backend, role/grant/scope, username fixture `pic.pilot`, nama fixture/event dan histori tidak diganti. Session cookie/CSRF/server authorization tetap kontrak lama; timer UI mengosongkan tampilan saat expiry. Tidak menambah hak, cutover, credential storage, CORS credential atau handoff bearer.
+- **Launcher:** `Start MSA.cmd` / `Stop MSA.cmd` yang sudah terverifikasi tetap utama. Pesan setup memakai Superadmin/Admin. Startup CMD nyata menerima dua password tersembunyi, membuka portal, Start kedua exit 0 memakai instance sama, Stop exit 0 dan Start pertama exit 0. Tidak ada shortcut/data/snapshot yang dihapus pada revisi ini.
+
+Referensi publik diperiksa melalui browser: [BPme resmi BP Australia di Google Play](https://play.google.com/store/apps/details?hl=en_US&id=com.bp.mobile.bpme.aus), [Planning Center App](https://www.planningcenter.com/app), [dokumentasi aplikasi](https://help.planningcenter.com/en/144868-planning-center-mobile-app.html), [Planning Center Services](https://www.planningcenter.com/services). Screenshot rewards/Home/tim diperiksa: kartu ringkas, hierarki tindakan, kelompok tanggung jawab dan navigasi empat tujuan diadaptasi dengan aset ABC. Tidak menyalin branding/aset/layout proprietary. Ini riset materi publik, bukan audit akun live/native lengkap; rincian pola/batas di README.
+
+Verifikasi aktual revisi ini:
+
+| Pemeriksaan | Hasil |
+|---|---|
+| Unit terakhir `npm.cmd test` | PASS 199/199; exit 0, termasuk setelah perubahan wrapper Mentor |
+| Check terakhir `npm.cmd run check` | PASS 213 modul sintaks/import; tidak ada lint/build/TypeScript compiler terpisah |
+| Regresi penuh `npm.cmd run test:stage6` | PASS/exit 0, run `run-fFQBKf`: unit 199/199, integrasi 162/162, Chrome 34/34, kalender/laporan/offline PASS, cold lifecycle 2/2. Emulator ditutup. Mencakup AUTH A1–A2.4C dan Stage 1–9B.2 |
+| Pilot `node --test tests/auth-pilot-browser.mjs` | PASS/exit 0 1/1: onboarding/review/link, login/show-hide, aktivasi/proof/asosiasi, absensi utama/backup, recovery trusted, suspension, fresh restart, Enter/Stop Windows, cleanup startup gagal dan listener asing tetap hidup saat konflik |
+| Portal akhir `node --test tests/msa-portal-browser.mjs` | PASS/exit 0 1/1: cookie, reload/navigasi tanpa password ulang, logout/nonaktif, 7 modul Superadmin/3 Admin, penolakan publish/foreign/admin/migrasi, kalender/create/detail, tujuan Modul dan empat ukuran. Login Mentor mode terpadu tanpa banner/tautan Admin statis diverifikasi. Kasus UI profil kosong memakai stub tanpa admission/grant server, hanya memverifikasi petunjuk login Mentor dan tiadanya menu pengelolaan |
+| Windows CMD nyata | PASS: Start, dua password tersembunyi berbeda, HTTP portal/headline/CSS 200, Start kedua exit 0 reuse, Stop exit 0 dan Start pertama exit 0. Bukan klik ganda Explorer |
+| Visual/akses dasar | Screenshot Chrome 360/390/768/1365 diperiksa. Input >=16px, target >=44px dan tanpa overflow horizontal diuji pada portal/modul. Navigasi Absensi Mentor diverifikasi tidak tampil sebelum proof/offline. Kontras tombol hasil pertemuan CSS lama/baru diperbaiki |
+
+Regresi penuh dijalankan sebelum perbaikan akhir label bantuan, wrapper Mentor dan petunjuk profil kosong; unit/check diulang setelah wrapper, check serta acceptance khusus mode terpadu diulang setelah perubahan terakhir dan PASS. Backend auth/otorisasi/attendance/event tidak diubah. Run awal sandbox gagal pada pemeriksaan port; ulang dengan loopback berhasil. Baseline browser yang bertepatan penyuntingan aset sempat gagal import dan tidak dihitung PASS. Acceptance menemukan tautan lama 21px dan diperbaiki; assertion Modul awal mengharuskan y<100 padahal scroll dibatasi akhir dokumen, kemudian diganti pemeriksaan heading terlihat di atas nav dan PASS. Tidak ada permission check yang dilonggarkan.
+
+**Batas yang sengaja dipertahankan:** SSO Mentor lintas origin **belum diimplementasikan**. Pengelolaan 4277 memakai cookie `/api/portal/`; UI Mentor 4276/API proof 4275 memakai admission personal A2.3 dan login ulang tersendiri. Login/registrasi tidak mengaktifkan perangkat atau absensi. Perangkat memerlukan aktivasi, kunci/proof, link dan scope yang sah. Penyatuan sesi perangkat perlu kontrak keamanan tersendiri. Panel governance/provisioning/grants tetap batas Stage 8; modul lama hanya diselaraskan bertahap. Android/iOS fisik, non-Chrome, klik Explorer, screen reader dan audit aksesibilitas formal belum diverifikasi. HTTP loopback ini bukan desain produksi; produksi/cutover NO-GO dan Stage 10A belum dimulai.
+
+Berkas utama: `msa-portal.{html,js}`, `msa-session.js`, `msa-shell.css` baru, `msa-events.{html,js}`, `mentor-account.{html,js,css}`, `admin-server.mjs`, `local-auth-pilot{,-ui}.mjs`, `Start MSA.cmd`; label pada `msa-users.js`, `msa-core.html`, `a1.html`, `identity-review.html`, `account-recovery.html`, `account-devices-ui.js`, `admin-accounts.js`, `secure-admin.js`; tes portal/pilot serta selector submit dan label expectation pada tes Chrome; README/arsitektur/visi/status. Tidak ada dependency baru. Logo SHA-256 tetap `b86a4d8f5a17615c324864751e83c38be7bdaa08587eb7fd15edaef23c4f41d0`. Branch tetap `development`; tanpa commit/push/deploy.
+
+Bukti diabaikan Git: `.emulator-data/redesign-{regression,unit-verified,check-last,pilot-final,unified-verified}.log`; screenshot `.emulator-data/msa-portal-qa/screenshots/`, `.emulator-data/auth-pilot-qa/screenshots/`, dan regresi `stage3-tests/run-fFQBKf/screenshots/`. Semua port launcher uji ditutup; tidak ada listener 8280/9299/4480/4580/9250/4275/4277/4276 pada pemeriksaan akhir. `git diff --check` PASS. Bagian berikut adalah checkpoint implementasi sebelumnya, bukan hasil run ulang revisi ini.
+
 **27 Oktober 2026 · Portal dan launcher MSA terpadu, sebelum Stage 10A · emulator/data fiktif saja · produksi NO-GO**
 
 ## Launcher Windows dan sesi portal MSA

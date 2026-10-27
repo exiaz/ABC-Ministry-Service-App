@@ -8,6 +8,12 @@ Start MSA memakai namespace fresh `test-auth-pilot-*` dan origin Admin 4277. Log
 
 Katalog shortcut memakai pembacaan API yang diotorisasi, bukan label peran browser. Setup operator menciptakan peninjau dan PIC fiktif berbeda dengan password terpisah; membership dan event grants diberikan eksplisit, terbatas satu organisasi untuk PIC. Tidak mempromosikan jabatan legacy atau mengikat UID operasional. UI keanggotaan/grants tetap sesuai Stage 8 (inspeksi, mutasi lewat API terlindungi); tidak menambah provisioning publik atau governance produksi. Stage 10A belum dimulai. Bukti tes aktual ada di PROJECT_STATUS.md.
 
+### Penyelarasan UI portal — 27 Oktober 2026
+
+Shell membaca `profile.modules` hasil server, bukan selector role atau browser storage. Label `pic` aplikasi ditampilkan sebagai Admin; identifier API/grants/scopes tetap sama. Field event ditampilkan sebagai Penanggung Jawab Pelayanan. Beranda utama memakai API dashboard Stage 9B.2 yang sudah berscope; canCreate server menentukan tautan buat. Urutan kartu/label tidak memberi izin. Sidebar desktop dan navigasi bawah mobile dipakai ulang oleh halaman pengelolaan kompatibel. Timer klien menyembunyikan tampilan saat expiresAt tercapai; otoritas expiry/revocation tetap server.
+
+Sesi Mentor tidak disatukan lintas origin: UI 4276 dan API proof 4275 tetap memakai admission personal A2.3 serta aktivasi/asosiasi/perangkat lama; cookie port 4277 tidak menjadi otorisasi Mentor. Login ulang pada origin Mentor tetap diperlukan. Tidak menambah handoff bearer, credential storage, CORS credential, auto-link atau admission perangkat dari sesi pengelolaan. Batas ini sengaja dipertahankan sampai ada kontrak pertukaran sesi yang ditinjau. Tidak ada perubahan model/grant/migrasi atau Stage 10A.
+
 ## Stage 9B.2 — jadwal berulang terbatas dan beranda, 26 Oktober 2026
 
 Perluasan hanya untuk data fiktif Auth/Firestore Emulator, namespace `test-*`, melalui gate independen `ABC_MSA_STAGE9B2=1` yang mati default dan memerlukan Stage 9B.1/9A/8/A1/A2.2. Auth Pilot mengaktifkannya secara lokal; launcher reguler tetap terpisah. Status verifikasi aktual ada di PROJECT_STATUS.md. Tidak mengaktifkan produksi atau Stage 10.
