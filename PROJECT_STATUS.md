@@ -1,5 +1,31 @@
 # ABC Attendance — status revisi
 
+**27 Oktober 2026 · Stabilisasi navigasi portal · emulator/data fiktif saja**
+
+## Reuse launcher harus kompatibel dengan sesi portal
+
+**IMPLEMENTED dan TESTED; unit, seluruh navigasi portal, CMD nyata dan regresi penuh PASS.** Root cause terkonfirmasi: controller Auth Pilot lama dan launcher terpadu memakai alamat lifecycle yang sama, tetapi cabang reuse sebelumnya hanya memeriksa keberadaan instance/phase. `Start MSA.cmd` exit 0 dan membuka server `unified:false` sebagai “portal”; server tersebut tetap memakai login/bearer per halaman. Setelah login Admin pada `/username.html`, klik Organisasi membuka `/msa-core.html` dengan `core-password` terlihat dan tanpa marker portal. Ini halaman mode legacy pada origin yang sama, bukan redirect HTTP ke origin lain.
+
+Reproduksi memakai `Start MSA.cmd` nyata dan Chrome pada pilot fiktif non-terpadu. Pembanding pada instance terpadu baru mengaudit 7 route Superadmin dan 3 Admin, masing-masing lewat kartu/sidebar/direct/refresh/back-forward: tidak ditemukan permintaan password ulang pada route kanonis. Karena itu adapter cookie/router/RBAC tidak diubah.
+
+- **Fix minimal:** `local-auth-pilot.mjs` menambahkan protokol, `unified`, fingerprint sumber dan port pada respons controller. Reuse hanya untuk kontrak yang persis cocok. Fingerprint memakai utilitas `serviceSignature` lama dengan konfigurasi kosong agar namespace/UID fiktif fresh tidak menyebabkan mismatch palsu. Instance legacy, metadata lama, kode lama atau port berbeda ditolak dengan petunjuk Stop lalu Start; tidak ada stop/restart/reset otomatis atau pembukaan browser ke instance tidak cocok.
+- **Regresi navigasi:** tes portal membaca seluruh katalog modul server kedua akun. Setiap route harus memuat konten hasil API nyata, tetap pada URL/origin tujuan, tanpa input login terlihat, tanpa request login baru dan dengan cookie HttpOnly/SameSite Strict/path yang sama. Kartu, sidebar, refresh, direct, back, forward/root dan kembali ke modul diuji; Admin ditolak saat membuka URL pengguna/identitas/migrasi. Pemeriksaan cookie, logout, revocation, expiry, CSRF, cross-org dan batas Mentor lama dipertahankan.
+- **Kontrak tetap:** tidak ada perubahan role/grant/scope, sesi server, cookie/CSRF, URL modul, UI/desain, dependency, migrasi atau produksi. Restart manual tetap memulai fixture fiktif baru. Sesi Mentor tetap terpisah dan proof/aktivasi wajib.
+
+Verifikasi revisi ini:
+
+| Pemeriksaan | Hasil |
+|---|---|
+| Reproduksi native sebelum fix | PASS reproduksi cacat: Start exit 0 me-reuse pilot non-terpadu; login Admin berhasil lalu modul meminta password lagi |
+| Unit terarah | PASS 8/8: reuse cocok; metadata lama/mode/signature/protokol/port tidak cocok ditolak, instance tidak dihentikan; cookie/CSRF/expiry/logout tetap lulus |
+| `npm.cmd test` | PASS 200/200, exit 0 |
+| Check akhir `npm.cmd run check` | PASS 213 modul sintaks/import, exit 0 |
+| Portal seluruh route `node --test tests/msa-portal-browser.mjs` | PASS 1/1, exit 0; 60 pemeriksaan konten tujuan: Superadmin 42 pada 7 route, Admin 18 pada 3 route; seluruhnya tanpa login tambahan, URL/origin dan cookie tetap benar. Direct route pengguna/identitas/migrasi Admin ditolak. Kalender/create/detail, logout/nonaktif, header cookie dan batas Mentor lama juga PASS |
+| Regresi penuh `npm.cmd run test:stage6` | PASS/exit 0, run `run-6q2xmB`: unit 200/200, integrasi 162/162, Chrome 34/34, kalender/laporan/offline PASS dan cold lifecycle 2/2; emulator ditutup |
+| Native sesudah fix | PASS/exit 0 helper: `Start MSA.cmd` exit 1 menolak instance legacy; respons controller, UID akun dan listener lama tetap identik/hidup. Helper kemudian menutup instance miliknya melalui Stop |
+
+Bukti lokal diabaikan Git: `.emulator-data/navigation-native-audit.log`, `.emulator-data/navigation-audit/{native-baseline,reused-legacy,incompatible-verified}.json`, screenshot `navigation-audit/reused-legacy-{root,module}.png`, `.emulator-data/navigation-{unit-focused-final,unit-final,check-verified,portal-final,native-verified,regression}.log` serta `.emulator-data/msa-portal-qa/navigation.json`. Semua layanan uji milik launcher ditutup. `git diff --check` PASS; branch tetap `development`, tanpa commit/push/deploy. Hanya lima berkas diubah: launcher, dua tes, README dan status ini. Kasus ini tidak membuktikan semua kemungkinan masalah lingkungan browser pengguna; yang diperbaiki adalah reuse mode/versi/port yang salah dan berhasil direproduksi. Windows CMD/Chrome diuji; klik Explorer/perangkat fisik tetap bukan cakupan verifikasi ini. Bagian berikut checkpoint sebelum stabilisasi.
+
 **27 Oktober 2026 · Penyelarasan UI/UX portal MSA · emulator/data fiktif saja · sebelum Stage 10A**
 
 ## Login, dashboard dan navigasi sesuai izin

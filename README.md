@@ -14,6 +14,24 @@ Sesi portal diaktifkan hanya oleh launcher fiktif ini. Cookie berisi handle acak
 
 Regresi portal: `node --test tests/msa-portal.test.mjs` dan `node --test tests/msa-portal-browser.mjs`. Regresi onboarding/aktivasi: `node --test tests/auth-pilot-browser.mjs`. Regresi penuh: `npm.cmd run test:stage6`. Hasil aktual dan batas platform dicatat di PROJECT_STATUS.md.
 
+### Jika navigasi meminta login Admin lama
+
+`Start MSA.cmd` hanya boleh memakai ulang instance dengan protokol launcher, mode portal, fingerprint sumber aplikasi dan port yang sama. Instance pilot lama atau proses dari versi kode sebelumnya ditolak dengan petunjuk **Stop MSA.cmd → Start MSA.cmd**. Launcher tidak mematikan, mengubah, atau memigrasikan instance tersebut secara otomatis. Selesaikan pengujian yang sedang berlangsung sebelum Stop; restart tetap membuat akun/data fiktif baru sesuai kontrak launcher.
+
+Pada mode terpadu, gunakan origin dari launcher, secara default `http://127.0.0.1:4277`, dan tautan katalog server berikut. Satu login berlaku saat klik kartu/sidebar, refresh, URL langsung dan back/forward selama sesi serta izin masih sah.
+
+| Route | Konten tujuan |
+|---|---|
+| `/msa-events.html` | Beranda pelayanan; `#kalender` untuk kalender dan `#baru` untuk buat sesuai izin |
+| `/msa-core.html` | Organisasi/program/keanggotaan yang berizin |
+| `/a1.html` | Daftar pengguna bagi pengelola akun berwenang |
+| `/identity-review.html` | Antrean tinjauan identitas sesuai kewenangan/delegasi |
+| `/account-recovery.html` | Antrean reviewer berwenang; permintaan recovery publik tetap terpisah |
+| `/migration-readiness.html` | Laporan kesiapan baca saja khusus Superadmin |
+| `/username.html` | Administrasi, aktivasi dan perangkat dengan scope Admin yang berlaku |
+
+Daftar di atas bukan pemberian izin. Fixture Superadmin memperoleh tujuh modul; Admin terbatas memperoleh pelayanan, organisasi dan administrasi/perangkat saja. Halaman review yang tidak berizin tidak membuka data privat; API tetap menolak permintaan terlarang. Cookie tetap HttpOnly/SameSite Strict pada `/api/portal/`, maksimal 30 menit; token tidak dipindah ke URL/storage atau ke Mentor. Jangan membuka modul pengelolaan melalui origin Mentor 4276/API perangkat 4275 atau server Admin legacy 4177.
+
 ## Tampilan dan navigasi terpadu — 27 Oktober 2026
 
 Login menampilkan nama lengkap **ABC Ministry Service App** dan logo ABC asli. Beranda memuat jadwal mendatang, tanggung jawab sendiri, draf yang dapat ditindak, serta ruang pelayanan dari izin server. Superadmin mendapat urutan modul organisasi/pengguna/tinjauan lebih dahulu. Admin tetap hanya melihat modul yang diizinkan; label Admin menggantikan PIC aplikasi tanpa mengubah ID role `pic`, scope atau grants. Penanggung jawab event disebut **Penanggung Jawab Pelayanan**, terpisah dari peran aplikasi.

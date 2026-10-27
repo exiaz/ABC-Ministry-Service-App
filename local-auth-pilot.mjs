@@ -19,6 +19,7 @@ import {fixtureRecords} from './tests/emulator/fixture.mjs';
 import {jakartaToday} from './dates.js';
 import {SCHOOL_CONFIG,GROUP_CONFIG} from './group-config.js';
 import {wrapPilotServer} from './local-auth-pilot-ui.mjs';
+import {serviceSignature} from './local-service.mjs';
 import {seedCalendarFixture} from './tests/fixtures/msa-calendar.mjs';
 import {calendarPermissions,eventPermissions} from './backend/msa-events.mjs';
 import {seedEventGrant} from './tests/fixtures/msa-events.mjs';
@@ -113,8 +114,14 @@ export async function recoverPilotAccount({recovery,username,askPassword,deliver
 
 export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword=askDemoPassword,askPicPassword=askDemoPassword,askRecoveryPassword,prerequisites=checkPrerequisites,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady,unified=false}={}){
   const env=pilotEnvironment(base,{ports}),prior={...process.env};
+  // Exclude fresh namespace/UID values: reuse compares the running source and
+  // launcher contract, not credentials or a newly generated fixture identity.
+  const signature=await serviceSignature({});
   const existing=await controlRequest(address,'status');
-  if(existing){log('Pilot sudah berjalan. Membuka kembali portal MSA.');if(existing.phase==='ready')await open({adminOrigin:'http://127.0.0.1:'+ports[6]});return;}
+  if(existing){
+    if(existing.protocol!==1||existing.unified!==unified||existing.signature!==signature||JSON.stringify(existing.ports)!==JSON.stringify(ports))throw safe('Instance MSA yang berjalan memakai mode, versi aplikasi atau port berbeda. Hentikan melalui Stop MSA.cmd atau Enter di jendela launcher, lalu jalankan Start MSA.cmd kembali. Instance lama tidak diubah.');
+    log('Pilot sudah berjalan. Membuka kembali portal MSA.');if(existing.phase==='ready')await open({adminOrigin:'http://127.0.0.1:'+ports[6]});return;
+  }
   let phase='starting',emulator,context,app,terminal,monitor,bootstrap,stopping,controller;
   let recovery;const deliveries=new Map();
   const resources={servers:[],auths:[]},abort=new AbortController();
@@ -135,7 +142,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
     })().catch(()=>{stopping=null;phase='stop-error';log('Penghentian pilot belum terkonfirmasi. Biarkan jendela ini terbuka dan jalankan Stop MSA.cmd lagi.');});return stopping;
   };
   const onSignal=()=>void stop();
-  controller=await createController(address,async command=>{if(command==='stop')await stop();return {phase};});
+  controller=await createController(address,async command=>{if(command==='stop')await stop();return {phase,protocol:1,unified,signature,ports};});
   process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
   bootstrap=(async()=>{
     log('1/4 · Memeriksa prasyarat dan port pilot. Data fiktif dimulai dari awal.');

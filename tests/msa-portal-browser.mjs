@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {PassThrough} from 'node:stream';
 import {createRequire} from 'node:module';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {runPilot,stopPilot,PILOT_USERNAME,PIC_USERNAME,PILOT_PORTS} from '../local-auth-pilot.mjs';
 import {portOccupied,waitFor} from '../local-demo.mjs';
 const require=createRequire(import.meta.url);let chromium;
 try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}
 
-test('Unified MSA portal: separate fictional identities, capability navigation, shared session, denial and mobile screenshots',{timeout:240000},async()=>{
+test('Unified MSA portal: all authorized routes via clicks, history, reload and direct navigation, shared session and denial',{timeout:900000},async()=>{
   const password=randomBytes(24).toString('base64url'),picPassword=randomBytes(24).toString('base64url'),opened=[],messages=[];
   const input=new PassThrough();let ready,reject;const prepared=new Promise((resolve,fail)=>{ready=resolve;reject=fail;});
   const running=runPilot({unified:true,input,output:new PassThrough(),askPassword:async()=>password,askPicPassword:async()=>picPassword,open:async options=>opened.push(options.adminOrigin+'/'),log:s=>{messages.push(s);console.log(s);},onReady:ready});running.then(()=>reject(Error('MSA belum siap')),reject);
-  let browser;
+  let browser;const navigation=[];
   try{
     const f=await prepared,origin=f.options.adminOrigin;
     await waitFor(async()=>opened.length===1);assert.deepEqual(opened,[origin+'/']);
@@ -34,8 +34,44 @@ test('Unified MSA portal: separate fictional identities, capability navigation, 
     await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation a:visible').count(),4);
     const api=async(route,body)=>page.evaluate(async({route,body})=>{const {msaFetch}=await import('/msa-session.js');const r=await msaFetch(route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});return {status:r.status,body:await r.json()};},{route,body});
     const profile=await api('/api/portal/session');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
+    const verifyDestination=async route=>{
+      await page.waitForURL(origin+route);await page.waitForSelector('#msa-navigation');
+      if(route==='/username.html'){
+        await page.waitForSelector('#admin-root[data-phase=active]');await page.locator('[data-admin-tab=devices]').click();
+        await page.waitForSelector('#admin-devices[data-state=ready]');assert.ok(await page.locator('#device-school option').count()>1);
+      }else await page.waitForFunction(route=>{
+        const text=id=>document.getElementById(id)?.textContent??'';
+        if(route==='/msa-events.html')return text('dashboard-result').startsWith('Jadwal mendatang')&&document.querySelectorAll('#dashboard-content>section').length===3;
+        if(route==='/msa-core.html')return text('core-org-name').length>0&&document.querySelectorAll('#core-program option').length>0;
+        if(route==='/a1.html')return document.querySelector('#msa-list')?.childElementCount>0;
+        if(route==='/identity-review.html')return document.querySelector('#queue')?.childElementCount>0;
+        if(route==='/account-recovery.html')return document.querySelector('#recovery-queue')?.childElementCount>0&&!document.querySelector('#review-workspace').hidden;
+        if(route==='/migration-readiness.html')return text('migration-verdict').startsWith('Cutover produksi:')&&text('migration-summary').length>0;
+        throw Error('Missing destination-content assertion: '+route);
+      },route);
+      assert.equal(new URL(page.url()).origin,origin);assert.equal(await page.locator('input[type=password]:visible,input[type=email]:visible').count(),0);
+      assert.equal(await page.locator('body').getAttribute('data-msa-portal'),'true');
+    };
+    const auditNavigation=async profile=>{
+      const cookieBefore=(await context.cookies()).find(c=>c.name.startsWith('msa_session_'));
+      const loginRequests=[];const track=r=>{if(r.url().endsWith('/api/portal/login')||r.url().endsWith('/api/admin/login')||r.url().endsWith('/api/a1/login'))loginRequests.push(new URL(r.url()).pathname);};page.on('request',track);
+      try{for(const module of profile.modules){
+        const route=module.href;console.log('NAVIGATION '+profile.role+' '+route);
+        const checked=async source=>{await verifyDestination(route);navigation.push({role:profile.role,route,source,url:page.url(),origin:new URL(page.url()).origin,contentLoaded:true});};
+        await page.goto(origin+'/');await page.locator('#portal-modules a[href="'+route+'"]').click();await checked('module-card');
+        await page.reload();await checked('refresh');
+        await page.locator('#msa-navigation a[href="/"]').click();await page.waitForSelector('#portal-modules a');
+        await page.goBack();await checked('back');await page.goForward();await page.waitForSelector('#portal-modules a');await page.goBack();await checked('back-after-forward');
+        await page.locator('#msa-navigation a[href="'+route+'"]').click();await checked('sidebar');
+        await page.goto(origin+route);await checked('direct');
+      }}finally{page.off('request',track);}
+      assert.deepEqual(loginRequests,[]);assert.equal((await api('/api/portal/session')).body.uid,profile.uid);
+      const cookieAfter=(await context.cookies()).find(c=>c.name===cookieBefore.name);assert.equal(cookieAfter.value,cookieBefore.value);assert.equal(cookieAfter.httpOnly,true);assert.equal(cookieAfter.sameSite,'Strict');assert.equal(cookieAfter.path,'/api/portal/');
+      await writeFile(path.resolve('.emulator-data/msa-portal-qa/navigation.json'),JSON.stringify(navigation,null,2));
+    };
     const cookie=(await context.cookies()).find(c=>c.name.startsWith('msa_session_'));assert.equal(cookie.httpOnly,true);assert.equal(cookie.sameSite,'Strict');assert.equal(await page.evaluate(()=>document.cookie.includes('msa_session_')),false);
     assert.equal((await context.cookies(f.options.mentorOrigin+'/')).some(c=>c.name===cookie.name),false);
+    await page.setViewportSize({width:1365,height:900});await auditNavigation(profile.body);
     for(const [route,workspace] of [['/msa-events.html','#event-workspace'],['/msa-core.html','#core-workspace'],['/a1.html','#msa-management'],['/identity-review.html','#review-workspace'],['/account-recovery.html','#review-workspace'],['/migration-readiness.html','#migration-report'],['/username.html','[data-phase=active]']]){
       console.log('SESSION NAV '+route);await page.goto(origin+route);assert.equal(await page.locator('input[type=password]:visible').count(),0);await page.waitForSelector(workspace+':not([hidden])');assert.equal((await api('/api/portal/session')).body.uid,owner);
       await page.waitForSelector('#msa-navigation');
@@ -44,6 +80,8 @@ test('Unified MSA portal: separate fictional identities, capability navigation, 
     await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
     await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#portal-modules a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#portal-modules a[href="/migration-readiness.html"]').count(),0);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
+    await page.setViewportSize({width:1365,height:900});await auditNavigation((await api('/api/portal/session')).body);
+    for(const route of ['/a1.html','/identity-review.html','/migration-readiness.html']){await page.goto(origin+route);await page.waitForURL(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');assert.equal(await page.locator('#portal-modules a[href="'+route+'"]').count(),0);}
     await page.goto(origin+'/msa-events.html#kalender');await page.waitForSelector('#calendar-workspace:not([hidden])');await page.waitForFunction(()=>!document.querySelector('#calendar-result').textContent.includes('Memuat'));await capture('calendar');
     await page.goto(origin+'/msa-events.html#baru');await page.waitForSelector('#event-form:not([hidden])');assert.equal(await page.locator('#draft-name').evaluate(n=>n===document.activeElement),true);await capture('new-service');
     await page.locator('#event-cancel').click();

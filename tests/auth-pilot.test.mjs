@@ -4,7 +4,8 @@ import net from 'node:net';
 import path from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {pilotEnvironment,requireFreePilotPorts,pilotSource,PILOT_PORTS,PILOT_ADDRESS} from '../local-auth-pilot.mjs';
-import {demoEnvironment,controllerPath,controlRequest,listen} from '../local-demo.mjs';
+import {demoEnvironment,controllerPath,controlRequest,createController,listen} from '../local-demo.mjs';
+import {serviceSignature} from '../local-service.mjs';
 import {wrapPilotServer} from '../local-auth-pilot-ui.mjs';
 import {createPrototypeServer} from '../server.mjs';
 import {jakartaToday} from '../dates.js';
@@ -47,6 +48,21 @@ test('Pilot fixture uses a current stable session, distinct backup and no histor
   assert.equal(session.date,jakartaToday());assert.deepEqual(session.groupIds,['g1','g2']);assert.deepEqual(source.sessions,[]);assert.equal(source.studentPrivateProfiles,undefined);
   assert.equal(source.defaultMentorAssignments.find(v=>v.groupId==='g2').mentorId,'fictional-substitute');
   assert.equal(source.groups.find(v=>v.id==='g1').name,'Hosea');assert.equal(source.groups.find(v=>v.id==='g2').name,'Obaja');
+});
+
+test('Pilot reuse requires matching portal mode, source signature and ports; incompatible instances stay alive',async()=>{
+  const signature=await serviceSignature({}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
+  let status={phase:'ready',protocol:1,unified:true,signature,ports:[...PILOT_PORTS]},stops=0,opens=0;
+  const controller=await createController(address,command=>{if(command==='stop')stops++;return status;});
+  const attempt=()=>runPilot({base:{},address,unified:true,open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});
+  try{
+    await attempt();assert.equal(opens,1);
+    const matching={...status};
+    for(const incompatible of [{phase:'ready'},{...matching,unified:false},{...matching,signature:'0'.repeat(64)},{...matching,protocol:0},{...matching,ports:[...PILOT_PORTS].reverse()}]){
+      status=incompatible;await assert.rejects(attempt(),/mode, versi aplikasi atau port berbeda/);assert.equal(opens,1);assert.equal(stops,0);assert.deepEqual(await controlRequest(address,'status'),status);
+    }
+    status={...matching,phase:'starting'};await attempt();assert.equal(opens,1);assert.equal(stops,0);
+  }finally{await new Promise(resolve=>controller.close(resolve));}
 });
 test('Pilot mentor root is gated personal login while regular mentor root and launchers remain legacy',async()=>{
   const prior={...process.env},env=pilotEnvironment({});Object.assign(process.env,env);
