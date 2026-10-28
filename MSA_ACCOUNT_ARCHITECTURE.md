@@ -1,5 +1,13 @@
 # MSA — Kajian arsitektur akun personal
 
+## Visual Studio v1A — kontrak usulan, belum diimplementasikan
+
+Pilot hanya untuk slot `welcome`, dengan gate independen mati default dan validasi emulator/namespace `test-*`. Otorisasi server harus memakai pemeriksaan Superadmin aktif dan revisi yang setara dengan `createMsaAccounts` (policy legacy atau grant sistem akun personal yang sah), serta memeriksa ulang sesi; username dan label role browser bukan otoritas. Admin/PIC, Mentor dan request tanpa sesi ditolak. Dispatch portal perlu allowlist eksplisit dan tetap menjalankan pemeriksaan Origin/CSRF yang ada.
+
+Draf dan media mentah berada dalam storage privat terisolasi, tidak disajikan oleh server publik. Media hanya dapat diterbitkan setelah validasi bytes, decode berbatas, dimensi dan ukuran, serta penghapusan metadata dengan encoder yang aman. Identitas/path dibuat server. Versi media yang telah diproses bersifat immutable. Preview selalu terproteksi. Pointer publik hanya dapat menunjuk hasil tervalidasi yang sudah terbit; kedua origin membaca pointer yang sama. Fallback `msa-visual.json` tetap tersedia ketika pointer atau media tidak valid.
+
+Publish/revert memerlukan konfirmasi, `expectedRevision`, `requestId` dan alasan; otorisasi diperiksa ulang dalam transaksi, bersama revision dan receipt. Transaksi memperbarui pointer, audit append-only dan receipt secara atomik; penulisan media yang gagal atau transaksi yang gagal tidak mengubah pointer sebelumnya. Retry request identik hanya mengembalikan receipt setelah memeriksa izin saat ini; reuse ID dengan payload berbeda dan revisi stale ditolak. Revert membuat versi publikasi baru yang menunjuk hasil sebelumnya atau fallback, tanpa menghapus riwayat. Konsistensi file–Firestore, pembersihan orphan, pemulihan, dan batas metadata gambar memerlukan implementasi dan tes sebelum fitur dianggap selesai.
+
 **26 Oktober 2026 · Stage 9B.2 recurrence/beranda tersedia dengan gate terpisah; Stage 9B.1 lifecycle/kalender tersedia dengan gate/grant terpisah; Stage 9A draf tersedia dengan gate/grant terpisah; Stage 8 core tersedia hanya pada fixture emulator dengan grant eksplisit; AUTH A1, A2.1, A2.2, A2.3, A2.4A dan A2.4B: IMPLEMENTED terbatas pada akun fiktif/emulator; login email tetap default. Branding MSA tersedia pada aplikasi. A2.4C menambahkan asesmen baca-saja dan simulasi terisolasi; cutover produksi NO-GO.** Status pengujian aktual ada di [PROJECT_STATUS.md](PROJECT_STATUS.md). Bagian AUTH berikut memperbarui status kajian awal; bagian 1–11 merekam rancangan/migrasi yang lebih luas dan tidak mengaktifkan fitur lanjutan. Kajian awal berdasarkan HEAD `370714c4da0a370a928dea0a77d130f3a11f9aca`; penyempurnaan UI PIC berdasarkan HEAD `88f88c1cfee4187b4189b134c557286b8b7fabdb`. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; [MSA_PRODUCT_VISION.md](MSA_PRODUCT_VISION.md) memuat konteks perluasan.
 
 ## Portal dan sesi bersama lokal — 27 Oktober 2026
@@ -374,7 +382,7 @@ Migrasi awal sebaiknya mempertahankan UID PIC/Superadmin lama, menautkan `mentor
 - Superadmin/PIC dapat menugaskan relawan yang layak dalam cakupan wewenangnya. Kelayakan PIC tidak bergantung pada status full-time; tidak ada pengecualian individu yang ditanam dalam kode.
 - Pertahankan catatan mentor, seluruh ID/penugasan, sejarah absensi dan batas keamanan; rancang pemulihan password dan penangguhan akun.
 
-Kontrak Mentor tanpa akun pada AGENTS.md dan implementasi lama tetap menggambarkan perilaku **saat ini**. Kebutuhan akun personal adalah target yang menggantikan asumsi itu setelah migrasi disetujui dan diuji, bukan alasan memutus akses lama dalam kajian ini. Akun Superadmin tetap milik orang yang berwenang, tidak menjadi akun bersama atau akun tambahan hanya karena orang tersebut juga melayani sebagai Mentor.
+Pada checkpoint kajian ini jalur Mentor lama tidak memakai akun pribadi. Sejak itu A2.3 menyediakan login username/password akun fiktif yang ditinjau dan ditautkan di emulator; lihat bagian AUTH A2.3 di atas. Jalur legacy tetap terpisah dan cutover produksi belum disetujui. Akun Superadmin tetap milik orang yang berwenang, tidak menjadi akun bersama atau akun tambahan hanya karena orang tersebut juga melayani sebagai Mentor.
 
 ### 2.1 Kontrak keputusan dan kompatibilitas
 

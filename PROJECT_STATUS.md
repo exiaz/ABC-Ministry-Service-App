@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Visual Studio v1A: kontrak awal
+
+**PARTIAL / NOT IMPLEMENTED.** Pemeriksaan awal menemukan dispatch portal dengan allowlist eksplisit, server aset terpisah pada origin Admin dan Mentor, serta pola pemeriksaan Superadmin dan revisi di `backend/msa-accounts.mjs`. Kontrak usulan di `MSA_ACCOUNT_ARCHITECTURE.md` mendefinisikan gate emulator, otorisasi, pemisahan media, revision/receipt/audit dan fallback; belum ada gate, upload, preview, publikasi, revert, UI atau tes fitur. Dokumen Mentor diperjelas untuk membedakan jalur legacy dari pilot A2.3. Produksi tetap NO-GO.
+
+Pemeriksaan perubahan dokumentasi: `npm.cmd run check` lulus 214 modul, `npm.cmd test` lulus 200/200 dengan akses loopback, dan `git diff --check` lulus. Tes fitur Visual Studio dan regresi Stage 6 tidak dijalankan pada checkpoint ini; hasil tersebut tidak membuktikan implementasi atau keamanan fitur.
+
 ## 28 Oktober 2026 — Opsi G, presentasi portal dan Mentor
 
 **IMPLEMENTED dan TESTED pada emulator/data fiktif; produksi tetap NO-GO.** Welcome portal memiliki visual, tautan login, registrasi Mentor dan akses Mentor terpisah; login Mentor dan registrasi memakai slot media yang sama. Beranda Mentor menampilkan minggu penugasan pertama dari respons server sebagai informasi baca-saja, kartu dan navigasi yang menandai tautan aktif; animasi menghormati reduced motion. Beranda portal pengelolaan mendapat penyesuaian palet dan kartu tanpa mengganti katalog modul berizin. Route, otorisasi, sesi, proof dan perilaku absensi tidak diubah. Pemilihan tanggal, foto profil, Rundown dan panel media belum diimplementasikan.
