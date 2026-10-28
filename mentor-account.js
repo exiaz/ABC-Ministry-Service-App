@@ -2,14 +2,29 @@ import {msaBrand} from './msa-brand.js';
 import {createPairingClient} from './pairing-client.js';
 import {createSecureMentor} from './secure-mentor.js';
 import {createAccountDevicesUI} from './account-devices-ui.js';
+import {mountVisuals} from './msa-visual.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const api=document.querySelector('meta[name="abc-api-origin"]').content;
 const devicesUI=createAccountDevicesUI({root:$('account-device-management'),request:(path,body)=>request(path,body),base:()=> 'devices',changed:()=>verify()});devicesUI.reset();
 let token='',profile=null,busy=false,message='',generation=0,wasActive=false,modalHandler,devicesOpen=false;
 $('account-brand').innerHTML=msaBrand();
+void mountVisuals();
 if(document.body.dataset.adminOrigin){const home=document.createElement('a');home.href=document.body.dataset.adminOrigin+'/';home.className='btn';home.textContent='Beranda aplikasi';$('account-brand').append(home);}
 $('account-show-password').onclick=()=>{const show=$('account-password').type==='password';$('account-password').type=show?'text':'password';$('account-show-password').textContent=show?'Sembunyikan kata sandi':'Tampilkan kata sandi';$('account-show-password').setAttribute('aria-pressed',String(show));};
 const closeModal=()=>{$('account-modal').close();modalHandler=undefined;};
+function showAssignmentWeek(groups){
+  const root=$('account-dates');root.replaceChildren();
+  const first=groups[0]?.serviceDate;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(first??''))return;
+  const date=new Date(first+'T12:00:00Z');if(Number.isNaN(date.valueOf())||date.toISOString().slice(0,10)!==first)return;
+  const heading=document.createElement('p');heading.className='account-week-heading';heading.textContent='Minggu penugasan pertama · '+date.toLocaleDateString('id-ID',{month:'long',year:'numeric',timeZone:'UTC'});root.append(heading);
+  const list=document.createElement('ol');list.className='account-week';const start=new Date(date);start.setUTCDate(date.getUTCDate()-((date.getUTCDay()+6)%7));
+  for(let i=0;i<7;i++){const d=new Date(start);d.setUTCDate(start.getUTCDate()+i);const item=document.createElement('li'),day=document.createElement('span'),number=document.createElement('strong');day.textContent=d.toLocaleDateString('id-ID',{weekday:'short',timeZone:'UTC'});number.textContent=String(d.getUTCDate());item.append(day,number);if(d.toISOString().slice(0,10)===first){item.className='account-week-selected';item.setAttribute('aria-label',d.toLocaleDateString('id-ID',{dateStyle:'full',timeZone:'UTC'})+', penugasan pertama');}list.append(item);}
+  root.append(list);
+}
+function markNavigation(){const links=[...$('account-navigation').querySelectorAll('a:not([hidden])')],active=links.find(a=>a.hash===location.hash)||links[0];for(const link of links){if(link===active)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');}}
+$('account-navigation').addEventListener('click',e=>{const link=e.target.closest('a');if(link){for(const other of $('account-navigation').querySelectorAll('a'))other.removeAttribute('aria-current');link.setAttribute('aria-current','location');}});
+window.addEventListener('hashchange',markNavigation);
 const icon=name=>{const paths={check:'m5 12 4 4L19 6',back:'m14 6-6 6 6 6M8 12h13',arrow:'m10 6 6 6-6 6M3 12h13',more:'M5 12h1m5 0h1m5 0h1',search:'m16 16 5 5M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14',edit:'m4 16 12-12 4 4-12 12H4z',calendar:'M4 5h16v15H4zM4 10h16M8 2v6m8-6v6',users:'M6 21v-4h12v4M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0'};return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]??paths.arrow}"/></svg>`;};
 const client=createPairingClient(api,state=>{
   if(!token)return;
@@ -36,8 +51,9 @@ function render(){
   $('account-nav-attendance').hidden=!token||client.state.phase!=='active'||devicesOpen||!navigator.onLine;
   $('account-login').hidden=!!token;$('account-profile').hidden=!token;$('account-feedback').textContent=message;
   $('account-device').hidden=!token;$('account-attendance').hidden=true;
-  if(!token){$('account-name').textContent='';$('account-groups').replaceChildren();$('account-device').replaceChildren();$('account-attendance').replaceChildren();return;}
+  if(!token){$('account-name').textContent='';$('account-dates').replaceChildren();$('account-groups').replaceChildren();$('account-device').replaceChildren();$('account-attendance').replaceChildren();return;}
   $('account-name').textContent=profile.fullName;
+  showAssignmentWeek(profile.groups);markNavigation();
   $('account-groups').innerHTML=profile.groups.map(g=>`<article class="account-group"><p class="eyebrow">KELOMPOK UTAMA</p><h2>${esc(g.groupName)}</h2><p class="mentor-subtitle">${esc(g.mentorName)}</p><p>${esc(g.schoolName)} · ${esc(new Date(g.serviceDate+'T12:00:00+07:00').toLocaleDateString('id-ID',{dateStyle:'long',timeZone:'Asia/Jakarta'}))}</p></article>`).join('')||'<p>Belum ada penugasan yang sesuai. Hubungi Admin sebelum mengaktifkan perangkat.</p>';
   const state=client.state,offline=!navigator.onLine;
   if(offline){$('account-device').innerHTML='<section class="panel" role="status"><h2>Anda sedang offline</h2><p>Hubungkan internet atau jaringan lokal, lalu periksa akses kembali. Absensi tidak dikirim atau disimpan otomatis saat offline.</p></section>';return;}

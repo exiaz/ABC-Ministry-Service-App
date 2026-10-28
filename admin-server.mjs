@@ -19,6 +19,7 @@ assets.set('/admin-backup.js','admin-backup.js');
 assets.set('/a1.html','a1.html');
 assets.set('/msa-users.js','msa-users.js');
 assets.set('/msa-brand.js','msa-brand.js');
+for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])assets.set('/'+file,file);
 assets.set('/username-login.js','username-login.js');
 assets.set('/msa-session.js','msa-session.js');
 assets.set('/msa-shell.css','msa-shell.css');
@@ -66,7 +67,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       const candidate=url.pathname==='/'?'msa-portal.html':url.pathname.slice(1);
       const file=portal&&portalAssets.has(candidate)?candidate:usernamePilot?'admin.html':assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}
-      let content=await readFile(path.join(root,file));
+      let content;try{content=await readFile(path.join(root,file));}catch(e){if(e.code==='ENOENT'){send(404,'Tidak ditemukan.');return;}throw e;}
       if(portal&&file.endsWith('.html'))content=content.toString().replace(/<body\b/, '<body data-msa-portal="true"');
       if(portal&&file.endsWith('.html')&&file!=='msa-portal.html')content=content.toString().replace('</head>','<link rel="stylesheet" href="/msa-shell.css"></head>');
       if(portal&&file.endsWith('.html'))content=content.toString().replace('</head>','<style>body[data-msa-portal] :is(#core-login,#event-login,#msa-login,#review-login,#migration-login,#recovery-login){display:none!important}</style></head>');
@@ -74,7 +75,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       if(file==='account-recovery.html')content=content.toString('utf8').replace('__RECOVERY_API__','');
       if(usernamePilot)content=content.toString('utf8').replace('data-admin-mode="authenticated-local"','data-admin-mode="authenticated-local" data-username-pilot="true"');
       if(adminAuthentication?.a1?.recovery&&['admin.html','identity-review.html','a1.html'].includes(file))content=content.toString('utf8').replace('</main>','<p><a class="btn" href="/account-recovery.html">Lupa kata sandi? / Tinjau pemulihan</a></p></main>');
-      const type=file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.png')?'image/png':'image/svg+xml';
+      const type=file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.png')?'image/png':file.endsWith('.jpg')?'image/jpeg':file.endsWith('.json')?'application/json; charset=utf-8':'image/svg+xml';
       res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-ABC-Mode':'authenticated-admin-emulator','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"});
       res.end(req.method==='HEAD'?undefined:content);
     }catch(e){send(e.status??500,e.status===403?'Origin admin tidak diizinkan.':'Halaman admin tidak dapat dibuka.');}

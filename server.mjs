@@ -7,11 +7,12 @@ import {emulatorConfig} from './backend/emulator-config.mjs';
 import {assertMentorAccountMode} from './backend/msa-mentor-devices.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||4173);
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
 const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
 // Legacy fictional prototype only. The protected roster API runs separately.
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
+for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175'}={}){
   if(mentorMode)localOrigin(apiOrigin);
   const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
@@ -25,7 +26,7 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
       if(!['GET','HEAD'].includes(req.method)||url.search){res.writeHead(404);res.end('Tidak ditemukan');return;}
     }
     if(!assets.has(name)&&!personal){res.writeHead(404);res.end('Tidak ditemukan');return;}
-    let body=await readFile(path.join(root,mentorMode&&name==='index.html'?'mentor.html':name));
+    let body;try{body=await readFile(path.join(root,mentorMode&&name==='index.html'?'mentor.html':name));}catch(e){if(e.code==='ENOENT'){res.writeHead(404);res.end('Tidak ditemukan');return;}throw e;}
     if(mentorMode&&name==='index.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
     if(personal&&name==='mentor-account.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
     if(name==='account-recovery.html')body=body.toString('utf8').replace('content="__RECOVERY_API__"','content="'+apiOrigin+'"');

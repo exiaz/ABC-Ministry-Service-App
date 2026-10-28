@@ -1,8 +1,10 @@
 import {msaFetch,resumeMsaSession} from './msa-session.js';
 import {msaBrand} from './msa-brand.js';
+import {mountVisuals} from './msa-visual.js';
 import {createAccountDevicesUI} from './account-devices-ui.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('brand').innerHTML=msaBrand();
+if($('registration'))void mountVisuals();
 let token='',busy=false,selected,pending,requestId=crypto.randomUUID(),inputKey='';
 const deviceRoot=$('review-devices'),devicesUI=deviceRoot?createAccountDevicesUI({root:deviceRoot,request:(path,body)=>request(path,body),base:()=>'/api/a2-4/accounts/'+selected.uid+'/devices'}):null;
 let deviceManagement=false;

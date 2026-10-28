@@ -1,0 +1,39 @@
+/* Presentation only: all account, authorization and device behavior stays in existing modules. */
+:is(.msa-portal,.msa-registration,.mentor-account){--visual-canvas:#eeece9;--visual-card:#fffdfa;--visual-accent:#ffbf31;--visual-ink:#202827;--visual-muted:#4b5752}
+:is(.msa-portal,.msa-registration,.mentor-account)[data-visual-preset=warm]{--visual-canvas:#f8f1df;--visual-accent:#f6c352}
+:is(.msa-portal,.msa-registration,.mentor-account)[data-visual-preset=bright]{--visual-canvas:#f2f5f1;--visual-accent:#ffd05c}
+:is(.msa-portal,.msa-registration,.mentor-account) .msa-visual{height:150px;overflow:hidden;border-radius:18px;background:#f4d88e}
+:is(.msa-portal,.msa-registration,.mentor-account) .msa-visual img{display:block;width:100%;height:100%;object-fit:cover}
+body[data-msa-portal].msa-portal:not(.msa-shell-active),body.msa-registration,body.msa-registration[data-msa-portal],body.mentor-account{background:var(--visual-canvas);color:var(--visual-ink);font-family:'Segoe UI',system-ui,sans-serif}
+.msa-portal #portal-welcome{margin:0 0 28px}
+.msa-portal #portal-welcome .msa-visual{height:210px}
+.msa-portal #portal-welcome .msa-welcome-kicker{margin:18px 0 4px;font-size:12px;letter-spacing:.1em;font-weight:700;color:#4b5752}
+.msa-portal #portal-welcome .msa-welcome-title{font-size:clamp(28px,5vw,36px);line-height:1.1;font-weight:750;letter-spacing:-.8px;margin:0}
+.msa-portal #portal-welcome p{margin:8px 0}
+body[data-msa-portal] #portal-welcome .msa-welcome-actions{display:flex;gap:10px;flex-wrap:wrap}
+body[data-msa-portal] #portal-welcome .msa-welcome-actions a{display:inline-flex;justify-content:center;align-items:center;min-height:48px;flex:1 1 180px;border-radius:25px;padding:10px 16px;background:var(--visual-accent);color:#202827;text-decoration:none;font-weight:700}
+body[data-msa-portal] #portal-welcome .msa-welcome-actions a+ a{background:var(--visual-card);border:1px solid #9faaa4}
+body[data-msa-portal] #portal-mentor-entry a{min-height:44px}
+body[data-msa-portal].msa-portal #portal-login,.msa-registration #registration,.mentor-account #account-login{background:var(--visual-card);border:1px solid #d8dfd9;border-radius:18px}
+body[data-msa-portal].msa-portal #portal-submit,.mentor-account #account-login .primary{background:#174f91;border-color:#174f91;color:white;border-radius:24px}
+/* Keep operational content and server-projected navigation intact on the portal. */
+body[data-msa-portal].msa-shell-active.msa-portal{--msa-canvas:#eeece9;--msa-paper:#fffdfa;--msa-ink:#202827;--msa-muted:#4b5752;--msa-line:#d8ded9}
+.msa-shell-active.msa-portal #portal-schedule .portal-event{border-radius:16px}
+.msa-shell-active.msa-portal #portal-schedule .portal-date{background:#ffe19a;border-top-color:#a96c00;color:#202827}
+.msa-shell-active.msa-portal #msa-navigation a[aria-current]{background:#ffdf84;color:#202827}
+.msa-registration .msa-visual{max-width:560px;margin:20px 0}
+.mentor-account #account-login .msa-visual{margin-bottom:20px}
+.mentor-account #account-profile .msa-visual{margin:20px 0 12px;max-width:620px}
+.mentor-account #account-dates:empty{display:none}
+.mentor-account .account-week-heading{margin:18px 0 8px;font-weight:650;font-size:14px;color:#44544e}
+.mentor-account .account-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;list-style:none;margin:0;padding:0;max-width:560px;text-align:center}
+.mentor-account .account-week li{min-width:0;display:flex;align-items:center;flex-direction:column;font-size:12px;color:#44544e}
+.mentor-account .account-week strong{display:grid;place-items:center;background:white;color:#202827;border:1px solid #d8dfd9;border-radius:50%;width:38px;height:38px;margin-top:5px;font-size:14px}
+.mentor-account .account-week-selected strong{background:var(--visual-accent);border-color:#d29200}
+.mentor-account .account-group{border:1px solid #e6d8ae;border-radius:18px;background:#ffe4a0;color:#202827}
+.mentor-account #account-navigation a{gap:4px;flex-direction:column;font-size:12px;line-height:1.15;color:#3d5350}
+.mentor-account #account-navigation .account-nav-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-size:20px;line-height:1;transition:transform .2s ease,background-color .2s ease}
+.mentor-account #account-navigation a[aria-current] .account-nav-icon{background:var(--visual-accent);color:#202827;transform:translateY(-2px) scale(1.2)}
+.mentor-account #account-navigation a[aria-current]{color:#172f2a;font-weight:700}
+@media(min-width:1000px){.mentor-account #account-navigation a{flex-direction:row;justify-content:start;gap:12px}.mentor-account #account-navigation a[aria-current] .account-nav-icon{transform:scale(1.12)}}
+@media(prefers-reduced-motion:reduce){.mentor-account #account-navigation .account-nav-icon{transition:none}}
