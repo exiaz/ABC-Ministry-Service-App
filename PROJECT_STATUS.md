@@ -1,5 +1,15 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — UI/UX Refinement Phase 3B.2B
+
+**IMPLEMENTED pada UI lokal dengan data fiktif; produksi tetap NO-GO.** Antrean identitas dan pemulihan memakai toolbar, label status, formulir bukti dan feedback yang selaras dengan workspace. Jejak tinjauan dapat dibuka; dialog pemulihan memiliki nama aksesibel. Perangkat tertaut menampilkan status dan waktu izin secara terpisah, dengan identitas yang dapat dibuka dan konfirmasi pencabutan yang tetap ada. Navigasi/sesi yang sudah ada digunakan kembali. Tidak ada perubahan backend, API, schema, izin, revisi, bukti, recovery lock, audit atau device proof.
+
+Verifikasi aktual: `npm.cmd run check` lulus 213 modul; unit terarah recovery/perangkat 3/3. `npm.cmd run test:msa-a2-2` lulus unit 200/200, integrasi 7/7 dan Chrome 1/1; `npm.cmd run test:msa-a2-4a` lulus unit 200/200, integrasi 4/4 dan Chrome 1/1; `npm.cmd run test:msa-a2-4b` lulus unit 200/200, integrasi 8/8 dan Chrome 1/1. Cakupan termasuk reviewer berwenang/terbatas, bukti, persetujuan, penolakan, pembatalan, pencabutan dan retry idempoten. Screenshot Chrome identitas, reviewer perangkat dan recovery diperiksa pada 360/390/768/1365 px; runner memeriksa overflow dan kontrol tertentu. Screenshot perangkat/identitas dibuat sebelum penanda buka/tutup terakhir ditambahkan. Artefak fiktif: `.emulator-data/stage3-tests/run-62KY1z`, `run-Q4IGY7`, `run-fVjGPe`.
+
+`node --test tests/msa-portal-browser.mjs` lulus 1/1: navigasi, reload, sesi bersama, logout dan penolakan Admin terbatas; pilot ditutup setelah tes.
+
+Run A2.2 awal pada sandbox berhenti pada unit 174/200 karena koneksi loopback `EACCES` dan kegagalan terkait; run ulang dengan akses loopback lulus. **Batas:** Chrome desktop emulasi bukan perangkat fisik; screen reader, browser lain, zoom/spacing, kontras terukur dan audit aksesibilitas formal belum diuji. Tidak ada perubahan branch, commit, push atau deploy.
+
 ## 27 Oktober 2026 — UI/UX Refinement Phase 3B.2A
 
 **IMPLEMENTED pada pengelolaan pengguna/izin A1 untuk portal lokal dan diuji dengan emulator/data fiktif; produksi tetap NO-GO.** Daftar akun, filter, profil, scope dan status menggunakan token workspace; detail ditempatkan sebelum daftar, audit sebelum/sesudah dapat dibuka, dan dialog memberikan fokus serta umpan balik konflik/koneksi. Penolakan sesi/izin membersihkan daftar, detail, audit dan ringkasan konfirmasi dari tampilan. Status tetap memakai label teks. Tidak ada perubahan backend, schema, grant, aturan last-Superadmin, revisi, audit, autentikasi, atau interior Identity Review/Recovery/Mentor.

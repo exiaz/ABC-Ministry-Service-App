@@ -22,7 +22,7 @@ if($('registration')){
 }else{
   void resumeMsaSession(async(_profile,marker)=>{token=marker;await action(async()=>{await load();$('review-login').hidden=true;});});
   const base=uid=>'/api/a2-2/accounts/'+uid;
-  async function load(){const data=await request('/api/a2-2/queue');deviceManagement=!!data.deviceManagement;$('delegate-option').disabled=!data.superadmin;$('review-workspace').hidden=false;$('queue').innerHTML=data.accounts.map(a=>`<article><h3>${esc(a.fullName)}</h3><p>@${esc(a.username)} · ${esc(labels[a.state])}</p><button data-account="${esc(a.uid)}">Tinjau akun</button></article>`).join('')||'<p>Tidak ada akun dalam cakupan tinjauan Anda.</p>';}
+  async function load(){const data=await request('/api/a2-2/queue');deviceManagement=!!data.deviceManagement;$('delegate-option').disabled=!data.superadmin;$('review-workspace').hidden=false;$('queue').innerHTML=data.accounts.map(a=>`<article><h3>${esc(a.fullName)}</h3><p>@${esc(a.username)} · <span class="review-state">${esc(labels[a.state])}</span></p><button data-account="${esc(a.uid)}">Tinjau akun</button></article>`).join('')||'<p>Tidak ada akun dalam cakupan tinjauan Anda.</p>';}
   async function detail(uid){
     devicesUI?.reset();if(deviceRoot)deviceRoot.hidden=!deviceManagement;
     const data=await request(base(uid)),a=data.account;selected=a;$('detail').hidden=false;$('account-title').textContent=a.fullName+' (@'+a.username+')';

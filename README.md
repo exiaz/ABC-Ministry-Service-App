@@ -34,6 +34,9 @@ Daftar di atas bukan pemberian izin. Fixture Superadmin memperoleh tujuh modul; 
 
 ## Tampilan dan navigasi terpadu — 27 Oktober 2026
 
+Pada **Tinjauan identitas**, pilih akun di antrean, periksa cakupan dan bukti, lalu tinjau tindakan sebelum menyimpan. **Jejak tinjauan** dapat dibuka pada detail akun. Di **Pemulihan akun**, peninjau memilih permintaan dan memeriksa bukti baru sebelum konfirmasi. Pada **Perangkat akun**, status dan waktu izin ditampilkan untuk setiap perangkat tertaut; pencabutan tetap memerlukan alasan dan konfirmasi. Jika hasil pencabutan belum pasti, gunakan retry yang sama setelah memeriksa koneksi. Perangkat lama yang belum tertaut tetap memerlukan rekonsiliasi.
+
+
 Login menampilkan nama lengkap **ABC Ministry Service App** dan logo ABC asli. Beranda menampilkan pelayanan terbit mendatang, tanggung jawab sendiri dan draf yang dapat ditindak sesuai data dan izin server. Tombol **Buat Pelayanan Baru** muncul hanya ketika server memberi izin. Keadaan kosong dan kegagalan pemuatan ditampilkan secara terpisah; **Periksa ulang izin** memuat ulang sesi dan beranda.
 
 Desktop memakai sidebar berkelompok; ponsel memakai navigasi bawah dan menu **Modul** untuk tujuan lain yang diizinkan. Pilih **Kalender** untuk agenda gabungan. Setiap tujuan memakai sesi pengelolaan yang sama, dengan pemeriksaan server pada setiap tindakan. Label Admin menggantikan PIC aplikasi tanpa mengubah ID role `pic`, scope atau grants. Penanggung jawab event terpisah dari peran aplikasi. Halaman Mentor mempertahankan alur dan pemeriksaan perangkatnya sendiri.
