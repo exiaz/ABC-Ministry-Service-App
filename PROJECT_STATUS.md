@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Phase 3C.1 Regression Closure
+
+Stage 9A: assertion empty-state lama mengharapkan `Belum ada draf`, sementara UI hasil filter memakai `Belum ada pelayanan yang sesuai dengan filter dan izin Anda.` Assertion diperbarui menjadi pemeriksaan tepat atas pesan tersebut. `npm.cmd run test:stage9a`: check 213 modul, unit 200/200, integrasi 8/8 dan Chrome 1/1 lulus, emulator ditutup (`run-pQUnZI`).
+
+Timeout bulk perangkat: akar penyebab belum terbukti; penantian `ready` dan batas waktu dipertahankan, dengan diagnostik state panel saat gagal. `npm.cmd run test:admin-devices` lulus 13/13 dengan `ABC_JAVA_TCP_FALLBACK=1`, dipakai karena percobaan sebelumnya menunjukkan kegagalan selector AF_UNIX Windows. Regresi penuh `npm.cmd run test:stage6` lulus: check 213 modul, unit 200/200, integrasi 162/162, Chrome 34/34, kalender/laporan/offline PASS, cold recovery dan startup/shutdown 2/2; emulator ditutup (`run-le5Qxz`). Kasus bulk lulus tanpa penambahan timeout. Satu run lulus dan pengulangan terarah tidak membuktikan penyebab timeout sebelumnya; investigasi akar penyebab tetap terbuka bila terjadi kembali.
+
 ## 28 Oktober 2026 — UI/UX Refinement Phase 3C.1
 
 **IMPLEMENTED untuk UI Mentor pada emulator/data fiktif; produksi tetap NO-GO.** Login menampilkan status pemeriksaan; identitas, penugasan utama, aktivasi/asosiasi, status perangkat dan pilihan kelompok memakai gaya workspace. Kelompok utama/backup tetap berasal dari konteks server; pilihan aktif ditandai teks **Sedang dipilih**. Ruang aman dan scroll margin membantu fokus menghindari navigasi bawah. Teks bantuan login digelapkan setelah kontras awal terukur 3,82:1 terhadap putih; pasangan baru dihitung 6,30:1. Tidak ada perubahan backend, schema, API, izin, proof, sesi lintas origin atau roster/finalisasi.
