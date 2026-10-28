@@ -1,5 +1,9 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Visual Studio v1B: validasi awal
+
+**PARTIAL / NOT IMPLEMENTED.** `backend/msa-visual-contract.mjs` menambahkan validasi terisolasi untuk slot `welcome`, `login`, `registration`, `dashboard`, metadata alt dan focal point, serta konfirmasi, revisi, alasan dan ID permintaan pada mutasi. Komponen ini belum terhubung ke rute, storage atau UI dan belum menyediakan upload, preview, publish, audit, revert atau isolasi draf. Program dan kampanye tetap tidak tersedia. Tes terarah gate, PNG dan kontrak lulus 7/7; hasil ini bukan verifikasi keamanan alur lengkap. Produksi tetap NO-GO.
+
 ## 28 Oktober 2026 — Visual Studio v1A: kontrak awal
 
 **PARTIAL / NOT IMPLEMENTED.** `backend/msa-visual-gate.mjs` menambahkan komponen gate terisolasi untuk konfigurasi emulator fiktif dan penolakan perubahan konfigurasi. `backend/msa-visual-image.mjs` menambahkan pemrosesan PNG statis RGB/RGBA 8-bit non-interlaced, membatasi ukuran dan dimensi, memeriksa CRC/dekompresi serta membuang metadata dengan membangun ulang PNG. Keduanya belum terhubung ke rute atau launcher dan belum diaudit sebagai alur upload aman. Tes terarah gate dan PNG lulus 4/4; pengujian keamanan menyeluruh belum dilakukan. Upload, otorisasi, penyimpanan draf, preview, publikasi, revert dan UI belum dibuat. Kontrak usulan ada di `MSA_ACCOUNT_ARCHITECTURE.md`; produksi tetap NO-GO.
