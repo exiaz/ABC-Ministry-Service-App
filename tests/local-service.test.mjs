@@ -24,6 +24,7 @@ test('Exact emulator config, allowlist, origins and source signature are require
     assert.equal((await inspectLocalService(f.port,'api',{env:{...f.env,[key]:'different'}})).kind,'incompatible');
   }
   assert.notEqual(await serviceSignature(f.env),await serviceSignature({...f.env,FIREBASE_TOKEN:'fictional-rejected'}));
+  assert.notEqual(await serviceSignature(f.env),await serviceSignature({...f.env,ABC_MSA_VISUAL_V1A:'1'}));
   assert.equal((await inspectLocalService(f.port,'mentor',{env:f.env})).kind,'unknown');
   const reuse=await resolveDemoPorts([f.port],{inspect:(port,role)=>inspectLocalService(port,role,{env:f.env}),log:()=>{},confirm:()=>assert.fail('Tidak boleh meminta konfirmasi server cocok.')});
   assert.equal(reuse[0].status.instance,inspected.status.instance);assert.equal(f.stops(),0);

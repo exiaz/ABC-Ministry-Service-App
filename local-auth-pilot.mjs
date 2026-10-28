@@ -116,7 +116,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
   const env=pilotEnvironment(base,{ports}),prior={...process.env};
   // Exclude fresh namespace/UID values: reuse compares the running source and
   // launcher contract, not credentials or a newly generated fixture identity.
-  const signature=await serviceSignature({});
+  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:env.ABC_MSA_VISUAL_V1A});
   const existing=await controlRequest(address,'status');
   if(existing){
     if(existing.protocol!==1||existing.unified!==unified||existing.signature!==signature||JSON.stringify(existing.ports)!==JSON.stringify(ports))throw safe('Instance MSA yang berjalan memakai mode, versi aplikasi atau port berbeda. Hentikan melalui Stop MSA.cmd atau Enter di jendela launcher, lalu jalankan Start MSA.cmd kembali. Instance lama tidak diubah.');
@@ -179,7 +179,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       const apiAuthentication=await createLocalAdminAuthentication(context);resources.auths.push(apiAuthentication);
       resources.servers.push(await listen(createRosterServer({...context,adminAuthentication:apiAuthentication,mentorOrigin:options.mentorOrigin}),api));
       resources.servers.push(await listen(wrapPilotServer(createAdminServer({adminAuthentication,pairing:context.pairing,portal:unified}),{...options,unified}),admin));
-      resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api}),{...options,mentor:true,unified}),mentor));
+      resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api,visual:adminAuthentication.a1.visual}),{...options,mentor:true,unified}),mentor));
       check();await ready();await appsReady(resources);phase='ready';
       log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+' (kata sandi yang baru Anda buat).\nMentor: '+options.mentorOrigin+'/\nPanduan: '+options.mentorOrigin+'/pilot.html\nPendaftaran: '+options.adminOrigin+'/register.html\nTinjauan: '+options.adminOrigin+'/identity-review.html\nPemulihan: '+options.adminOrigin+'/account-recovery.html\nAdmin / aktivasi: '+options.adminOrigin+'/username.html\nSesudah review pemulihan disetujui, operator tepercaya mengetik: pulihkan <username>. Pemilik mengisi kata sandi baru sendiri tanpa tampil.\nTekan Enter untuk berhenti atau klik Stop MSA.cmd. Semua data pilot sementara.');
       if(unified)log('Portal MSA: '+options.adminOrigin+'/ · Admin: '+PIC_USERNAME+' (kata sandi Admin yang baru dibuat).');

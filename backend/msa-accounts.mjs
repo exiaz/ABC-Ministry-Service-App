@@ -64,6 +64,8 @@ export function createMsaAccounts({db,root,auth,assertLocal,now=Date.now}){
     return {...scope};
   };
   return {
+    // Reuse the same transactional Superadmin boundary for protected modules.
+    authorizeManager: manager,
     // Explicit fictional marker prevents accidental reuse as a general provisioner.
     async provisionFixture(value){
       assertLocal();

@@ -10,6 +10,8 @@ import {createMsaCore} from './msa-core.mjs';
 import {createMsaEvents} from './msa-events.mjs';
 import {createMsaCalendar} from './msa-calendar.mjs';
 import {createMsaScheduling} from './msa-scheduling.mjs';
+import {createVisualPilotGate} from './msa-visual-gate.mjs';
+import {createMsaVisual} from './msa-visual.mjs';
 
 export function createMsaAuthentication({db,root,auth,config,assertLocal,emailActor,pilotEnabled=false,registrationEnabled=false,repository,mentorAccounts,now=Date.now}){
   const sessions=new Map(),accounts=createMsaAccounts({db,root,auth,assertLocal,now});
@@ -96,5 +98,9 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
   if(api.core&&process.env.ABC_MSA_STAGE9A==='1')api.events=createMsaEvents({db,root,auth,core:api.core,now});
   if(api.events&&process.env.ABC_MSA_STAGE9B1==='1')api.calendar=createMsaCalendar({db,root,core:api.core,events:api.events,now});
   if(api.calendar&&process.env.ABC_MSA_STAGE9B2==='1')api.scheduling=createMsaScheduling({db,root,core:api.core,events:api.events,calendar:api.calendar,now});
+  if(process.env.ABC_MSA_VISUAL_V1A==='1'){
+    const gate=createVisualPilotGate();
+    api.visual=createMsaVisual({db,root,accounts,now,enabled:()=>{assertLocal();gate.enabled();}});
+  }
   return api;
 }

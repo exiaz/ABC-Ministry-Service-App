@@ -5,6 +5,7 @@ import path from 'node:path';
 import {localOrigin} from './backend/mentor-origin.mjs';
 import {emulatorConfig} from './backend/emulator-config.mjs';
 import {assertMentorAccountMode} from './backend/msa-mentor-devices.mjs';
+import {visualPublicRoute} from './backend/msa-visual-public.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||4173);
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
@@ -13,11 +14,12 @@ const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthd
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
-export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175'}={}){
+export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
   const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
   return http.createServer(async(req,res)=>{try{
     const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
+    if(await visualPublicRoute(req,res,url,mentorMode?visual:undefined))return;
     const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
     const personal=recovery||['mentor-account.html','mentor-account.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
     if(personal){

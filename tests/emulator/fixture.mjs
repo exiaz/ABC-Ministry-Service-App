@@ -12,9 +12,10 @@ export function fixtureRecords(source){
 
 // Seed only explicitly supplied fictional fixtures, never browser/localStorage.
 // Each test uses a unique namespace; teardown deletes only that namespace.
-export async function emulatorFixture({now,source}={}){
+export async function emulatorFixture({now,source,namespace}={}){
   const previous=process.env.ABC_FIRESTORE_NAMESPACE;
-  process.env.ABC_FIRESTORE_NAMESPACE='test-'+randomUUID();
+  if(namespace!==undefined&&!/^test-[A-Za-z0-9_-]+$/.test(namespace))throw Error('Namespace fixture harus test-*.');
+  process.env.ABC_FIRESTORE_NAMESPACE=namespace??'test-'+randomUUID();
   let context;
   try{context=await createFirestoreEmulatorRepositories({now});}
   finally{if(previous===undefined)delete process.env.ABC_FIRESTORE_NAMESPACE;else process.env.ABC_FIRESTORE_NAMESPACE=previous;}

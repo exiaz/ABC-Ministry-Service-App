@@ -81,7 +81,7 @@ export function createPortalSessions(authentication,{now=Date.now}={}){
         }
         // Only same-origin management APIs may consume this cookie. Mentor
         // device authorization and public intake keep their own boundaries.
-        if(!dispatch||!/^\/api\/(?:admin|a1|a2-2|a2-4|a2-4b|a2-4c|stage8|stage9a|stage9b1|stage9b2)\//.test(url.pathname))fail(403,'Modul tidak termasuk sesi portal.');
+        if(!dispatch||!/^\/api\/(?:admin|a1|a2-2|a2-4|a2-4b|a2-4c|stage8|stage9a|stage9b1|stage9b2|visual)\//.test(url.pathname))fail(403,'Modul tidak termasuk sesi portal.');
         if(['/api/a1/login','/api/admin/login'].includes(url.pathname))fail(403,'Gunakan login portal MSA.');
         if(!s)fail(401,'Sesi berakhir. Masuk kembali.');await actor(s);
         req.headers.authorization='Bearer '+s.token;

@@ -5,9 +5,9 @@ import {initializeOwner} from '../../backend/admin-accounts.mjs';
 import {initializeApp,deleteApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 
-export async function msaFixture(t,{usernamePilot=false,source}={}){
+export async function msaFixture(t,{usernamePilot=false,source,namespace}={}){
   const previous={flag:process.env.ABC_MSA_A1,pilot:process.env.ABC_MSA_USERNAME_PILOT,namespace:process.env.ABC_FIRESTORE_NAMESPACE};
-  const c=await emulatorFixture({source});process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;process.env.ABC_MSA_A1='1';
+  const c=await emulatorFixture({source,namespace});process.env.ABC_FIRESTORE_NAMESPACE=c.config.namespace;process.env.ABC_MSA_A1='1';
   if(usernamePilot)process.env.ABC_MSA_USERNAME_PILOT='1';else delete process.env.ABC_MSA_USERNAME_PILOT;
   const f=await adminLoginFixture(t,{pairing:c.pairing,repository:c.repository,mentorAccounts:c.mentorAccounts}),created=[];
   await initializeOwner({...c,auth:f.auth,uid:f.uid,email:f.email,confirmed:true});

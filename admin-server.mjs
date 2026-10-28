@@ -8,6 +8,7 @@ import {createRosterServer} from './backend/server.mjs';
 import {requireAdminOrigin} from './backend/admin-session-http.mjs';
 import {createConfiguredRepositories} from './backend/configured-repositories.mjs';
 import {createPortalSessions} from './backend/msa-portal-session.mjs';
+import {visualPublicRoute} from './backend/msa-visual-public.mjs';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const assets=new Map([['/','admin.html'],['/index.html','admin.html'],['/admin-client.js','admin-client.js'],['/secure-admin.js','secure-admin.js'],['/styles.css','styles.css'],['/assets/abc-movement-logo.png','assets/abc-movement-logo.png'],['/icon.svg','icon.svg']]);
@@ -40,6 +41,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
     try{
       requireAdminOrigin(req);
       let url=new URL(req.url,'http://127.0.0.1');
+      if(await visualPublicRoute(req,res,url,adminAuthentication?.a1?.visual))return;
       if(sessions&&url.pathname.startsWith('/api/')){
         // Public onboarding/recovery stays separately testable without a session.
         if(await sessions.handle(req,res,url))return;
@@ -57,7 +59,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
         if(!adminAuthentication?.a1?.registration||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
         adminAuthentication.a1.registration.enabled();
       }
-      if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')||url.pathname.startsWith('/api/a2-4/')||url.pathname.startsWith('/api/a2-4b/')||url.pathname.startsWith('/api/a2-4c/')||url.pathname.startsWith('/api/stage8/')||url.pathname.startsWith('/api/stage9a/')||url.pathname.startsWith('/api/stage9b1/')||url.pathname.startsWith('/api/stage9b2/')){api.emit('request',req,res);return;}
+      if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')||url.pathname.startsWith('/api/a2-4/')||url.pathname.startsWith('/api/a2-4b/')||url.pathname.startsWith('/api/a2-4c/')||url.pathname.startsWith('/api/stage8/')||url.pathname.startsWith('/api/stage9a/')||url.pathname.startsWith('/api/stage9b1/')||url.pathname.startsWith('/api/stage9b2/')||url.pathname.startsWith('/api/visual/')){api.emit('request',req,res);return;}
       if(['/a1.html','/msa-users.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
       }

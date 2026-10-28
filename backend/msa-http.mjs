@@ -1,10 +1,10 @@
 import {requireAdminOrigin} from './admin-session-http.mjs';
 import {fail} from './msa-accounts.mjs';
 
-async function json(req){
+async function json(req,limit=4096){
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??''))fail(400,'Permintaan harus berupa JSON.');
   const chunks=[];let size=0;req.setTimeout(5000,()=>req.destroy());
-  try{for await(const chunk of req.iterator({destroyOnReturn:false})){size+=chunk.length;if(size>4096){req.resume();fail(413,'Permintaan akun terlalu besar.');}chunks.push(chunk);}}finally{req.setTimeout(0);}
+  try{for await(const chunk of req.iterator({destroyOnReturn:false})){size+=chunk.length;if(size>limit){req.resume();fail(413,'Permintaan akun terlalu besar.');}chunks.push(chunk);}}finally{req.setTimeout(0);}
   let value;try{value=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fail(400,'JSON tidak valid.');}
   if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Data akun tidak valid.');return value;
 }
@@ -17,11 +17,13 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   const events=url.pathname.startsWith('/api/stage9a/');
   const calendar=url.pathname.startsWith('/api/stage9b1/');
   const scheduling=url.pathname.startsWith('/api/stage9b2/');
-  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events&&!calendar&&!scheduling)return false;
+  const visual=url.pathname.startsWith('/api/visual/');
+  if(!url.pathname.startsWith('/api/a1/')&&!intake&&!lifecycle&&!recovery&&!migration&&!core&&!events&&!calendar&&!scheduling&&!visual)return false;
   const a1=adminAuthentication?.a1;
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  if(visual){if(!a1.visual){send(404,{error:'Tidak ditemukan.'});return true;}a1.visual.enabled();}
   if(scheduling){if(!a1.scheduling){send(404,{error:'Tidak ditemukan.'});return true;}a1.scheduling.enabled();}
   if(calendar){if(!a1.calendar){send(404,{error:'Tidak ditemukan.'});return true;}a1.calendar.enabled();}
   if(events){if(!a1.events){send(404,{error:'Tidak ditemukan.'});return true;}a1.events.enabled();}
@@ -51,6 +53,19 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(visual){
+    if(url.search)fail(400,'Parameter tidak diizinkan.');
+    const match=/^\/api\/visual\/(welcome|login|registration|dashboard)(?:\/(draft|preview|publish|revert|history))?$/.exec(path);
+    if(!match){send(404,{error:'Tidak ditemukan.'});return true;}
+    const [,slot,action]=match,v=a1.visual;
+    if(!action&&req.method==='GET'){send(200,await v.status(actor,slot));return true;}
+    if(action==='history'&&req.method==='GET'){send(200,await v.history(actor,slot));return true;}
+    if(action==='preview'&&req.method==='GET'){send(200,await v.preview(actor,slot));return true;}
+    if(action==='draft'&&req.method==='POST'){await v.authorize(actor);send(200,await v.upload(actor,slot,await json(req,7*1024*1024+4096)));return true;}
+    if(action==='publish'&&req.method==='POST'){send(200,await v.publish(actor,slot,await json(req)));return true;}
+    if(action==='revert'&&req.method==='POST'){send(200,await v.revert(actor,slot,await json(req)));return true;}
+    send(405,{error:'Tindakan tidak tersedia.'});return true;
   }
   if(scheduling){
     if(url.search)fail(400,'Parameter tidak diizinkan.');const s=a1.scheduling;

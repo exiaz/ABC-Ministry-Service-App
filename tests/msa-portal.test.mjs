@@ -23,6 +23,9 @@ test('Portal cookie preserves trusted admission, origin/CSRF boundary, revocatio
     const cookie=await login();
     assert.equal((await request('/api/portal/session',{cookie})).status,200);
     assert.deepEqual(await (await request('/api/portal/dispatch/api/stage8/organizations',{cookie})).json(),{authorized:true});
+    assert.deepEqual(await (await request('/api/portal/dispatch/api/visual/login',{cookie})).json(),{authorized:true});
+    assert.equal((await request('/api/portal/dispatch/api/visual/login/draft',{cookie,body:{},headers:{Origin:'http://evil.invalid'}})).status,403);
+    assert.equal((await request('/api/portal/dispatch/api/visual/login/preview')).status,401);
     for(const headers of [{Origin:'http://evil.invalid'},{'Sec-Fetch-Site':'cross-site'},{'X-MSA-Portal':''},{Authorization:'Bearer portal-session'}])assert.equal((await request('/api/portal/session',{cookie,headers})).status,403);
     assert.equal((await request('/api/portal/logout',{cookie,body:{},headers:{Origin:''}})).status,403);
     assert.equal((await request('/api/portal/session?token=ignored',{cookie})).status,400);

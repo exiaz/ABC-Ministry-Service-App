@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Visual Studio v1B.2: backend emulator
+
+**IMPLEMENTED / TESTED terbatas pada emulator; v1B belum selesai, produksi NO-GO.** Gate `ABC_MSA_VISUAL_V1A=1` tetap mati default dan mengharuskan A1, kedua emulator dan namespace `test-*`. Backend menyediakan status, riwayat/audit, upload draf PNG, preview privat, publish dan revert independen untuk `welcome`, `login`, `registration`, `dashboard`. Otorisasi memakai pemeriksaan Superadmin A1 yang sama di dalam transaksi, termasuk pemeriksaan ulang sesi; portal memakai cookie/CSRF yang sudah ada. Chunk PNG yang diproses, pointer slot, receipt dan audit disimpan dalam Firestore Emulator; rules browser tetap menolak akses langsung. Setiap mutasi memakai alasan, konfirmasi, revisi dan request ID; pointer, chunk, audit dan receipt ditulis atomik. Baca publik hanya menyajikan pointer aktif pada kedua origin dengan URL revisi dan `no-store`; konsumen kembali ke konfigurasi/aset lokal bila media tidak tersedia.
+
+Tes terarah `node tests/stage3.mjs --visual`: unit 207/207 dan integrasi 1/1, termasuk draf tiga slot, konflik/replay, penolakan Admin/akun biasa/guest, Superadmin legacy dan personal, cookie portal/CSRF dan pencabutan, rules Firestore, kegagalan write dan chunk rusak, pembuatan ulang service terhadap namespace yang sama, serta gambar registrasi/Mentor dan fallback di Chrome 390 px. `npm.cmd run test:msa-a1`: unit 3/3, integrasi 3/3 dan Chrome 1/1. `npm.cmd run test:msa-a2-2`: unit 207/207, integrasi 7/7 dan Chrome 1/1. `npm.cmd run test:msa-a2-3`: unit 207/207, integrasi 6/6 dan Chrome 1/1. `npm.cmd test`: 207/207. Hasil ini bukan audit keamanan produksi.
+
+**Batas:** belum ada UI Visual Studio, preview tata letak Opsi G, program/kampanye, pembersihan aset lama atau paginasi riwayat (maksimal 200 entri per jenis). Restart service diuji dengan emulator/namespace yang sama; launcher pilot membuat namespace baru dan tidak menyimpan data setelah berhenti. Backup, migrasi, quota, hardening dan audit produksi belum tersedia. Hanya PNG statis yang dibatasi; tidak ada perubahan proof perangkat Mentor atau SSO lintas origin.
+
 ## 28 Oktober 2026 — Visual Studio v1B: validasi awal
 
 **PARTIAL / NOT IMPLEMENTED.** `backend/msa-visual-contract.mjs` menambahkan validasi terisolasi untuk slot `welcome`, `login`, `registration`, `dashboard`, metadata alt dan focal point, serta konfirmasi, revisi, alasan dan ID permintaan pada mutasi. Komponen ini belum terhubung ke rute, storage atau UI dan belum menyediakan upload, preview, publish, audit, revert atau isolasi draf. Program dan kampanye tetap tidak tersedia. Tes terarah gate, PNG dan kontrak lulus 7/7; hasil ini bukan verifikasi keamanan alur lengkap. Produksi tetap NO-GO.
