@@ -21,6 +21,9 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     await runPilot({unified:true,open:async options=>opened.push(options.adminOrigin+'/'),log:()=>{}});assert.deepEqual(opened,[origin+'/',origin+'/']);
     const root=f.context.root,owner=(await root.collection('msaUsernames').doc(PILOT_USERNAME).get()).data().uid,pic=(await root.collection('msaUsernames').doc(PIC_USERNAME).get()).data().uid;
     assert.notEqual(owner,pic);assert.equal((await root.collection('msaCorePlatformGrants').doc(pic).get()).exists,false);assert.equal((await root.collection('msaAccounts').get()).size,0);
+    const fixtureUsername='user-qa-'+randomUUID().slice(0,8),fixturePassword=randomBytes(24).toString('base64url');
+    const fixtureAccount=await f.resources.auths[0].a1.accounts.provisionFixture({fictional:true,requestId:randomUUID(),username:fixtureUsername,fullName:'Pengguna Uji Fiktif',password:fixturePassword,phone:'081234567890'});
+    await root.collection('msaAccounts').doc(fixtureAccount.uid).update({state:'active',identity:{state:'verified',actorUid:owner,verifiedAt:Date.now(),method:'fictional-fixture'},eligibleRoles:['pic','admin','volunteer','superadmin']});
     browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
     const context=await browser.newContext({locale:'id-ID',viewport:{width:390,height:900}}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const screenshots=path.resolve('.emulator-data/msa-portal-qa/screenshots');await mkdir(screenshots,{recursive:true});
@@ -70,6 +73,17 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       await page.reload();await page.waitForFunction(()=>document.querySelector('#core-org-name').textContent.length>0);assert.equal(await page.locator('input[type=password]:visible').count(),0);
       await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');
     };
+    const userScreens=async()=>{
+      await page.goto(origin+'/a1.html');await page.waitForSelector('[data-user="'+fixtureAccount.uid+'"]');await page.waitForFunction(()=>document.querySelector('#msa-management').getAttribute('aria-busy')==='false');await capture('phase3b2-users');
+      await page.locator('[data-user="'+fixtureAccount.uid+'"]').click();assert.equal(await page.locator('#msa-detail').evaluate(n=>n===document.activeElement),true);await capture('phase3b2-detail');
+      await page.locator('#msa-kind').selectOption('state');await page.locator('#msa-account-state').selectOption('suspended');await page.locator('#msa-reason').fill('Tinjauan fiktif untuk uji pembatalan');await page.locator('#msa-change button').click();
+      assert.equal(await page.locator('#msa-cancel').evaluate(n=>n===document.activeElement),true);await capture('phase3b2-confirm');await page.locator('#msa-cancel').click();assert.equal(await page.locator('#msa-change button').evaluate(n=>n===document.activeElement),true);
+      assert.equal((await root.collection('msaAccounts').doc(fixtureAccount.uid).get()).data().state,'active');
+      await page.locator('#msa-query').fill('tidak-ada-pengguna-uji');await page.locator('#msa-search button').click();await page.waitForFunction(()=>document.querySelector('#msa-list').textContent.includes('Tidak ada akun'));await capture('phase3b2-empty');
+      const pattern='**/api/portal/dispatch/api/a1/accounts?*';await page.route(pattern,route=>route.fulfill({status:503,json:{error:'Gangguan uji fiktif'}}));await page.locator('#msa-search button').click();await page.waitForFunction(()=>document.querySelector('#msa-feedback').textContent.includes('Gangguan uji'));await capture('phase3b2-error');await page.unroute(pattern);
+      await page.locator('#msa-query').fill(fixtureUsername);await page.locator('#msa-search button').click();await page.waitForSelector('[data-user="'+fixtureAccount.uid+'"]');await page.reload();await page.waitForSelector('[data-user="'+fixtureAccount.uid+'"]');assert.equal(await page.locator('input[type=password]:visible').count(),0);
+      await page.locator('#msa-logout').click();await page.waitForURL(origin+'/');await page.waitForSelector('#portal-login:not([hidden])');await login(PILOT_USERNAME,password);
+    };
     const login=async(username,value)=>{await page.goto(origin+'/');await page.locator('#portal-username').fill(username);await page.locator('#portal-password').fill(value);await page.locator('#portal-login button[type=submit]').click();await page.waitForSelector('#portal-workspace:not([hidden])');};
     await page.goto(origin+'/');assert.equal(await page.locator('select').count(),0);await page.locator('#portal-username').focus();await page.keyboard.press('Tab');assert.equal(await page.locator('#portal-password').evaluate(n=>n===document.activeElement),true);await page.locator('#portal-show').click();assert.equal(await page.locator('#portal-password').getAttribute('type'),'text');await capture('login');
     await page.locator('#portal-username').fill(PILOT_USERNAME);await page.locator('#portal-password').fill('incorrect-fictional-password');await page.locator('#portal-login button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#portal-feedback').textContent.includes('tidak valid'));assert.equal(await page.locator('#portal-workspace').isVisible(),false);
@@ -78,7 +92,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Superadmin');assert.equal(await page.locator('#portal-new').isVisible(),true);
     await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation .msa-nav-primary a:visible').count(),3);assert.equal(await page.locator('#modul summary').isVisible(),true);
     const api=async(route,body)=>page.evaluate(async({route,body})=>{const {msaFetch}=await import('/msa-session.js');const r=await msaFetch(route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});return {status:r.status,body:await r.json()};},{route,body});
-    const profile=await api('/api/portal/session');await coreScreens('superadmin');await serviceScreens('superadmin');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
+    const profile=await api('/api/portal/session');await userScreens();await coreScreens('superadmin');await serviceScreens('superadmin');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
     const verifyDestination=async route=>{
       await page.waitForURL(origin+route);await page.waitForSelector('#msa-navigation');
       if(route==='/username.html'){

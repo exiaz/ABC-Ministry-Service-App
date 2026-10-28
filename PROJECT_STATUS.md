@@ -1,5 +1,15 @@
 # ABC Attendance — status revisi
 
+## 27 Oktober 2026 — UI/UX Refinement Phase 3B.2A
+
+**IMPLEMENTED pada pengelolaan pengguna/izin A1 untuk portal lokal dan diuji dengan emulator/data fiktif; produksi tetap NO-GO.** Daftar akun, filter, profil, scope dan status menggunakan token workspace; detail ditempatkan sebelum daftar, audit sebelum/sesudah dapat dibuka, dan dialog memberikan fokus serta umpan balik konflik/koneksi. Penolakan sesi/izin membersihkan daftar, detail, audit dan ringkasan konfirmasi dari tampilan. Status tetap memakai label teks. Tidak ada perubahan backend, schema, grant, aturan last-Superadmin, revisi, audit, autentikasi, atau interior Identity Review/Recovery/Mentor.
+
+Verifikasi aktual: `npm.cmd test` PASS 200/200 sebelum penambahan pembersihan ringkasan akhir; `npm.cmd run test:msa-a1` run final PASS check 213 modul, unit A1 3/3, integrasi 3/3 dan Chrome 1/1 setelah perubahan akhir. Tes mencakup filter nama/status/peran, grant scope, pembatalan, perubahan dan pencabutan, konflik revisi, audit, penolakan akses serta retry dengan request ID dan payload yang sama setelah respons hilang. Penolakan UI 403 disimulasikan; pembatasan izin, last-Superadmin dan revokasi server diuji pada integrasi emulator nyata. Run Chrome awal sempat gagal karena selector grant ambigu setelah skenario baru membuat dua grant; selector tes diperjelas berdasarkan scope dan run berikutnya lulus.
+
+`node --test tests/msa-portal-browser.mjs` PASS 1/1: akun fiktif emulator, daftar berisi, detail, konfirmasi/batal, hasil kosong dan error jaringan, refresh, logout A1, navigasi sesi dan penolakan Admin terbatas. Error jaringan UI disimulasikan; akun dan akses menggunakan emulator. Run portal ini selesai sebelum perubahan akhir yang hanya membersihkan ringkasan pada respons 401/403; perubahan tersebut diverifikasi oleh run A1 final. Screenshot berisi/kosong/error/detail/konfirmasi diperiksa pada 360/390/768/1365 px; assertion memeriksa overflow horizontal dan tinggi tombol/tautan/summary terlihat >=44 px. Kontras pasangan teks/status yang dihitung 5,98:1 atau lebih. Screenshot berada di `.emulator-data/msa-portal-qa/screenshots/`, runner A1 final di `.emulator-data/stage3-tests/run-7gBNsI`; emulator tes ditutup.
+
+**Batas:** Chrome desktop emulasi bukan perangkat fisik; browser lain, screen reader, zoom/spacing dan audit aksesibilitas formal belum diuji. Tidak ada pagination atau kemampuan akun baru. Tidak ada commit/push/deploy, perubahan branch, atau Stage 10A.
+
 ## 27 Oktober 2026 — UI/UX Refinement Phase 3B.1
 
 **IMPLEMENTED untuk tampilan Organisasi/Program/Membership dan diuji pada emulator lokal/data fiktif; produksi tetap NO-GO.** Konteks organisasi, status, daftar program, hak baca/tambah dan daftar anggota memakai token workspace; hak tindakan tetap berasal dari respons server. Dialog konfirmasi memiliki nama aksesibel dan fokus kembali setelah batal. Loading, kosong, akses terbatas dan error ditampilkan tanpa menambah grant, API, penyediaan akun, data atau perubahan histori. Label di halaman menegaskan bahwa pilihan organisasi bersifat lokal pada halaman; pilihan belum diteruskan otomatis antar-modul.

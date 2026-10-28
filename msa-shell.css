@@ -252,3 +252,52 @@ body[data-msa-portal].msa-core #core-platform-list article{padding:16px;margin:0
 body[data-msa-portal].msa-core #core-platform-list article :is(h3,p){margin:4px 0}
 body[data-msa-portal].msa-core #core-confirm{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
 @media(max-width:480px){body[data-msa-portal].msa-core #core-program-form{padding:16px}body[data-msa-portal].msa-core .core-member{grid-template-columns:1fr}body[data-msa-portal].msa-core .core-member .core-status{grid-column:1;grid-row:auto;justify-self:start;margin-top:4px}}
+
+/* User and permission management in the portal workspace. */
+body[data-msa-portal] #msa-users{max-width:1200px;color:var(--msa-ink);background:var(--msa-canvas)}
+body[data-msa-portal] #msa-users header{border-bottom:1px solid var(--msa-line);padding-bottom:18px}
+body[data-msa-portal] #msa-users header #msa-brand{display:none}
+body[data-msa-portal] #msa-users h1{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0;line-height:1.15}
+body[data-msa-portal] #msa-users header p{margin:8px 0 0;color:var(--msa-muted)}
+body[data-msa-portal] #msa-users>p:has(a[href="/"]){display:none}
+body[data-msa-portal] #msa-users :is(#msa-session,#msa-management){background:transparent;border:0;border-radius:0;padding:0;margin:20px 0}
+body[data-msa-portal] #msa-session{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+body[data-msa-portal] #msa-session[hidden]{display:none}
+body[data-msa-portal] #msa-session p{color:var(--msa-muted);margin:0}
+body[data-msa-portal] #msa-users #msa-management>h2{border-top:3px solid var(--msa-red);padding-top:16px;margin:0 0 12px}
+body[data-msa-portal] #msa-users #msa-search{align-items:end;gap:12px 16px;padding:16px;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px}
+body[data-msa-portal] #msa-users #msa-search label{font-size:14px;font-weight:650;margin:0}
+body[data-msa-portal] #msa-users #msa-search :is(input,select){margin-top:6px}
+body[data-msa-portal] #msa-users #msa-search button{margin:0}
+body[data-msa-portal] #msa-users #msa-list{display:block;margin:20px 0}
+body[data-msa-portal] #msa-users #msa-list .account-card{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) auto;gap:4px 16px;align-items:center;margin:0;padding:14px 0;border:0;border-bottom:1px solid var(--msa-line);border-radius:0;background:transparent}
+body[data-msa-portal] #msa-users .account-card h3{grid-column:1;margin:0;overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users .account-card p{grid-column:1;margin:0;color:var(--msa-muted);font-size:14px}
+body[data-msa-portal] #msa-users .account-card ul{grid-column:2;grid-row:1/4;margin:0;padding-left:18px;font-size:14px}
+body[data-msa-portal] #msa-users .account-card li{margin:3px 0}
+body[data-msa-portal] #msa-users .account-card button{grid-column:3;grid-row:1/4;width:auto;margin:0}
+body[data-msa-portal] #msa-users .account-card button[aria-pressed=true]{border-color:var(--msa-red);background:#e7f1f5;color:var(--msa-ink)}
+body[data-msa-portal] #msa-users .msa-user-status{display:inline-block;padding:2px 7px;border-radius:4px;background:#e7f1f5;color:var(--msa-blue);font-size:12px;font-weight:700}
+body[data-msa-portal] #msa-users .msa-user-status[data-state=suspended],body[data-msa-portal] #msa-users .msa-user-status[data-state=rejected],body[data-msa-portal] #msa-users .msa-user-status[data-state=disabled]{background:#f9e9e6;color:#8a2530}
+body[data-msa-portal] #msa-users .msa-user-status[data-state=pending]{background:#faedc5;color:#694800}
+body[data-msa-portal] #msa-users #msa-detail:empty{display:none}
+body[data-msa-portal] #msa-users #msa-detail>article{background:var(--msa-paper);border:1px solid var(--msa-line);border-top:3px solid var(--msa-red);border-radius:10px;padding:20px;margin:20px 0}
+body[data-msa-portal] #msa-users #msa-detail h2{margin:0 0 10px}
+body[data-msa-portal] #msa-users #msa-detail p{overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users #msa-change fieldset{border:1px solid var(--msa-line);border-radius:8px;background:#f6f6f0;margin:16px 0;padding:16px}
+body[data-msa-portal] #msa-users #msa-change legend{font-weight:700}
+body[data-msa-portal] #msa-users #msa-change label{font-size:14px;font-weight:650}
+body[data-msa-portal] #msa-users #msa-change .grid{gap:12px 16px}
+body[data-msa-portal] #msa-users #msa-history article{background:transparent;border:0;border-top:1px solid var(--msa-line);border-radius:0;margin:0;padding:12px 0}
+body[data-msa-portal] #msa-users #msa-history article p{margin:4px 0}
+body[data-msa-portal] #msa-users #msa-history summary{font-weight:650}
+body[data-msa-portal] #msa-users #msa-history pre{background:var(--msa-paper);border:1px solid var(--msa-line);padding:12px;overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users #msa-confirm{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
+body[data-msa-portal] #msa-users #msa-feedback:empty{display:none}
+body[data-msa-portal] #msa-users #msa-feedback:not(:empty){padding:10px 12px;border-left:3px solid var(--msa-red);background:#f0f0e9}
+@media(max-width:700px){
+ body[data-msa-portal] #msa-users #msa-list .account-card{grid-template-columns:minmax(0,1fr);gap:6px}
+ body[data-msa-portal] #msa-users .account-card :is(h3,p,ul,button){grid-column:1;grid-row:auto}
+ body[data-msa-portal] #msa-users .account-card button{justify-self:start}
+ body[data-msa-portal] #msa-users #msa-detail>article{padding:16px}
+}
