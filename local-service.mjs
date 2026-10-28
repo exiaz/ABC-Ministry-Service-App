@@ -22,7 +22,7 @@ export async function serviceSignature(env=process.env,root=ROOT){
   async function scan(folder){for(const item of await readdir(folder,{withFileTypes:true})){
     const target=path.join(folder,item.name);
     if(item.isDirectory()&&folder===root&&item.name==='backend')await scan(target);
-    else if(item.isFile()&&/\.(m?js|html|css)$/.test(item.name))files.push(target);
+    else if(item.isFile()&&/\.(m?js|html|css|ps1)$/.test(item.name))files.push(target);
   }}
   await scan(root);files.sort();
   const source=createHash('sha256');for(const file of files){source.update(path.relative(root,file));source.update(await readFile(file));}

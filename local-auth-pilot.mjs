@@ -1,6 +1,6 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,randomBytes} from 'node:crypto';
 import {mkdir,mkdtemp,writeFile,realpath} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
@@ -25,11 +25,12 @@ import {calendarPermissions,eventPermissions} from './backend/msa-events.mjs';
 import {seedEventGrant} from './tests/fixtures/msa-events.mjs';
 import {seedStage8Fixture} from './tests/fixtures/msa-core.mjs';
 import {coreMembershipId} from './backend/msa-core.mjs';
+import {createLocalMsaSetup,wrapLocalMsaSetup} from './local-msa-setup.mjs';
 
 const ROOT=path.dirname(fileURLToPath(import.meta.url));
 export const PILOT_PORTS=Object.freeze([8280,9299,4480,4580,9250,4275,4277,4276]);
 export const PILOT_ADDRESS=controllerPath(path.join(ROOT,'auth-pilot'));
-export const PILOT_USERNAME='peninjau.pilot';
+export const PILOT_USERNAME='momor1n';
 export const PIC_USERNAME='pic.pilot';
 const safe=message=>Object.assign(Error(message),{pilotSafe:true});
 
@@ -64,6 +65,7 @@ export async function preparePilot(context,{auth,adminAuthentication,password,pi
   check();
   if(!context.config.namespace.startsWith('test-auth-pilot-'))throw safe('Namespace fixture pilot tidak valid.');
   const uid=JSON.parse(process.env.ABC_ADMIN_UIDS)[0],email=uid+'@example.invalid';
+  const accounts=new Map([[PILOT_USERNAME,{uid,email,role:'superadmin'}]]);
   // Fresh emulator + namespace, create-only. No reset, account rewrite or HTTP provisioning.
   const batch=context.db.batch();
   for(const r of fixtureRecords(pilotSource()))batch.create(context.root.collection(r.collection).doc(r.id),r.data);
@@ -84,6 +86,7 @@ export async function preparePilot(context,{auth,adminAuthentication,password,pi
       const checkOwner=async()=>(await adminAuthentication.authorize('Bearer '+ownerToken)).kind==='ok';
       const created=await adminAuthentication.accounts.create(uid,{email:'pic-'+randomUUID()+'@example.invalid',password:picPassword,actions:['pairing:read','pairing:issue'],grants:[{schoolId:'s1',groupId:'g1',serviceSessionId:'fictional-a23-current'}]},checkOwner);
       const user=await auth.getUser(created.uid),picToken=await adminAuthentication.signIn({email:user.email,password:picPassword});
+      accounts.set(PIC_USERNAME,{uid:created.uid,email:user.email,role:'pic'});
       try{await adminAuthentication.a1.legacyPilot.claim({header:'Bearer '+picToken,username:PIC_USERNAME,password:picPassword,expectedUid:created.uid,reason:'Setup eksplisit identitas PIC fiktif terpisah oleh operator lokal',confirmed:true});}finally{adminAuthentication.revoke(picToken);}
       const a1=adminAuthentication.a1,actor=await adminAuthentication.authorize('Bearer '+ownerToken);
       // These are explicit fixture grants, never derived from the PIC label.
@@ -97,11 +100,14 @@ export async function preparePilot(context,{auth,adminAuthentication,password,pi
     }finally{adminAuthentication.revoke(ownerToken);}
   }
   check();
+  return accounts;
 }
 
 export async function openPilotPages({adminOrigin}){
   for(const url of [adminOrigin+'/'])await new Promise((resolve,reject)=>{
-    const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});child.once('spawn',resolve);child.once('error',reject);
+    const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});
+    const timer=setTimeout(()=>{child.kill();reject(safe('Browser Windows belum merespons. Buka portal dari tautan lokal yang tercantum.'));},15000);
+    child.once('error',error=>{clearTimeout(timer);reject(error);});child.once('exit',code=>{clearTimeout(timer);code===0?resolve():reject(safe('Browser Windows belum dapat dibuka.'));});
   });
 }
 
@@ -113,7 +119,7 @@ export async function recoverPilotAccount({recovery,username,askPassword,deliver
   catch(error){return {...(error.status===403?{}:{delivery:challenge}),error:error.status===503?'Pemulihan belum selesai. Akses ditutup; ulangi perintah yang sama.':'Pemulihan belum berhasil. Periksa tinjauan, kata sandi dan batas waktu, lalu ulangi perintah.'};}
 }
 
-export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword=askDemoPassword,askPicPassword=askDemoPassword,askRecoveryPassword,prerequisites=checkPrerequisites,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady,unified=false}={}){
+export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword,askPicPassword,askRecoveryPassword,setupPrompt,prerequisites=checkPrerequisites,verifyApps=appsReady,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady,unified=false}={}){
   const env=pilotEnvironment(base,{ports,unified}),prior={...process.env};
   // Exclude fresh namespace/UID values: reuse compares the running source and
   // launcher contract, not credentials or a newly generated fixture identity.
@@ -121,10 +127,13 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
   const existing=await controlRequest(address,'status');
   if(existing){
     if(existing.protocol!==1||existing.unified!==unified||existing.signature!==signature||JSON.stringify(existing.ports)!==JSON.stringify(ports))throw safe('Instance MSA yang berjalan memakai mode, versi aplikasi atau port berbeda. Hentikan melalui Stop MSA.cmd atau Enter di jendela launcher, lalu jalankan Start MSA.cmd kembali. Instance lama tidak diubah.');
-    log('Pilot sudah berjalan. Membuka kembali portal MSA.');if(existing.phase==='ready')await open({adminOrigin:'http://127.0.0.1:'+ports[6]});return;
+    if(existing.phase==='unhealthy')throw safe('Layanan instance MSA belum sehat. Gunakan Stop MSA.cmd, tunggu berhenti, lalu jalankan Start MSA.cmd kembali.');
+    if(existing.phase!=='ready')throw safe('MSA masih menyiapkan atau menghentikan layanan. Tunggu jendela pertama menyatakan siap, lalu klik Start lagi.');
+    await verifyApps({servers:ports.slice(5).map(port=>({address:()=>({port})}))});
+    log('Pilot sudah berjalan. Membuka kembali portal MSA.');await open({adminOrigin:'http://127.0.0.1:'+ports[6]});return;
   }
-  let phase='starting',emulator,context,app,terminal,monitor,bootstrap,stopping,controller;
-  let recovery;const deliveries=new Map();
+  let phase='starting',emulator,context,app,terminal,monitor,bootstrap,stopping,controller,readyProbe;
+  let recovery,setup;const deliveries=new Map();
   const resources={servers:[],auths:[]},abort=new AbortController();
   let finish;const finished=new Promise(resolve=>finish=resolve);
   const check=()=>{if(abort.signal.aborted)throw safe('Penyiapan pilot dibatalkan.');for(const key of Object.keys(env))if(process.env[key]!==env[key])throw safe('Konfigurasi pilot berubah; akses ditutup.');};
@@ -134,6 +143,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
     stopping=(async()=>{
       if(bootstrap)await bootstrap.catch(()=>{});phase='stopping';log('Menghentikan pilot dan menutup data sementara…');
       await closeDemoServers(resources);resources.servers.length=0;resources.auths.length=0;
+      await setup?.close();setup=null;
       await context?.close();context=null;
       if(app){const {deleteApp}=await import('firebase-admin/app');await deleteApp(app);app=null;}
       await stopManagedEmulator(emulator);terminal?.close();controller?.close();
@@ -143,7 +153,11 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
     })().catch(()=>{stopping=null;phase='stop-error';log('Penghentian pilot belum terkonfirmasi. Biarkan jendela ini terbuka dan jalankan Stop MSA.cmd lagi.');});return stopping;
   };
   const onSignal=()=>void stop();
-  controller=await createController(address,async command=>{if(command==='stop')await stop();return {phase,protocol:1,unified,signature,ports};});
+  controller=await createController(address,async command=>{
+    if(command==='stop')await stop();
+    if(phase==='ready')try{await readyProbe();}catch{return {phase:'unhealthy',protocol:1,unified,signature,ports};}
+    return {phase,protocol:1,unified,signature,ports};
+  });
   process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
   bootstrap=(async()=>{
     log('1/4 · Memeriksa prasyarat dan port pilot. Data fiktif dimulai dari awal.');
@@ -160,9 +174,10 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
     check();await requireFreePilotPorts(ports);
     emulator=spawnManagedEmulator([path.join(ROOT,'node_modules/firebase-tools/lib/bin/firebase.js'),'emulators:start','--only','firestore,auth','--project','demo-abc-attendance','--config',config,'--non-interactive'],{cwd:state,env:childEnv,logFile:path.join(state,'emulator.log')});
     const ready=async()=>{if(emulator.exitCode!==null||emulator.signalCode!==null)throw safe('Emulator milik pilot sudah berhenti.');const hub=await verifyHub({ports:ports.slice(0,5),locatorDirectory:temp});if(hub.pid!==emulator.pid)throw safe('Identitas emulator tidak cocok dengan proses pilot.');return hub;};
+    readyProbe=async()=>{await ready();await appsReady(resources);check();};
     await waitFor(()=>ready(),{alive:()=>!abort.signal.aborted&&emulator.exitCode===null&&emulator.signalCode===null});check();
-    log('2/4 · Buat kata sandi peninjau fiktif (12–128 karakter). Input tidak terlihat; ketik lalu Enter dan ulangi.');
-    let password=await askPassword({input,output,signal:abort.signal});
+    log(unified?'2/4 · Menyiapkan akun fiktif dan otorisasi Windows. Kata sandi ditetapkan di aplikasi.':'2/4 · Buat kata sandi peninjau fiktif (12–128 karakter). Input tidak terlihat; ketik lalu Enter dan ulangi.');
+    let password=await (askPassword??(unified?()=>randomBytes(32).toString('base64url'):askDemoPassword))({input,output,signal:abort.signal});
     try{
       if(typeof password!=='string'||password.length<12||password.length>128)throw safe('Kata sandi harus 12–128 karakter. Nyalakan ulang pilot.');
       check();await ready();context=await createFirestoreEmulatorRepositories();
@@ -172,18 +187,20 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
       recovery=adminAuthentication.a1.recovery;
       let picPassword;
       try{
-        if(unified){log('Buat kata sandi Admin fiktif terpisah (12–128 karakter), lalu ulangi.');picPassword=await askPicPassword({input,output,signal:abort.signal});if(typeof picPassword!=='string'||picPassword.length<12||picPassword.length>128||picPassword===password)throw safe('Kata sandi Admin harus 12–128 karakter dan berbeda dari peninjau.');}
-        await preparePilot(context,{auth:getAuth(app),adminAuthentication,password,picPassword,check});
+        if(unified){picPassword=await (askPicPassword??(()=>randomBytes(32).toString('base64url')))({input,output,signal:abort.signal});if(typeof picPassword!=='string'||picPassword.length<12||picPassword.length>128||picPassword===password)throw safe('Kata sandi Admin harus 12–128 karakter dan berbeda dari peninjau.');}
+        const accounts=await preparePilot(context,{auth:getAuth(app),adminAuthentication,password,picPassword,check});
+        if(unified)setup=createLocalMsaSetup({context,auth:getAuth(app),authentication:adminAuthentication,accounts,check,prompt:setupPrompt});
       }finally{picPassword='';}
       log('3/4 · Menyiapkan halaman Mentor dan peninjau…');
       const options={mentorOrigin:'http://127.0.0.1:'+mentor,adminOrigin:'http://127.0.0.1:'+admin};
       const apiAuthentication=await createLocalAdminAuthentication(context);resources.auths.push(apiAuthentication);
       resources.servers.push(await listen(createRosterServer({...context,adminAuthentication:apiAuthentication,mentorOrigin:options.mentorOrigin}),api));
-      resources.servers.push(await listen(wrapPilotServer(createAdminServer({adminAuthentication,pairing:context.pairing,portal:unified}),{...options,unified}),admin));
+      const adminServer=wrapPilotServer(createAdminServer({adminAuthentication,pairing:context.pairing,portal:unified}),{...options,unified});
+      resources.servers.push(await listen(setup?wrapLocalMsaSetup(adminServer,setup):adminServer,admin));
       resources.servers.push(await listen(wrapPilotServer(createPrototypeServer({mentorMode:true,apiOrigin:'http://127.0.0.1:'+api,visual:adminAuthentication.a1.visual}),{...options,mentor:true,unified}),mentor));
       check();await ready();await appsReady(resources);phase='ready';
-      log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+' (kata sandi yang baru Anda buat).\nMentor: '+options.mentorOrigin+'/\nPanduan: '+options.mentorOrigin+'/pilot.html\nPendaftaran: '+options.adminOrigin+'/register.html\nTinjauan: '+options.adminOrigin+'/identity-review.html\nPemulihan: '+options.adminOrigin+'/account-recovery.html\nAdmin / aktivasi: '+options.adminOrigin+'/username.html\nSesudah review pemulihan disetujui, operator tepercaya mengetik: pulihkan <username>. Pemilik mengisi kata sandi baru sendiri tanpa tampil.\nTekan Enter untuk berhenti atau klik Stop MSA.cmd. Semua data pilot sementara.');
-      if(unified)log('Portal MSA: '+options.adminOrigin+'/ · Admin: '+PIC_USERNAME+' (kata sandi Admin yang baru dibuat).');
+      if(unified)log('4/4 · Pilot siap — hanya data fiktif.\nPortal MSA: '+options.adminOrigin+'/\nSuperadmin: '+PILOT_USERNAME+' · Admin terbatas: '+PIC_USERNAME+'\nTetapkan kata sandi masing-masing melalui Bantuan akses lokal → Penyiapan akun.\nTekan Enter untuk berhenti atau klik Stop MSA.cmd. Restart memerlukan setup baru.');
+      else log('4/4 · Pilot siap — hanya data fiktif.\nPeninjau: '+PILOT_USERNAME+'\nMentor: '+options.mentorOrigin+'/\nTekan Enter untuk berhenti atau klik Stop MSA.cmd. Semua data pilot sementara.');
       await onReady?.({context,options,resources,state,stop});
       try{await open(options);}catch{log('Browser belum terbuka. Gunakan tautan pilot di atas.');}
       monitor=setInterval(()=>{if(phase==='ready')void ready().then(()=>appsReady(resources)).then(check).catch(()=>{log('Layanan pilot terputus. Akses ditutup; nyalakan ulang untuk memakai data fiktif baru.');void stop();});},5000);monitor.unref();

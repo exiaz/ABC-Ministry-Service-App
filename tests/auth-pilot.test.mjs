@@ -55,14 +55,16 @@ test('Pilot reuse requires matching portal mode, source signature and ports; inc
   const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
   let status={phase:'ready',protocol:1,unified:true,signature,ports:[...PILOT_PORTS]},stops=0,opens=0;
   const controller=await createController(address,command=>{if(command==='stop')stops++;return status;});
-  const attempt=()=>runPilot({base:{},address,unified:true,open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});
+  const attempt=()=>runPilot({base:{},address,unified:true,verifyApps:async()=>{},open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});
   try{
     await attempt();assert.equal(opens,1);
     const matching={...status};
     for(const incompatible of [{phase:'ready'},{...matching,unified:false},{...matching,signature:'0'.repeat(64)},{...matching,protocol:0},{...matching,ports:[...PILOT_PORTS].reverse()}]){
       status=incompatible;await assert.rejects(attempt(),/mode, versi aplikasi atau port berbeda/);assert.equal(opens,1);assert.equal(stops,0);assert.deepEqual(await controlRequest(address,'status'),status);
     }
-    status={...matching,phase:'starting'};await attempt();assert.equal(opens,1);assert.equal(stops,0);
+    status={...matching,phase:'starting'};await assert.rejects(attempt(),/masih menyiapkan/);assert.equal(opens,1);assert.equal(stops,0);
+    status={...matching,phase:'unhealthy'};await assert.rejects(attempt(),/belum sehat/);assert.equal(opens,1);
+    status=matching;await assert.rejects(runPilot({base:{},address,unified:true,verifyApps:async()=>{throw Error('unhealthy');},open:async()=>assert.fail('Unhealthy instance must not open a browser')}),/unhealthy/);
   }finally{await new Promise(resolve=>controller.close(resolve));}
 });
 test('Pilot mentor root is gated personal login while regular mentor root and launchers remain legacy',async()=>{
@@ -73,7 +75,7 @@ test('Pilot mentor root is gated personal login while regular mentor root and la
     const read=async(server,route='/')=>{const r=await fetch('http://127.0.0.1:'+server.address().port+route);return {status:r.status,body:await r.text()};};
     assert.match((await read(pilot)).body,/id="account-login"/);assert.match((await read(pilot)).body,/PILOT LOKAL/);
     assert.match((await read(regular)).body,/id="pairing-root"/);assert.doesNotMatch((await read(regular)).body,/pilot-nav/);
-    assert.match((await read(pilot,'/pilot.html')).body,/peninjau.pilot/);assert.equal((await read(regular,'/pilot.html')).status,404);
+    assert.match((await read(pilot,'/pilot.html')).body,/momor1n/);assert.equal((await read(regular,'/pilot.html')).status,404);
     delete process.env.ABC_MSA_A2_4B;assert.doesNotMatch((await read(pilot)).body,/Lupa kata sandi/);assert.equal((await read(pilot,'/account-recovery.html')).status,404);process.env.ABC_MSA_A2_4B='1';
     delete process.env.ABC_MSA_A2_3;assert.equal((await read(pilot)).status,404);
     const launcher=await readFile(new URL('../Start MSA.cmd',import.meta.url),'utf8');assert.match(launcher,/local-msa.mjs/);assert.doesNotMatch(launcher,/local-demo.mjs/);

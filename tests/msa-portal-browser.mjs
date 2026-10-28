@@ -7,13 +7,15 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {runPilot,stopPilot,PILOT_USERNAME,PIC_USERNAME,PILOT_PORTS} from '../local-auth-pilot.mjs';
 import {portOccupied,waitFor} from '../local-demo.mjs';
+import {fixtureNativeDialog} from './fixtures/msa-native-dialog.mjs';
 const require=createRequire(import.meta.url);let chromium;
 try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}
 
 test('Unified MSA portal: all authorized routes via clicks, history, reload and direct navigation, shared session and denial',{timeout:900000},async()=>{
   const password=randomBytes(24).toString('base64url'),picPassword=randomBytes(24).toString('base64url'),opened=[],messages=[];
+  const nativeCredentials=new Map([[PILOT_USERNAME,{password}],[PIC_USERNAME,{password:picPassword}]]);
   const input=new PassThrough();let ready,reject;const prepared=new Promise((resolve,fail)=>{ready=resolve;reject=fail;});
-  const running=runPilot({unified:true,input,output:new PassThrough(),askPassword:async()=>password,askPicPassword:async()=>picPassword,open:async options=>opened.push(options.adminOrigin+'/'),log:s=>{messages.push(s);console.log(s);},onReady:ready});running.then(()=>reject(Error('MSA belum siap')),reject);
+  const running=runPilot({unified:true,input,output:new PassThrough(),setupPrompt:options=>fixtureNativeDialog({...options,...nativeCredentials.get(options.username)}),open:async options=>opened.push(options.adminOrigin+'/'),log:s=>{messages.push(s);console.log(s);},onReady:ready});running.then(()=>reject(Error('MSA belum siap')),reject);
   let browser;const navigation=[];
   try{
     const f=await prepared,origin=f.options.adminOrigin;
@@ -27,6 +29,12 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
     const context=await browser.newContext({locale:'id-ID',viewport:{width:390,height:900}}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const screenshots=path.resolve('.emulator-data/msa-portal-qa/screenshots');await mkdir(screenshots,{recursive:true});
+    // The WPF component test fills its own controls with fictional input and
+    // invokes the real Save handler. HTTP never receives a bootstrap password.
+    for(const username of [PILOT_USERNAME,PIC_USERNAME]){
+      await page.goto(origin+'/local-account-setup.html');await page.locator('#setup-username').selectOption(username);await page.locator('#setup-form button').click();
+      await page.waitForFunction(()=>document.querySelector('#setup-status').textContent.includes('Kata sandi tersimpan'));
+    }
     const capture=async(name,target=page)=>{for(const width of [360,390,768,1365]){await target.setViewportSize({width,height:900});await target.screenshot({path:path.join(screenshots,name+'-'+width+'.png'),fullPage:true});assert.equal(await target.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.ok(await target.locator('input:visible').evaluateAll(nodes=>nodes.every(n=>parseFloat(getComputedStyle(n).fontSize)>=16)));assert.deepEqual(await target.locator('button:visible,a:visible,summary:visible').evaluateAll(nodes=>nodes.filter(n=>n.getBoundingClientRect().height<44).map(n=>({text:n.textContent,height:n.getBoundingClientRect().height,html:n.outerHTML}))),[]);}};
     const emptyDashboard=async name=>{
       const pattern='**/api/portal/dispatch/api/stage9b2/dashboard';
@@ -92,6 +100,11 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     assert.equal(await page.locator('#portal-eyebrow').textContent(),'Superadmin');assert.equal(await page.locator('#portal-new').isVisible(),true);
     await page.setViewportSize({width:390,height:900});assert.equal(await page.locator('#msa-navigation .msa-nav-primary a:visible').count(),3);assert.equal(await page.locator('#modul summary').isVisible(),true);
     const api=async(route,body)=>page.evaluate(async({route,body})=>{const {msaFetch}=await import('/msa-session.js');const r=await msaFetch(route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});return {status:r.status,body:await r.json()};},{route,body});
+    const rotatedPassword=randomBytes(24).toString('base64url');
+    const changeOwner=async(next,current)=>{
+      nativeCredentials.set(PILOT_USERNAME,{password:next,currentPassword:current});
+      await page.goto(origin+'/local-account-setup.html');await page.locator('#setup-form button').click();await page.waitForFunction(()=>document.querySelector('#setup-status').textContent.includes('Kata sandi tersimpan'));
+    };
     const profile=await api('/api/portal/session');await userScreens();await coreScreens('superadmin');await serviceScreens('superadmin');assert.equal(profile.status,200);assert.equal(profile.body.token,undefined);
     const verifyDestination=async route=>{
       await page.waitForURL(origin+route);await page.waitForSelector('#msa-navigation');
@@ -137,6 +150,8 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       await page.waitForSelector('#msa-navigation');
       if(['/msa-core.html','/a1.html','/username.html'].includes(route))await capture(route.includes('core')?'organizations':route.includes('a1')?'users':'devices');
     }
+    await changeOwner(rotatedPassword,password);await page.goto(origin+'/');assert.equal((await api('/api/portal/session')).status,401);
+    assert.equal((await api('/api/portal/login',{username:PILOT_USERNAME,password})).status,401);await login(PILOT_USERNAME,rotatedPassword);
     await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
     await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/migration-readiness.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/visual-studio.html"]').count(),0);assert.equal((await page.evaluate(async()=>{const {msaFetch}=await import('/msa-session.js');return (await msaFetch('/api/visual/welcome')).status;})),403);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');await emptyDashboard('pic');
     await coreScreens('admin');await serviceScreens('admin');assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
@@ -171,7 +186,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     // all actual cookie, role and device boundaries above use the real emulator.
     await page.route('**/api/portal/session',route=>route.fulfill({status:200,json:{uid:'fictional-moduleless',username:'fictional-mentor',role:'volunteer',modules:[],expiresAt:Date.now()+60000}}));
     await page.goto(origin+'/');await page.waitForSelector('#portal-personal:not([hidden])');assert.equal(await page.locator('#portal-personal a').getAttribute('href'),f.options.mentorOrigin+'/');assert.equal(await page.locator('#msa-navigation .msa-nav-group a').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
-    assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>/token|password|session/i.test(k))),false);assert.ok(messages.every(s=>!s.includes(password)&&!s.includes(picPassword)));
+    assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>/token|password|session/i.test(k))),false);assert.ok(messages.every(s=>!s.includes(password)&&!s.includes(picPassword)&&!s.includes(rotatedPassword)));
     console.log('PASS unified MSA portal screenshots: '+screenshots);
   }finally{await browser?.close();await stopPilot({log:()=>{}});await running;await waitFor(async()=>!(await Promise.all(PILOT_PORTS.map(portOccupied))).some(Boolean),{timeout:10000});}
 });
