@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Integrasi launcher Visual Studio
+
+**IMPLEMENTED / TESTED terbatas; produksi NO-GO.** Mode portal terpadu `Start MSA.cmd` menetapkan gate Visual Studio di environment pilot yang divalidasi, dengan A1, Auth/Firestore Emulator loopback dan namespace fiktif baru. Mode lain tetap mengikuti konfigurasi sebelumnya. Fingerprint reuse mencakup gate dan sumber HTML/CSS/JS; otorisasi server dan batas sesi tidak diubah. Respons aset portal memakai `no-store`; alur portal tidak mendaftarkan service worker.
+
+Tes terarah launcher/fingerprint/gate lulus 17/17; `node tests/stage3.mjs --visual` lulus sintaks 224 modul, unit 207/207 dan integrasi 1/1 (`run-C0T7iK`). `node --test tests/msa-portal-browser.mjs` lulus 1/1: pilot terpadu, reuse duplikat, Superadmin membuka Visual Studio, Admin tidak melihat modul dan API mengembalikan 403, serta shutdown pilot. Run pertama gagal karena assertion navigasi belum mengenali rute baru; assertion diperbaiki dan tes diulang hingga lulus. Uji klik langsung Start → Login → Stop → Start pada CMD Windows, termasuk perubahan file UI antar restart dan cache service worker yang sudah ada, belum dijalankan. Tetap perlu uji operator; tidak ada klaim siap produksi.
+
 ## 28 Oktober 2026 — Visual Studio v1B.3A: preview Opsi G
 
 **IMPLEMENTED / TESTED terbatas pada emulator; v1B.3 tetap PARTIAL dan produksi NO-GO.** Preview empat slot memakai markup dan stylesheet halaman sumber dalam iframe sandbox tanpa skrip atau kontrol aktif. Gambar draf dan metadata dipasang dari memori browser, tidak dipublikasikan; dashboard memakai data contoh fiktif. Preview membedakan pilihan lokal, draf privat, publikasi dan fallback. Tautan runtime portal/Mentor dan shell registrasi direpresentasikan untuk pilot terpadu.

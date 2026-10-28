@@ -33,12 +33,13 @@ export const PILOT_USERNAME='peninjau.pilot';
 export const PIC_USERNAME='pic.pilot';
 const safe=message=>Object.assign(Error(message),{pilotSafe:true});
 
-export function pilotEnvironment(base=process.env,{ports=PILOT_PORTS,id=randomUUID()}={}){
+export function pilotEnvironment(base=process.env,{ports=PILOT_PORTS,id=randomUUID(),unified=false}={}){
   demoEnvironment(base); // Retain the existing explicit cloud/production refusal.
   if(!/^[a-f0-9-]{36}$/.test(id)||ports.length!==8||new Set(ports).size!==8||ports.some(p=>!Number.isSafeInteger(p)||p<1024||p>65535||[4173,4175,4176,4177,8080,9099,4400,4500,9150].includes(p)))throw safe('Konfigurasi port atau identitas pilot tidak valid.');
   for(const key of ['FIRESTORE_EMULATOR_HOST','FIREBASE_AUTH_EMULATOR_HOST'])if(base[key]&&!/^127\.0\.0\.1:[1-9]\d{0,4}$/.test(base[key]))throw safe('Alamat emulator dari lingkungan tidak aman.');
   const [firestore,auth,,,,api,admin,mentor]=ports;
   const env={...base,ABC_ROSTER_ADAPTER:'firestore-emulator',ABC_ADMIN_AUTH_MODE:'firebase-auth-emulator',ABC_FIREBASE_PROJECT_ID:'demo-abc-attendance',GCLOUD_PROJECT:'demo-abc-attendance',GOOGLE_CLOUD_PROJECT:'demo-abc-attendance',FIRESTORE_EMULATOR_HOST:'127.0.0.1:'+firestore,FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:'+auth,ABC_FIRESTORE_NAMESPACE:'test-auth-pilot-'+id,ABC_ADMIN_UIDS:JSON.stringify(['pilot-reviewer-'+id]),ABC_ROSTER_PORT:String(api),ABC_ADMIN_PORT:String(admin),ABC_MENTOR_PORT:String(mentor),ABC_API_ORIGIN:'http://127.0.0.1:'+api,ABC_MENTOR_ORIGIN:'http://127.0.0.1:'+mentor,ABC_MSA_A1:'1',ABC_MSA_USERNAME_PILOT:'1',ABC_MSA_A2_2:'1',ABC_MSA_A2_3:'1',ABC_MSA_A2_4A:'1',ABC_MSA_A2_4B:'1',ABC_MSA_A2_4C:'1',ABC_MSA_STAGE8:'1',ABC_MSA_STAGE9A:'1',ABC_MSA_STAGE9B1:'1',ABC_MSA_STAGE9B2:'1',ABC_JAVA_TCP_FALLBACK:'1'};
+  if(unified)env.ABC_MSA_VISUAL_V1A='1';
   delete env.ABC_EMULATOR_IMPORT_DIR;return env;
 }
 
@@ -113,7 +114,7 @@ export async function recoverPilotAccount({recovery,username,askPassword,deliver
 }
 
 export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT_ADDRESS,askPassword=askDemoPassword,askPicPassword=askDemoPassword,askRecoveryPassword,prerequisites=checkPrerequisites,open=openPilotPages,input=process.stdin,output=process.stdout,log=console.log,onReady,unified=false}={}){
-  const env=pilotEnvironment(base,{ports}),prior={...process.env};
+  const env=pilotEnvironment(base,{ports,unified}),prior={...process.env};
   // Exclude fresh namespace/UID values: reuse compares the running source and
   // launcher contract, not credentials or a newly generated fixture identity.
   const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:env.ABC_MSA_VISUAL_V1A});

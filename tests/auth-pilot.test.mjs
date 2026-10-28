@@ -23,6 +23,7 @@ test('Pilot uses fresh test namespace, isolated ports and scoped flags; invalid/
   for(const base of [{GOOGLE_APPLICATION_CREDENTIALS:'no'},{FIREBASE_TOKEN:'no'},{NODE_ENV:'production'},{GCLOUD_PROJECT:'real-project'},{FIRESTORE_EMULATOR_HOST:'example.com:8080'}])assert.throws(()=>pilotEnvironment(base));
   for(const ports of [[8080,...PILOT_PORTS.slice(1)],[8280,8280,...PILOT_PORTS.slice(2)],PILOT_PORTS.slice(1)])assert.throws(()=>pilotEnvironment({},{ports}));
   const regular=demoEnvironment({});assert.equal(regular.ABC_MSA_A2_3,undefined);assert.equal(regular.ABC_MSA_A2_4A,undefined);assert.equal(regular.ABC_MSA_A2_4B,undefined);assert.equal(regular.ABC_MSA_STAGE8,undefined);assert.equal(regular.ABC_MSA_STAGE9A,undefined);assert.equal(regular.ABC_MSA_STAGE9B1,undefined);assert.equal(regular.ABC_FIRESTORE_NAMESPACE,'local-demo-m2b5b');
+  assert.equal(first.ABC_MSA_VISUAL_V1A,undefined);assert.equal(pilotEnvironment({},{unified:true}).ABC_MSA_VISUAL_V1A,'1');assert.throws(()=>pilotEnvironment({NODE_ENV:'production'},{unified:true}));
 });
 test('Pilot detects occupied ports and leaves unrelated listener alive',async()=>{
   const server=await listen(net.createServer(socket=>socket.end()),0);
@@ -51,7 +52,7 @@ test('Pilot fixture uses a current stable session, distinct backup and no histor
 });
 
 test('Pilot reuse requires matching portal mode, source signature and ports; incompatible instances stay alive',async()=>{
-  const signature=await serviceSignature({}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
+  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
   let status={phase:'ready',protocol:1,unified:true,signature,ports:[...PILOT_PORTS]},stops=0,opens=0;
   const controller=await createController(address,command=>{if(command==='stop')stops++;return status;});
   const attempt=()=>runPilot({base:{},address,unified:true,open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});
