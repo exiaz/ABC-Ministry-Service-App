@@ -27,6 +27,7 @@ assets.set('/msa-shell.css','msa-shell.css');
 for(const file of ['register.html','identity-review.html','msa-registration-ui.js','msa-intake.css'])assets.set('/'+file,file);
 for(const file of ['account-devices-ui.js','account-devices.css'])assets.set('/'+file,file);
 for(const file of ['account-recovery.html','account-recovery.js','migration-readiness.html','migration-readiness.js','msa-core.html','msa-core.js','msa-events.html','msa-events.js'])assets.set('/'+file,file);
+for(const file of ['visual-studio.html','visual-studio.js','visual-studio.css'])assets.set('/'+file,file);
 const apiPaths=new Set(['/api/admin/login','/api/admin/logout','/api/admin/session','/api/admin/pairing-context','/api/admin/pairing-codes','/api/admin/activation-codes','/api/admin/devices','/api/admin/service-sessions']);
 apiPaths.add('/api/admin/backup-assignments');
 // Same-origin admin shell + existing protected API handler/context. No CORS,
@@ -48,6 +49,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
         url=new URL(req.url,'http://127.0.0.1');
       }
       if(['/migration-readiness.html','/migration-readiness.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.migration){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.migration.enabled();}
+      if(['/visual-studio.html','/visual-studio.js','/visual-studio.css'].includes(url.pathname)){if(!portal||!adminAuthentication?.a1?.visual){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.visual.enabled();}
       if(['/msa-core.html','/msa-core.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.core){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.core.enabled();}
       if(['/msa-events.html','/msa-events.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.events){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.events.enabled();}
       const usernamePilot=url.pathname==='/username.html';
@@ -78,7 +80,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       if(usernamePilot)content=content.toString('utf8').replace('data-admin-mode="authenticated-local"','data-admin-mode="authenticated-local" data-username-pilot="true"');
       if(adminAuthentication?.a1?.recovery&&['admin.html','identity-review.html','a1.html'].includes(file))content=content.toString('utf8').replace('</main>','<p><a class="btn" href="/account-recovery.html">Lupa kata sandi? / Tinjau pemulihan</a></p></main>');
       const type=file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.png')?'image/png':file.endsWith('.jpg')?'image/jpeg':file.endsWith('.json')?'application/json; charset=utf-8':'image/svg+xml';
-      res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-ABC-Mode':'authenticated-admin-emulator','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"});
+      res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-ABC-Mode':'authenticated-admin-emulator','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; "+(file==='visual-studio.html'?"img-src 'self' blob:; ":'')+"script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"});
       res.end(req.method==='HEAD'?undefined:content);
     }catch(e){send(e.status??500,e.status===403?'Origin admin tidak diizinkan.':'Halaman admin tidak dapat dibuka.');}
   });

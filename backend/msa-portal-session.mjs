@@ -39,6 +39,7 @@ export function createPortalSessions(authentication,{now=Date.now}={}){
     if(a1.registration)await probe(async()=>{const r=await a1.registration.queue(a);return r.superadmin||!!r.accounts.length;},{href:'/identity-review.html',label:'Tinjau identitas & perangkat akun'});
     if(a1.recovery)await probe(async()=>{const r=await a1.recovery.queue(a);return r.superadmin||!!r.requests.length;},{href:'/account-recovery.html',label:'Tinjau pemulihan akun'});
     if(a1.migration)await probe(()=>a1.migration.inspect(a),{href:'/migration-readiness.html',label:'Kesiapan migrasi (baca saja)'});
+    if(a1.visual)await probe(()=>a1.visual.authorize(a),{href:'/visual-studio.html',label:'Visual Studio'});
     const legacy=await authentication.authorize('Bearer '+s.token);
     if(legacy.kind==='ok')modules.push({href:'/username.html',label:'Admin, aktivasi & perangkat'});
     if(!await a.check())fail(401,'Sesi berakhir. Masuk kembali.');

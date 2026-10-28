@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {deflateSync} from 'node:zlib';
 import {once} from 'node:events';
+import {mkdir} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {msaFixture} from './msa-a1-fixture.mjs';
 import {createMsaVisual} from '../../backend/msa-visual.mjs';
@@ -54,7 +55,26 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
   t.after(()=>new Promise(resolve=>{portal.close(resolve);portal.closeAllConnections();}));
   const portalBase='http://127.0.0.1:'+portal.address().port;
   const login=await fetch(portalBase+'/api/portal/login',{method:'POST',headers:{'Content-Type':'application/json',Origin:portalBase,'X-MSA-Portal':'1'},body:JSON.stringify({username:manager.username,password:manager.password})});
-  assert.equal(login.status,200);const cookie=login.headers.get('set-cookie').split(';')[0];
+  assert.equal(login.status,200);assert.ok((await login.json()).modules.some(m=>m.href==='/visual-studio.html'));const cookie=login.headers.get('set-cookie').split(';')[0];
+  const uiBrowser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+  try{
+    const page=await uiBrowser.newPage();
+    await page.context().addCookies([{name:cookie.split('=')[0],value:cookie.split('=')[1],url:portalBase}]);
+    await page.goto(portalBase+'/visual-studio.html');await page.locator('#studio').waitFor({state:'visible'});
+    await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:Buffer.from(png(17),'base64')});
+    await page.locator('#alt').fill('Gambar fiktif');await page.locator('#reason').fill('Pengujian gambar fiktif');await page.locator('#confirm').check();
+    await page.locator('#editor button[type=submit]').click();await page.getByText('Draf tersedia secara privat.').waitFor();
+    assert.equal((await publicRead(portalBase,'welcome')).status,404);
+    const screenshotDir='.emulator-data/visual-studio-v1b3';await mkdir(screenshotDir,{recursive:true});
+    for(const width of [360,390,768,1365]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:`${screenshotDir}/${width}.png`,fullPage:true});}
+    let firstBody='',retryBody='';
+    const routePattern='**/api/portal/dispatch/api/visual/welcome/publish';
+    await page.route(routePattern,async route=>{firstBody=route.request().postData();await route.fetch();await route.abort();},{times:1});
+    await page.locator('#confirm').check();await page.locator('#publish').click();await page.locator('#retry').waitFor({state:'visible'});
+    page.on('request',req=>{if(req.url().endsWith('/api/visual/welcome/publish'))retryBody=req.postData();});
+    await page.locator('#retry').click();await page.getByText('Revisi publikasi 2').waitFor();assert.equal(retryBody,firstBody);
+    await page.locator('#confirm').check();await page.locator('#revert').click();await page.getByText('Menggunakan gambar bawaan.').waitFor();
+  }finally{await uiBrowser.close();}
   const portalCall=(route,options={})=>fetch(portalBase+'/api/portal/dispatch/api/visual/login'+route,{...options,headers:{'X-MSA-Portal':'1',Origin:portalBase,Cookie:cookie,...options.headers}});
   assert.equal((await portalCall('')).status,200);
   assert.equal((await portalCall('/draft',{method:'POST',headers:{'Content-Type':'application/json',Origin:'http://evil.invalid'},body:JSON.stringify(upload(0,1))})).status,403);
@@ -74,7 +94,7 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
     assert.equal((await publicRead(f.base,slot)).status,404);
     const preview=await f.request(path(slot,'preview'));assert.equal(preview.status,200);assert.equal(preview.headers.get('cache-control'),'no-store');assert.equal((await preview.json()).image,png(20+i));
   }
-  assert.equal((await f.root.collection('msaVisualAudit').get()).size,3);
+  assert.equal((await f.root.collection('msaVisualAudit').get()).size,6);
   const privateChunk=(await f.root.collection('msaVisualChunks').limit(1).get()).docs[0];
   const rawFirestore='http://'+process.env.FIRESTORE_EMULATOR_HOST+'/v1/projects/demo-abc-attendance/databases/(default)/documents/'+privateChunk.ref.path;
   assert.equal((await fetch(rawFirestore)).status,403);
@@ -129,7 +149,7 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
   assert.equal((await f.root.collection('msaVisualSlots').doc('login').get()).data().revision,5);
   await chunk.set(saved);assert.equal((await publicRead(f.base,'login',5)).status,200);
   const events=(await f.root.collection('msaVisualAudit').get()).docs.map(d=>d.data());
-  assert.ok(events.every(e=>e.actorUid===f.uid&&e.reason&&e.requestId&&Number.isSafeInteger(e.at)&&e.revision===e.previousRevision+1));
+  assert.ok(events.every(e=>[f.uid,manager.uid].includes(e.actorUid)&&e.reason&&e.requestId&&Number.isSafeInteger(e.at)&&e.revision===e.previousRevision+1));
   assert.equal((await f.request(path('login','revert'),{mutation:command(5),targetRevision:0})).status,200);
   assert.equal((await publicRead(f.base,'login')).status,404);
   assert.equal((await publicRead(f.base,'dashboard',2)).status,200);

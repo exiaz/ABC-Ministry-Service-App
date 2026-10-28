@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Visual Studio v1B.3: integrasi awal
+
+**PARTIAL / produksi NO-GO.** Halaman portal emulator menyediakan pilihan empat slot, draf PNG, metadata, pratinjau ilustratif, publikasi, revert, riwayat dan retry permintaan yang hasilnya belum pasti. Navigasi memakai pemeriksaan otorisasi Visual Studio pada server; gate tetap mati secara default. Pratinjau masih ilustratif dan belum membuktikan kesesuaian dengan layout Opsi G yang sebenarnya. Verifikasi end-to-end dan aksesibilitas lengkap belum dinyatakan selesai; jangan gunakan sebagai workflow produksi.
+
+Verifikasi: `npm.cmd run check` lulus 224 modul, `npm.cmd test` lulus 207/207, dan `node tests/stage3.mjs --visual` lulus sintaks, unit 207/207 dan integrasi 1/1 (`run-rJRIHL`). Chrome menguji upload, isolasi draf, publish, retry body identik setelah respons terputus, dan revert fallback untuk slot welcome; screenshot 360/390/768/1365 px dan pemeriksaan overflow tersimpan di `.emulator-data/visual-studio-v1b3/`. Run sebelumnya gagal pada assertion audit yang hanya menerima satu aktor; assertion diperbaiki untuk kedua aktor fixture lalu suite diulang. Pengujian keyboard/focus, kontras, preview Opsi G sebenarnya, serta seluruh slot melalui UI belum selesai; pengujian browser bukan audit aksesibilitas.
+
 ## 28 Oktober 2026 — Visual Studio v1B.2: backend emulator
 
 **IMPLEMENTED / TESTED terbatas pada emulator; v1B belum selesai, produksi NO-GO.** Gate `ABC_MSA_VISUAL_V1A=1` tetap mati default dan mengharuskan A1, kedua emulator dan namespace `test-*`. Backend menyediakan status, riwayat/audit, upload draf PNG, preview privat, publish dan revert independen untuk `welcome`, `login`, `registration`, `dashboard`. Otorisasi memakai pemeriksaan Superadmin A1 yang sama di dalam transaksi, termasuk pemeriksaan ulang sesi; portal memakai cookie/CSRF yang sudah ada. Chunk PNG yang diproses, pointer slot, receipt dan audit disimpan dalam Firestore Emulator; rules browser tetap menolak akses langsung. Setiap mutasi memakai alasan, konfirmasi, revisi dan request ID; pointer, chunk, audit dan receipt ditulis atomik. Baca publik hanya menyajikan pointer aktif pada kedua origin dengan URL revisi dan `no-store`; konsumen kembali ke konfigurasi/aset lokal bila media tidak tersedia.

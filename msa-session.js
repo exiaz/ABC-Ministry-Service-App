@@ -31,9 +31,9 @@ export async function resumeMsaSession(ready,{redirect=true}={}){
     }
     await ready(profile,portalMarker);
     mountMsaShell(profile);
-    setTimeout(()=>{clearMsaShell();document.querySelector('main').hidden=true;location.replace('/');},Math.max(0,profile.expiresAt-Date.now()));
+    setTimeout(()=>{window.dispatchEvent(new Event('msa-session-ended'));clearMsaShell();document.querySelector('main').hidden=true;location.replace('/');},Math.max(0,profile.expiresAt-Date.now()));
     const verify=async()=>{
-      try{const r=await msaFetch('/api/portal/session',{signal:AbortSignal.timeout(15000)});const allowed=r.ok&&(await r.json()).modules.some(m=>m.href===location.pathname);if(r.status===401||r.ok&&!allowed){document.querySelector('main').hidden=true;location.replace('/');}}catch{/* Existing page requests still fail closed on connectivity loss. */}
+      try{const r=await msaFetch('/api/portal/session',{signal:AbortSignal.timeout(15000)});const allowed=r.ok&&(await r.json()).modules.some(m=>m.href===location.pathname);if(r.status===401||r.status===403||r.ok&&!allowed){window.dispatchEvent(new Event('msa-session-ended'));document.querySelector('main').hidden=true;location.replace('/');}}catch{/* Existing page requests still fail closed on connectivity loss. */}
     };
     window.addEventListener('focus',verify);
     window.addEventListener('pageshow',e=>{if(e.persisted){document.querySelector('main').hidden=true;location.reload();}});
@@ -70,7 +70,7 @@ export function mountMsaShell(profile){
   const menu=document.createElement('details');menu.id='modul';menu.className='msa-nav-menu';
   const summary=document.createElement('summary');summary.textContent='Modul';menu.append(summary);
   const panel=document.createElement('div');panel.className='msa-nav-panel';menu.append(panel);
-  const groups=[['Ruang kerja',['/msa-core.html','/username.html']],['Pengelolaan',['/a1.html','/identity-review.html','/account-recovery.html','/migration-readiness.html']]];
+  const groups=[['Ruang kerja',['/msa-core.html','/username.html']],['Pengelolaan',['/a1.html','/identity-review.html','/account-recovery.html','/migration-readiness.html','/visual-studio.html']]];
   const remaining=profile.modules.filter(m=>m.href!=='/msa-events.html');menu.hidden=remaining.length===0;
   for(const [title,paths] of groups){const items=remaining.filter(m=>paths.includes(m.href));if(!items.length)continue;const group=document.createElement('div'),heading=document.createElement('p');group.className='msa-nav-group';heading.textContent=title;group.append(heading);items.forEach(item=>add(group,item));panel.append(group);}
   const other=remaining.filter(m=>!groups.some(([,paths])=>paths.includes(m.href)));if(other.length){const group=document.createElement('div');group.className='msa-nav-group';other.forEach(item=>add(group,item));panel.append(group);}
