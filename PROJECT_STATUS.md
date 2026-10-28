@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 28 Oktober 2026 — Visual Studio v1B.3A: preview Opsi G
+
+**IMPLEMENTED / TESTED terbatas pada emulator; v1B.3 tetap PARTIAL dan produksi NO-GO.** Preview empat slot memakai markup dan stylesheet halaman sumber dalam iframe sandbox tanpa skrip atau kontrol aktif. Gambar draf dan metadata dipasang dari memori browser, tidak dipublikasikan; dashboard memakai data contoh fiktif. Preview membedakan pilihan lokal, draf privat, publikasi dan fallback. Tautan runtime portal/Mentor dan shell registrasi direpresentasikan untuk pilot terpadu.
+
+`node tests/stage3.mjs --visual` lulus pemeriksaan 224 modul, unit 207/207 dan integrasi/Chrome 1/1 (`run-tP38dJ`); emulator ditutup. Pada Chrome, screenshot preview dan halaman acuan 390/1365 px disimpan di `.emulator-data/visual-studio-v1b3a/`. Tes membandingkan posisi/ukuran bidang gambar serta posisi, ukuran dan font judul untuk keempat slot; crop focal point dengan PNG fiktif lebar, alt dan isolasi draf diperiksa. Draf tiap slot dimuat kembali setelah refresh, publikasi/fallback tiap slot diperiksa, dan revert diperiksa pada welcome dan login. Tes juga memeriksa retry dengan body sama, penolakan API serta pencabutan akun; pembersihan saat akhir sesi disimulasikan dengan event, bukan menunggu masa sesi sebenarnya. Run sebelumnya menemukan perbedaan tipografi registrasi karena shell CSS belum dimuat dan assertion yang masih mengharapkan sesi berlaku sesudah pencabutan; keduanya diperbaiki dan suite diulang hingga lulus. `git diff --check` lulus.
+
+**Batas:** screenshot membandingkan gambar fiktif berbeda dari aset halaman acuan dan metrik terpilih, bukan perbandingan seluruh piksel atau audit visual formal. Perangkat fisik, browser lain, screen reader, pemeriksaan aksesibilitas menyeluruh dan penerimaan UI penuh v1B.3 belum diuji. Dashboard preview memakai contoh, bukan data akun. Gate tetap mati default; tidak ada izin produksi.
+
 ## 28 Oktober 2026 — Visual Studio v1B.3: integrasi awal
 
 **PARTIAL / produksi NO-GO.** Halaman portal emulator menyediakan pilihan empat slot, draf PNG, metadata, pratinjau ilustratif, publikasi, revert, riwayat dan retry permintaan yang hasilnya belum pasti. Navigasi memakai pemeriksaan otorisasi Visual Studio pada server; gate tetap mati secara default. Pratinjau masih ilustratif dan belum membuktikan kesesuaian dengan layout Opsi G yang sebenarnya. Verifikasi end-to-end dan aksesibilitas lengkap belum dinyatakan selesai; jangan gunakan sebagai workflow produksi.

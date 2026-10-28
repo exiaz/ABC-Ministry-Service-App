@@ -43,6 +43,17 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       requireAdminOrigin(req);
       let url=new URL(req.url,'http://127.0.0.1');
       if(await visualPublicRoute(req,res,url,adminAuthentication?.a1?.visual))return;
+      // Static page sources contain no private data; the editor renders them in
+      // a script-free sandbox and obtains private media only through its API.
+      if(url.pathname.startsWith('/visual-preview-source/')){
+        const sources={welcome:'msa-portal.html',registration:'register.html',login:'mentor-account.html',dashboard:'mentor-account.html'};
+        const slot=url.pathname.slice('/visual-preview-source/'.length),source=Object.hasOwn(sources,slot)?sources[slot]:null;
+        if(!portal||!adminAuthentication?.a1?.visual||!source||url.search||req.method!=='GET'){send(404,'Tidak ditemukan.');return;}
+        adminAuthentication.a1.visual.enabled();
+        let content=await readFile(path.join(root,source),'utf8');
+        if(source==='mentor-account.html'&&process.env.ABC_MSA_A2_4B==='1'&&process.env.ABC_MSA_A2_4A==='1')content=content.replace('</form>','</form><p><a class="btn" href="/account-recovery.html">Lupa kata sandi?</a></p>');
+        res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(content);return;
+      }
       if(sessions&&url.pathname.startsWith('/api/')){
         // Public onboarding/recovery stays separately testable without a session.
         if(await sessions.handle(req,res,url))return;
@@ -50,6 +61,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       }
       if(['/migration-readiness.html','/migration-readiness.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.migration){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.migration.enabled();}
       if(['/visual-studio.html','/visual-studio.js','/visual-studio.css'].includes(url.pathname)){if(!portal||!adminAuthentication?.a1?.visual){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.visual.enabled();}
+      if(url.pathname==='/mentor-account.css'){if(!portal||!adminAuthentication?.a1?.visual){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.visual.enabled();}
       if(['/msa-core.html','/msa-core.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.core){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.core.enabled();}
       if(['/msa-events.html','/msa-events.js'].includes(url.pathname)){if(!adminAuthentication?.a1?.events){send(404,'Tidak ditemukan.');return;}adminAuthentication.a1.events.enabled();}
       const usernamePilot=url.pathname==='/username.html';
@@ -69,7 +81,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       if(!['GET','HEAD'].includes(req.method)){send(405,'Metode tidak diizinkan.');return;}
       const portalAssets=new Set(['msa-portal.html','msa-portal.js','msa-session.js']);
       const candidate=url.pathname==='/'?'msa-portal.html':url.pathname.slice(1);
-      const file=portal&&portalAssets.has(candidate)?candidate:usernamePilot?'admin.html':assets.get(url.pathname);
+      const file=url.pathname==='/mentor-account.css'?'mentor-account.css':portal&&portalAssets.has(candidate)?candidate:usernamePilot?'admin.html':assets.get(url.pathname);
       if(!file||url.search){send(404,'Tidak ditemukan.');return;}
       let content;try{content=await readFile(path.join(root,file));}catch(e){if(e.code==='ENOENT'){send(404,'Tidak ditemukan.');return;}throw e;}
       if(portal&&file.endsWith('.html'))content=content.toString().replace(/<body\b/, '<body data-msa-portal="true"');
