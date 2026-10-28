@@ -20,7 +20,7 @@ Regresi portal: `node --test tests/msa-portal.test.mjs` dan `node --test tests/m
 
 **Visual lokal:** `msa-visual.json` mengatur preset (`neutral`, `warm`, `bright`) dan slot `welcome`, `login`, `registration`, `dashboard`, `program`, `campaign`. Untuk mengganti foto tanpa mengubah kode, siapkan JPEG di folder `assets` menggunakan salah satu nama: `msa-visual-default.jpg`, `msa-visual-welcome.jpg`, `msa-visual-auth.jpg`, `msa-visual-dashboard.jpg`, `msa-visual-program.jpg`, atau `msa-visual-campaign.jpg`; kemudian pilih namanya pada `file` di slot yang sesuai. `position` memakai dua persentase, misalnya `50% 45%`, dan `alt` menjelaskan gambar bermakna atau kosong untuk gambar dekoratif. Jika berkas/konfigurasi tidak tersedia, bidang warna pengganti tetap tampil. Slot program dan kampanye disiapkan dalam konfigurasi, tetapi belum terpasang pada modul. Foto bawaan adalah gambar fiktif buatan AI; foto pengguna pada prototipe tidak disalin ke aplikasi. Ini pengaturan berkas lokal, bukan panel pengelolaan atau publikasi media.
 
-Visual Studio v1A untuk slot `welcome` masih berupa kontrak usulan; upload, preview privat, publish dan revert belum tersedia. Jangan menganggap konfigurasi berkas lokal sebagai alur publikasi yang terotorisasi.
+Visual Studio v1A untuk slot `welcome` belum tersedia. Komponen gate dan pemrosesan PNG terisolasi belum dihubungkan; upload, preview privat, publish dan revert belum diimplementasikan. Jangan menganggap konfigurasi berkas lokal sebagai alur publikasi yang terotorisasi.
 
 Pada mode terpadu, gunakan origin dari launcher, secara default `http://127.0.0.1:4277`, dan tautan katalog server berikut. Satu login berlaku saat menggunakan navigasi, refresh, URL langsung dan back/forward selama sesi serta izin masih sah.
 
