@@ -1,5 +1,9 @@
 # ABC Attendance — status revisi
 
+## 29 Oktober 2026 — Penyelarasan roadmap dokumentasi
+
+**PLANNED:** P0 stabilisasi/penerimaan Visual Studio, AUTH-UX 1, AUTH-SESSION 1, AUTH-GOOGLE 1–2 dan Production Readiness ditambahkan tanpa mengubah nomor Stage 1–13. Stage 10 dibagi Core, Templates dan Publish/Sharing; Stage 11–13 tetap Sheets, Volunteers dan Special Programs. Dependensi, acceptance, urutan dan keputusan terbuka berada di [MSA_PRODUCT_VISION.md bagian 11–12](MSA_PRODUCT_VISION.md#11-roadmap-dan-urutan--status-29-oktober-2026); batas akun di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md). Ini penyelarasan rencana, bukan implementasi atau pengujian fitur baru. Bukti historis di bawah tetap berlaku sesuai lingkup dan tanggalnya; produksi/cutover tetap NO-GO.
+
 ## 29 Oktober 2026 — Visual Studio: konfirmasi simpan dan layanan lama
 
 **IMPLEMENTED / TESTED terarah pada emulator; produksi NO-GO.** Editor menampilkan dialog **Berhasil disimpan** hanya setelah respons sukses endpoint save, termasuk retry idempoten setelah respons pertama hilang. Dialog mendukung tombol OK, Enter dan Escape serta ditutup ketika sesi berakhir. Jika simpan berhasil tetapi pembacaan status gagal, dialog menjelaskan bahwa hasil tersimpan dan perlu Muat ulang; kehilangan otorisasi saat pembacaan tersebut tidak memunculkan kembali dialog atau state privat. HTTP 404 pada save kini memberi petunjuk layanan simpan tidak tersedia dan restart pilot bila instance belum diperbarui, dengan peringatan data uji baru; file dan teks lokal tetap tersedia setelah penolakan itu. Backend, transaksi atomik, otorisasi dan kontrak storage tidak berubah.

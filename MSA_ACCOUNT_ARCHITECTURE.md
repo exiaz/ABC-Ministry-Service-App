@@ -1,6 +1,8 @@
 # MSA — Kajian arsitektur akun personal
 
-## Visual Studio v1A — kontrak usulan, belum diimplementasikan
+## Visual Studio v1A — checkpoint historis kontrak awal
+
+Checkpoint ini mendahului implementasi Visual Studio emulator dan alur simpan terbaru; status serta kontrak aktual ada pada revisi terbaru PROJECT_STATUS.md.
 
 Pilot hanya untuk slot `welcome`, dengan gate independen mati default dan validasi emulator/namespace `test-*`. Otorisasi server harus memakai pemeriksaan Superadmin aktif dan revisi yang setara dengan `createMsaAccounts` (policy legacy atau grant sistem akun personal yang sah), serta memeriksa ulang sesi; username dan label role browser bukan otoritas. Admin/PIC, Mentor dan request tanpa sesi ditolak. Dispatch portal perlu allowlist eksplisit dan tetap menjalankan pemeriksaan Origin/CSRF yang ada.
 
@@ -505,6 +507,10 @@ Setelah bukti disahkan, server mengeluarkan otorisasi reset terbatas, sekali pak
 Firebase membedakan refresh-token revocation dan pemeriksaan ID token; gunakan pemeriksaan revocation dan state aplikasi, jangan menunggu token kedaluwarsa untuk menjamin suspend. [Firebase session management](https://firebase.google.com/docs/auth/admin/manage-sessions).
 
 Kontrol tambahan yang perlu dibangun: rate limit persisten untuk login/registrasi/invite/link/recovery, respons generik dan pencegahan enumerasi username/telepon, pembatasan percobaan reset, reautentikasi/step-up tindakan sensitif, CSRF bila cookie dipilih, CSP/XSS, origin/TLS, expiry server, audit tanpa password/token/telepon penuh, proyeksi kontak minimal dan retensi. Password policy server/provider harus konsisten; jangan memaksa reset massal akun lama tanpa keputusan migrasi. Perlindungan enumerasi Firebase tidak otomatis melindungi registry username buatan aplikasi. [Firebase password policy dan enumeration protection](https://firebase.google.com/docs/auth/web/password-auth).
+
+## Penyelarasan roadmap autentikasi — 29 Oktober 2026
+
+**PLANNED:** AUTH-UX 1 memisahkan Welcome, Sign In dan Sign Up; AUTH-SESSION 1 merancang autentikasi Mentor persisten; AUTH-GOOGLE 1–2 merencanakan integrasi provider dan linking aman. Rincian dependensi, acceptance dan urutan ada di [roadmap](MSA_PRODUCT_VISION.md#11-roadmap-dan-urutan--status-29-oktober-2026). Belum ada klaim implementasi workstream ini. Sesi portal pengelolaan saat ini dan admission Mentor tetap terpisah; sesi persisten kelak memerlukan kontrak dan uji tersendiri. Login/provider tidak memberi hak perangkat atau absensi; linking tidak boleh otomatis berdasarkan kesamaan identitas. Keputusan durasi sesi, mekanisme lintas origin, revocation, provider, reautentikasi, konflik dan unlink tetap terbuka. Fase A0–A4 berikut adalah rencana historis; implementasi parsial aktual dan bukti tercatat di PROJECT_STATUS.md.
 
 ## 9. Fase implementasi minimal yang direkomendasikan
 

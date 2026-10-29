@@ -4,6 +4,8 @@
 
 Dokumen ini berisi rencana, bukan izin implementasi atau perubahan schema. [MASTER_BRIEF.md](MASTER_BRIEF.md) tetap acuan kebutuhan; dokumen ini merinci arsitektur dan roadmap usulannya. [PROJECT_STATUS.md](PROJECT_STATUS.md) mencatat implementasi serta bukti pengujian. Stage 1–6 tetap berlaku; Stage 6 **Backup Mentor / Temporary Group Merge** sudah tersedia dalam lingkup lokal/emulator. Stage 7 **Testing, security, documentation** kini diverifikasi pada lingkup lokal/emulator (hasil dan batasnya di PROJECT_STATUS.md); kajian akun personal tidak mengganti tahap asli atau memberi izin implementasi.
 
+**Pembacaan status:** bagian bertanggal di bawah adalah checkpoint historis; bagian 11 dan revisi terbaru PROJECT_STATUS.md mengatasi pernyataan status tahap yang telah diperbarui kemudian.
+
 ## Portal MSA lokal — 27 Oktober 2026
 
 Launcher utama Start MSA / Stop MSA menggantikan shortcut demo/pilot lama. Portal username tanpa pilihan peran memakai sesi server bersama pada origin Admin, dengan modul dari capabilities terverifikasi. Peninjau dan PIC terbatas dibuat lewat setup terminal trusted dengan password berbeda, membership/grants eksplisit dan data fresh fiktif. Backend serta snapshot legacy tetap untuk regresi/migrasi; tidak ada cutover operasional. Alur Mentor tetap memerlukan aktivasi/proof perangkat terpisah. Kontrak sesi ada di MSA_ACCOUNT_ARCHITECTURE.md, penggunaan di README.md, bukti aktual di PROJECT_STATUS.md. Berhenti sebelum Stage 10A.
@@ -228,27 +230,46 @@ Utamakan satu kolom pada ponsel, tombol simpan/status yang jelas, input opsional
 5. Uji rollback pada data fiktif. Utamakan menonaktifkan adapter/fitur baru tanpa menghapus data MSA atau memulihkan ulang seluruh namespace. Restore snapshot lama dapat menghidupkan izin yang telah dicabut; peninjauan/revokasi ulang tetap diperlukan. Jangan memakai rollback untuk membuka kembali credential lama secara otomatis.
 6. Aktifkan modul per organisasi setelah gate fungsional, keamanan, privasi dan operasi lulus. Cutover tidak dianggap selesai hanya karena UI sudah memakai nama MSA; tidak ada deployment yang diizinkan oleh dokumen ini.
 
-## 11. Prioritas dan tahap — PLANNED / NOT IMPLEMENTED
+## 11. Roadmap dan urutan — status 29 Oktober 2026
 
-Nomor tahap berikut merupakan usulan setelah roadmap asli, bukan penggantian Stage 6–7. Setiap tahap implementasi memerlukan lingkup dan persetujuan tersendiri.
+Penomoran Stage 1–13 tetap; workstream tambahan tidak menggantikan Stage. Status dan bukti aktual berada di [PROJECT_STATUS.md](PROJECT_STATUS.md); setiap pekerjaan baru di bawah **PLANNED**, bukan izin implementasi. Semua implementasi yang sudah ada tetap terbatas pada lokal/emulator dan data fiktif; produksi NO-GO.
 
-| Urutan/prioritas | Lingkup | Gate sebelum lanjut |
-|---|---|---|
-| P0, sebelum/sambil persiapan Stage 6 | Stabilkan Stage 1–5, inventarisasi keterbatasan dan validasi regresi | Tidak mengklaim tes lama sebagai tes baru; gap server/demo diketahui |
-| **Stage 6 asli** | **Backup Mentor / Temporary Group Merge** | Sudah diimplementasikan lokal/emulator; hasil terverifikasi di PROJECT_STATUS.md. Rencana MSA/akun tidak mengubah scope, TTL atau riwayatnya |
-| **Stage 7 asli** | **Testing, security, documentation** | Regresi Stage 1–6, keamanan dan petunjuk operasi sesuai lingkup yang disetujui; bukan sertifikasi produksi otomatis |
-| Stage 8 usulan, P1 | Fondasi MSA: organisasi, program opsional, keanggotaan/izin dan adapter legacy | Kepemilikan data, pemetaan ID serta uji penolakan lintas organisasi disetujui |
-| Stage 9 usulan, P1 | Buat Pelayanan Baru, draf/publikasi, jadwal gabungan, perulangan terbatas, dashboard/navigasi/merek | Lima isian minimum; tanpa program tetap bekerja; pemilihan tanggal tidak memberi akses absensi |
-| Stage 10 usulan, P2 | Rundown Builder, versi/template, BibleMax fleksibel dan pembagian baca-saja | Reorder persisten, template terisolasi, izin publikasi/draf benar; isi metode disetujui |
-| Stage 11 usulan, P2 | Sheets satu arah untuk proyeksi event/rundown baru | Mapping/owner/OAuth siap; read-back, retry, konflik dan revokasi teruji |
-| Stage 12 usulan, P2 | Profil/penugasan/kehadiran/riwayat/laporan relawan | Penugasan berbeda dari hadir; satu orang tidak dihitung berulang karena banyak peran |
-| Stage 13 usulan, P3 | Alur Natal khusus dan kebutuhan lanjutan yang terbukti, termasuk kajian sinkron dua arah | Kebutuhan nyata dan kebijakan konflik/privasi disetujui; bukan target implementasi mendesak |
+| Tahap | Status dan lingkup saat ini / target |
+|---|---|
+| Stage 1–5 | **IMPLEMENTED / TESTED** dalam batas lokal/emulator; jalur legacy dan keterbatasan backend tetap berlaku. |
+| Stage 6 | **IMPLEMENTED / TESTED** lokal/emulator: Backup Mentor / Temporary Group Merge, dengan scope, TTL dan histori yang ada. |
+| Stage 7 | **TESTED** pada lingkup lokal/emulator; bukan sertifikasi produksi. |
+| Stage 8 | **PARTIAL: IMPLEMENTED / TESTED** fondasi organisasi/program, membership/grant dan adapter baca-saja pada emulator; governance dan migrasi operasional belum selesai. |
+| Stage 9 | **PARTIAL: IMPLEMENTED / TESTED** 9A, 9B.1 dan recurrence/beranda 9B.2 dalam batas gate emulator. Ekspor kalender manual bukan sinkronisasi; perluasan di luar kontrak itu tetap PLANNED. |
+| Stage 10 — Rundown Builder / BibleMax | **PLANNED:** Core, Templates dan Publish/Sharing sebagaimana dirinci di bawah. |
+| Stage 11 — Google Sheets | **PLANNED:** proyeksi awal satu arah MSA → Sheets; mapping, owner/OAuth, read-back, retry, konflik dan revokasi harus diuji. XLSX dan ekspor kalender manual bukan sinkronisasi. |
+| Stage 12 — Volunteers | **PLANNED:** profil, penugasan, kehadiran aktual, riwayat dan laporan relawan; assignment tidak sama dengan hadir dan satu orang dengan banyak peran tidak dihitung ganda. |
+| Stage 13 — Special Programs | **PLANNED:** kebutuhan khusus termasuk Natal, berdasarkan kebutuhan yang disetujui; bukan target mendesak. |
 
-Fondasi identitas relawan minimal dapat dipakai modul sebelumnya setelah keputusan desain, tetapi bukan alasan mempercepat seluruh Volunteer Management atau menunda alur event sederhana. Tidak ada estimasi tanggal, anggaran, deployment atau komitmen implementasi yang ditetapkan di sini.
+### Workstream tambahan — semuanya PLANNED
+
+| Workstream | Dependensi dan kriteria penerimaan |
+|---|---|
+| P0 — Stabilization & Visual Studio acceptance | Berangkat dari Visual Studio yang **sudah IMPLEMENTED / TESTED terarah** pada emulator, bukan fitur baru. Terima alur terbaru pilih/atur gambar → Terapkan → Simpan, teks, preview Opsi G empat slot, fallback, isolasi draf privat, revisi/konflik, retry body dan ID identik, izin Superadmin server, CSRF, kehilangan izin dan audit. Validasi restart/namespace fresh serta penerimaan operator, perangkat/browser dan aksesibilitas yang relevan; catat cakupan dan gap aktual. Jangan menganggap publikasi bertahan lintas Stop → Start pada pilot fresh. |
+| AUTH-UX 1 — Welcome, Sign In, Sign Up terpisah | Setelah P0 dan kontrak navigasi disetujui: tiga tujuan dan transisi jelas pada mobile/desktop, state loading/error/izin dan akses keyboard. Gunakan branding/slot yang ada; pertahankan registrasi pending, review dan jalur Mentor/perangkat. Pemisahan halaman adalah target, bukan klaim UI baru sudah ada. |
+| AUTH-SESSION 1 — Persistent Mentor authentication | Bergantung pada kontrak sesi, expiry, revocation, recovery dan lintas origin yang disetujui. Kriteria: sesi bertahan sesuai kebijakan yang disepakati, logout/expiry/suspension/revoke segera ditegakkan server, restart/offline/error ditangani fail-closed, dan tidak ada token bearer di URL atau localStorage. Login tetap tidak memberikan aktivasi, proof, grant perangkat atau izin absensi; uji regresi Stage 4–6 dan batas akun/link. |
+| AUTH-GOOGLE 1 — Provider integration | Bergantung pada keputusan provider, identitas/realm, konfigurasi dan lingkungan uji terisolasi. Uji login, pembatalan, error dan akun pending tanpa kenaikan hak; provider identity tidak membuktikan izin domain. Jangan mengaktifkan provider operasional, billing atau produksi dari rencana ini. |
+| AUTH-GOOGLE 2 — Safe account linking | Bergantung pada AUTH-GOOGLE 1 dan kebijakan bukti, reautentikasi, konflik serta recovery yang disetujui. Linking eksplisit dan diaudit harus menjaga UID, role, scope, perangkat dan histori; uji duplikasi/race, provider sudah tertaut, akun salah, revoke dan partial failure. Email/nama/nomor yang sama tidak cukup untuk auto-merge atau memberi izin. |
+| Production Readiness — lintas tahap | **PLANNED; produksi NO-GO.** Bergantung pada governance/pemilik data dan izin, hardening server/TLS/session/CSRF, rate limit dan audit, recovery lintas proses/worker fencing, trusted owner/step-up, anti-rollback/revocation eksternal, rekonsiliasi dan retirement/rebind legacy, serta review izin snapshot. Migrasi emulator ke operasional memerlukan inventaris dan pemetaan UID/ID/role/grant terverifikasi, penanganan konflik dan perangkat unresolved, backup/restore yang diuji, prosedur rollback dan cutover, verifikasi privasi, monitoring serta keputusan GO eksplisit. Dry run A2.4C adalah asesmen fiktif, bukan migrasi atau otorisasi restore. |
+
+### Stage 10 — pembagian PLANNED
+
+- **Core:** editor aktivitas, waktu/durasi, PIC dan catatan; reorder bertahan setelah simpan/reload, dengan revisi dan otorisasi event. Tidak mengubah ID atau histori absensi.
+- **Templates:** template reusable terpisah dari salinan event; edit event tidak mengubah sumber. Materi dan versi BibleMax harus disetujui pemilik metodologi; urutan internal tidak diasumsikan wajib.
+- **Publish/Sharing:** versi draft/published dan pembaca berizin, dengan uji isolasi draft, revisi, pencabutan dan proyeksi minimal. Guest link, masa berlaku dan kebijakan pencabutan perlu keputusan sebelum diimplementasikan.
+
+Urutan yang disarankan: P0 → AUTH-UX 1 → AUTH-SESSION 1 → AUTH-GOOGLE 1 → AUTH-GOOGLE 2 → Stage 10 Core → Templates → Publish/Sharing → Stage 11 → Stage 12 → Stage 13. Production Readiness berjalan lintas tahap dan menjadi gate tersendiri sebelum penggunaan operasional, bukan konsekuensi otomatis selesainya urutan fitur. Dependensi keamanan atau keputusan terbuka dapat mengubah urutan setelah disetujui; setiap lingkup tetap memerlukan otorisasi terpisah.
+
+Fondasi identitas relawan minimal dapat dipakai modul sebelumnya setelah keputusan desain, tanpa mempercepat seluruh Volunteer Management. Tidak ada tanggal, anggaran atau deployment yang ditetapkan.
 
 ## 12. Risiko, dependensi dan keputusan terbuka
 
-Seluruh mitigasi berikut **PLANNED / NOT IMPLEMENTED**; keputusan ini tidak menghalangi penyelesaian dokumen, tetapi dapat menghalangi tahap implementasi terkait.
+Keputusan dan mitigasi lanjutan berikut **PLANNED / NOT IMPLEMENTED**; keputusan ini tidak menghalangi penyelesaian dokumen, tetapi dapat menghalangi tahap implementasi terkait.
 
 | Keputusan/risiko | Usulan awal dan pihak yang perlu menyetujui |
 |---|---|
@@ -261,6 +282,7 @@ Seluruh mitigasi berikut **PLANNED / NOT IMPLEMENTED**; keputusan ini tidak meng
 | Workbook Sheets aktif, layout, formula, pemilik dan tab keluaran | Konfirmasi ulang dengan pemilik file sebelum mapping; catatan kerja lama belum membuktikan kompatibilitas workbook sekarang |
 | OAuth, identitas worker, secret storage dan akses jaringan | Keputusan arsitektur/operasi terpisah; connector cloud tidak boleh membypass safeguard emulator lokal |
 | Benturan edit MSA/Sheets, reorder atau penghapusan | Proyeksi satu arah ber-checksum; konflik ditinjau manusia. Bidir menunggu kebijakan per-field dan versi dasar |
+| AUTH-SESSION / Google | Tetapkan durasi dan model sesi Mentor, batas lintas origin, revocation dan recovery; pilih provider/realm, bukti linking, penanganan konflik dan unlink sebelum implementasi. |
 | Akun personal, identitas lintas organisasi/realm dan laporan agregat | Satu akun lintas peran dikonfirmasi; jangan auto-merge orang/profil. Broker/alias, verifikasi/linking, kebijakan telepon/recovery, reviewer dan izin agregasi masih memerlukan keputusan; lihat kajian akun |
 | Media anak, kontak relawan/mitra dan lokasi sensitif | Persetujuan, proyeksi minimal, akses, retensi dan prosedur insiden ditetapkan pemilik data sebelum data nyata |
 | Tautan tamu baca-saja | Mulai dengan pembaca terotorisasi; guest link, masa berlaku, pencabutan dan field publik memerlukan persetujuan |
