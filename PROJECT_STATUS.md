@@ -1,5 +1,9 @@
 # ABC Attendance — status revisi
 
+## 29 Oktober 2026 — Konfirmasi keselarasan roadmap
+
+Roadmap yang sudah tercatat dikonfirmasi terhadap status terbaru: workstream P0, AUTH-UX 1, AUTH-SESSION 1, AUTH-GOOGLE 1–2 dan Production Readiness tetap **PLANNED**; implementasi dan tes Visual Studio yang ada tetap terbatas pada emulator. Kriteria P0 kini juga menyebut regresi gambar besar yang telah diuji dan upload asli pengguna yang belum diulang. Pengantar kebutuhan MSA diperjelas agar tidak menyatakan seluruh fondasi yang sudah ada sebagai belum diimplementasikan. Tidak ada implementasi atau pengujian fitur baru dalam pembaruan dokumentasi ini; rincian, dependensi, urutan dan keputusan terbuka tetap di [roadmap](MSA_PRODUCT_VISION.md#11-roadmap-dan-urutan--status-29-oktober-2026).
+
 ## 29 Oktober 2026 — Visual Studio: stack overflow saat menyimpan gambar besar
 
 **IMPLEMENTED / TESTED pada emulator; produksi NO-GO.** Penyebab kegagalan upload berhasil direproduksi: regex Base64 dengan grup empat karakter berulang di `backend/msa-visual.mjs` melempar `RangeError: Maximum call stack size exceeded` pada PNG fiktif 1100×1100 sekitar 4,62 MiB, masih di bawah batas 5 MiB. Error internal API visual sebelumnya jatuh ke pesan generik **Roster tidak dapat dibaca.**; ini tidak menunjukkan roster hilang. Diagnosis ini melengkapi pemeriksaan instance lama sebelumnya; file dan sesi pengguna tidak dipakai untuk reproduksi.
