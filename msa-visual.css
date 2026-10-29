@@ -28,6 +28,36 @@ body[data-msa-portal].msa-shell-active.msa-portal{--msa-canvas:#eeece9;--msa-pap
 body[data-msa-portal].msa-portal #portal-login .auth-back{color:#174f91}
 body[data-msa-portal].msa-portal #portal-submit{display:block;width:100%;margin:16px 0}
 body[data-msa-portal].msa-portal #portal-mentor-login{margin-bottom:0}
+/* Authentication screens: a compact form with the existing ABC accents. */
+body[data-msa-portal].msa-portal[data-auth-screen=login] main.intake{max-width:520px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-heading{margin:20px 0 24px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-heading .msa-eyebrow{display:none}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-heading h1{font-size:clamp(30px,6vw,38px);line-height:1.15;margin:18px 0 8px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-intro{color:#4b5752;margin:0}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-back{font-size:28px;line-height:1;text-decoration:none;padding:0 8px 0 0}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-login{background:transparent;border:0;border-radius:0;padding:0;margin:0;max-width:none}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-login label{font-weight:650;margin:16px 0 6px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-login input{background:#fffdfa;border:1px solid #8198ab;border-radius:8px;min-height:50px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] .auth-password{position:relative}
+body[data-msa-portal].msa-portal[data-auth-screen=login] .auth-password input{padding-right:82px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-show{position:absolute;right:4px;top:3px;margin:0;min-width:64px;min-height:44px;padding:8px;border:0;background:transparent;color:#174f91}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-login .portal-recovery{display:flex;justify-content:flex-end;color:#174f91}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-submit{background:var(--visual-accent);border-color:#bd890e;color:#202827;font-weight:700;min-height:50px;margin:8px 0 20px}
+body[data-msa-portal].msa-portal[data-auth-screen=login] #portal-mentor-login,body[data-msa-portal].msa-portal[data-auth-screen=login] .auth-switch{text-align:center;margin:8px 0}
+:is(body.msa-registration,body[data-msa-portal].msa-registration) main{max-width:560px}
+.msa-registration .auth-nav{margin:12px 0 0}
+.msa-registration .auth-nav a{font-size:28px;text-decoration:none;padding:0 8px 0 0}
+.msa-registration .msa-visual{height:130px;margin:8px 0 18px}
+:is(body.msa-registration,body[data-msa-portal].msa-registration) #registration{max-width:none;padding:clamp(20px,5vw,32px);margin:0 0 20px}
+.msa-registration #registration h1{text-align:center;font-size:clamp(26px,5vw,30px);line-height:1.2;margin:0 0 10px}
+.msa-registration #registration .registration-intro{text-align:center;margin:0 0 8px}
+.msa-registration #registration .registration-pilot{text-align:center;color:#4b5752;font-size:13px;margin:0 0 16px}
+.msa-registration #registration label{font-weight:650;margin:16px 0 6px}
+.msa-registration #registration label input{margin-top:6px;min-height:48px}
+.msa-registration #registration :is(#phone-help,#username-help,#password-help){font-size:13px;line-height:1.4;color:#4b5752;margin:6px 0 0}
+.msa-registration #registration button{display:block;width:100%;min-height:48px;margin:22px 0 12px;background:#174f91;border-color:#174f91;font-weight:700}
+.msa-registration #registration .auth-switch{text-align:center;margin:0}
+body[data-msa-portal].msa-registration main>p:has(>a[href="/"]){display:none}
 .mentor-account #account-login .msa-visual{margin-bottom:20px}
 .mentor-account #account-profile .msa-visual{margin:20px 0 12px;max-width:620px}
 .mentor-account #account-dates:empty{display:none}

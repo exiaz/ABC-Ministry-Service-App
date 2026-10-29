@@ -9,7 +9,7 @@ const note=text=>{$('portal-feedback').textContent=text;};
 function route(){
   if(!$('portal-workspace').hidden)return;
   const login=location.hash==='#masuk'||location.hash==='#portal-login';
-  $('portal-welcome').hidden=login;$('portal-heading').hidden=!login;$('portal-login').hidden=!login;
+  $('portal-welcome').hidden=login;$('portal-heading').hidden=!login;$('portal-login').hidden=!login;document.body.dataset.authScreen=login?'login':'welcome';
   document.title='ABC Ministry Service App | '+(login?'Masuk':'Selamat datang');
 }
 function clear(){
@@ -17,14 +17,14 @@ function clear(){
   generation++;clearTimeout(expiry);clearMsaShell();
   $('portal-workspace').hidden=true;$('portal-account').textContent='';$('portal-personal').hidden=true;
   $('portal-schedule').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
-  $('portal-title').textContent='ABC Ministry Service App';$('portal-eyebrow').textContent='SELAMAT DATANG';
-  $('portal-intro').textContent='Masuk untuk melihat jadwal dan mengelola pelayanan Anda.';
+  $('portal-title').textContent='Welcome back';$('portal-eyebrow').textContent='SELAMAT DATANG';$('portal-back').hidden=false;
+  $('portal-intro').textContent='Enter your credentials to continue.';
   $('portal-local').hidden=false;$('portal-password').value='';route();
-  $('portal-password').type='password';$('portal-show').textContent='Tampilkan kata sandi';$('portal-show').setAttribute('aria-pressed','false');
+  $('portal-password').type='password';$('portal-show').textContent='Show';$('portal-show').setAttribute('aria-label','Show password');$('portal-show').setAttribute('aria-pressed','false');
 }
 async function show(profile){
   const current=++generation;clearTimeout(expiry);
-  $('portal-login').hidden=true;$('portal-welcome').hidden=true;$('portal-heading').hidden=false;$('portal-workspace').hidden=false;$('portal-local').hidden=true;
+  $('portal-login').hidden=true;$('portal-welcome').hidden=true;$('portal-heading').hidden=false;$('portal-back').hidden=true;$('portal-workspace').hidden=false;$('portal-local').hidden=true;delete document.body.dataset.authScreen;
   $('portal-title').textContent='Beranda';$('portal-eyebrow').textContent=msaRoleLabel(profile.role);
   $('portal-intro').textContent='Selamat melayani. Mulai dari jadwal atau ruang pelayanan Anda.';$('portal-account').textContent='@'+profile.username;
   document.title='ABC Ministry Service App | Beranda';mountMsaShell(profile);
@@ -64,9 +64,9 @@ async function action(fn){
   if(busy)return;busy=true;$('portal-login').setAttribute('aria-busy','true');$('portal-workspace').setAttribute('aria-busy','true');
   document.querySelectorAll('main button').forEach(n=>n.disabled=true);$('portal-submit').textContent='Memeriksa…';
   try{await fn();}catch(e){note(e.name==='TimeoutError'||e instanceof TypeError?'Koneksi belum tersedia. Coba lagi.':e.message);$('portal-feedback').focus();}
-  finally{busy=false;document.querySelectorAll('main button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Masuk';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
+  finally{busy=false;document.querySelectorAll('main button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Log in';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
 }
-$('portal-show').onclick=()=>{const show=$('portal-password').type==='password';$('portal-password').type=show?'text':'password';$('portal-show').textContent=show?'Sembunyikan kata sandi':'Tampilkan kata sandi';$('portal-show').setAttribute('aria-pressed',String(show));};
+$('portal-show').onclick=()=>{const show=$('portal-password').type==='password';$('portal-password').type=show?'text':'password';$('portal-show').textContent=show?'Hide':'Show';$('portal-show').setAttribute('aria-label',show?'Hide password':'Show password');$('portal-show').setAttribute('aria-pressed',String(show));};
 $('portal-login').onsubmit=e=>{e.preventDefault();void action(async()=>{note('Memeriksa akun dan izin…');let password=$('portal-password').value;$('portal-password').value='';try{await show(await request('login',{username:$('portal-username').value,password}));note('');}finally{password='';}});};
 $('portal-refresh').onclick=()=>void action(async()=>{clear();await show(await request('session'));});
 $('portal-logout').onclick=()=>void action(async()=>{await request('logout',{});clear();note('Anda sudah keluar.');});

@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 29 Oktober 2026 — Penyempurnaan login dan Sign Up
+
+**IMPLEMENTED / TESTED pada emulator; produksi NO-GO.** Login portal mengikuti hierarki “Welcome back”, field username dan password, kontrol Show/Hide, pemulihan, tombol Log in dan navigasi Sign Up/Mentor. Pendaftaran memakai kartu ringkas dengan empat field existing, informasi review dan petunjuk validasi; gambar slot `registration` tetap memakai publikasi/fallback Visual Studio. Teks UI terkait mengganti “relawan” menjadi “Volunteer”. Autentikasi, review, izin dan data tidak diubah.
+
+**Verifikasi aktual:** `node --test tests/msa-portal-focus.test.mjs tests/msa-portal-focus-browser.mjs` lulus 3/3; pemeriksaan Chrome memakai respons fiktif untuk login dan pendaftaran, memeriksa navigasi, visibilitas password, validasi dasar dan overflow pada 360/390/768/1365 px. `node tests/stage3.mjs --visual` lulus 213/213 unit dan 3/3 integrasi/Chrome (`run-C3vmDL`); `node tests/stage3.mjs --a2-2` lulus 213/213 unit, 7/7 integrasi dan 1/1 Chrome pendaftaran/review/link (`run-VovtK8`). Tes `auth-pilot-browser.mjs` tidak dimulai karena instance MSA lain aktif dengan mode/versi berbeda; instance tidak dihentikan. Tangkapan terarah: `.emulator-data/auth-ux-redesign/`. Screen reader, perangkat fisik dan browser selain Chrome belum diuji.
+
 ## 29 Oktober 2026 — AUTH-UX 1: layar autentikasi terpisah
 
 **IMPLEMENTED / TESTED pada pilot emulator; produksi NO-GO.** Welcome portal kini menampilkan gambar dan teks slot `welcome`, tindakan Masuk (`/#masuk`), pendaftaran Mentor dan tautan login Mentor tanpa formulir portal. Formulir portal ditampilkan pada URL hash terpisah; back/forward dan refresh mempertahankan pilihan layar, dengan fokus pada judul saat perpindahan. Sesi portal yang valid tetap membuka workspace sesuai izin server; ketika sesi workspace berakhir pengguna kembali ke login. Halaman pendaftaran memakai navigasi dan gaya yang selaras; sesi portal valid diarahkan kembali ke workspace. Pendaftaran/review, login Mentor, aktivasi perangkat, dan kontrak publikasi/fallback Visual Studio tetap memakai jalur existing. Tidak ada sesi Mentor persisten atau perubahan backend autentikasi.
