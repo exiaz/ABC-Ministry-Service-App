@@ -9,7 +9,8 @@ test('Portal keeps authenticated workspace during focus validation and clears it
   const node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,value:'',textContent:'',setAttribute(){},replaceChildren(){},append(){},focus(){},cloneNode(){return node(id+'-clone');}});return nodes.get(id);};
   const profile={username:'fictional-owner',role:'superadmin',modules:[],expiresAt:Date.now()+1800000};
   let pending,delay=false,requests=0;
-  const context=vm.createContext({document:{getElementById:node,querySelectorAll:()=>[],createElement:()=>node('link'),body:{dataset:{mentorOrigin:'http://127.0.0.1:4276'}}},window:{addEventListener:(name,fn)=>listeners.set(name,fn)},msaBrand:()=>'',mountVisuals:async()=>{},mountMsaShell(){},clearMsaShell(){},msaRoleLabel:()=> 'Superadmin',setTimeout:()=>1,clearTimeout(){},AbortSignal,Date,URLSearchParams,
+  const location={pathname:'/',hash:''};
+  const context=vm.createContext({location,history:{replaceState(_state,_title,url){location.hash=url.includes('#')?'#'+url.split('#')[1]:'';}},document:{getElementById:node,querySelectorAll:()=>[],createElement:()=>node('link'),body:{dataset:{mentorOrigin:'http://127.0.0.1:4276'}}},window:{addEventListener:(name,fn)=>listeners.set(name,fn)},msaBrand:()=>'',mountVisuals:async()=>{},mountMsaShell(){},clearMsaShell(){},msaRoleLabel:()=> 'Superadmin',setTimeout:()=>1,clearTimeout(){},AbortSignal,Date,URLSearchParams,
     msaFetch:async()=>{requests++;if(delay)return new Promise(resolve=>pending=resolve);return {ok:true,json:async()=>profile};}});
   vm.runInContext(source,context);const settle=()=>new Promise(resolve=>setImmediate(resolve));await settle();
   assert.equal(node('portal-workspace').hidden,false);assert.equal(node('portal-login').hidden,true);

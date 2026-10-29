@@ -6,19 +6,25 @@ $('portal-brand').innerHTML=msaBrand();
 void mountVisuals();
 let busy=false,expiry,generation=0;
 const note=text=>{$('portal-feedback').textContent=text;};
+function route(){
+  if(!$('portal-workspace').hidden)return;
+  const login=location.hash==='#masuk'||location.hash==='#portal-login';
+  $('portal-welcome').hidden=login;$('portal-heading').hidden=!login;$('portal-login').hidden=!login;
+  document.title='ABC Ministry Service App | '+(login?'Masuk':'Selamat datang');
+}
 function clear(){
+  if(!$('portal-workspace').hidden)history.replaceState(null,'',location.pathname+'#masuk');
   generation++;clearTimeout(expiry);clearMsaShell();
   $('portal-workspace').hidden=true;$('portal-account').textContent='';$('portal-personal').hidden=true;
   $('portal-schedule').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
   $('portal-title').textContent='ABC Ministry Service App';$('portal-eyebrow').textContent='SELAMAT DATANG';
   $('portal-intro').textContent='Masuk untuk melihat jadwal dan mengelola pelayanan Anda.';
-  $('portal-login').hidden=false;$('portal-welcome').hidden=false;$('portal-local').hidden=false;$('portal-password').value='';
+  $('portal-local').hidden=false;$('portal-password').value='';route();
   $('portal-password').type='password';$('portal-show').textContent='Tampilkan kata sandi';$('portal-show').setAttribute('aria-pressed','false');
-  document.title='ABC Ministry Service App | Masuk';
 }
 async function show(profile){
   const current=++generation;clearTimeout(expiry);
-  $('portal-login').hidden=true;$('portal-welcome').hidden=true;$('portal-workspace').hidden=false;$('portal-local').hidden=true;
+  $('portal-login').hidden=true;$('portal-welcome').hidden=true;$('portal-heading').hidden=false;$('portal-workspace').hidden=false;$('portal-local').hidden=true;
   $('portal-title').textContent='Beranda';$('portal-eyebrow').textContent=msaRoleLabel(profile.role);
   $('portal-intro').textContent='Selamat melayani. Mulai dari jadwal atau ruang pelayanan Anda.';$('portal-account').textContent='@'+profile.username;
   document.title='ABC Ministry Service App | Beranda';mountMsaShell(profile);
@@ -66,7 +72,9 @@ $('portal-refresh').onclick=()=>void action(async()=>{clear();await show(await r
 $('portal-logout').onclick=()=>void action(async()=>{await request('logout',{});clear();note('Anda sudah keluar.');});
 const link=document.createElement('a');link.href=document.body.dataset.mentorOrigin+'/';link.textContent='Buka akun Mentor / Volunteer';$('portal-mentor').append(link);
 const mentorEntry=link.cloneNode(true);mentorEntry.textContent='Masuk sebagai Mentor';$('portal-mentor-entry').append(mentorEntry);
+const mentorLogin=mentorEntry.cloneNode(true);$('portal-mentor-login').append(mentorLogin);
 const personal=link.cloneNode(true);$('portal-personal').append('Untuk akses Mentor, masuk kembali di halaman perangkat. Aktivasi dan bukti kunci tetap wajib. ',personal);
 void action(async()=>{try{await show(await request('session'));}catch{clear();note('Gunakan username dan kata sandi akun fiktif Anda.');}});
 window.addEventListener('focus',()=>{if(!$('portal-workspace').hidden)void action(async()=>{await show(await request('session'));});});
 window.addEventListener('pageshow',e=>{if(e.persisted){clear();void action(async()=>show(await request('session')));}});
+window.addEventListener('hashchange',()=>{route();note('');if($('portal-workspace').hidden)$(location.hash==='#masuk'||location.hash==='#portal-login'?'portal-title':'welcome-title').focus();});
