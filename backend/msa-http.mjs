@@ -56,13 +56,14 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   }
   if(visual){
     if(url.search)fail(400,'Parameter tidak diizinkan.');
-    const match=/^\/api\/visual\/(welcome|login|registration|dashboard)(?:\/(draft|preview|publish|revert|history))?$/.exec(path);
+    const match=/^\/api\/visual\/(welcome|login|registration|dashboard)(?:\/(draft|preview|publish|revert|history|save))?$/.exec(path);
     if(!match){send(404,{error:'Tidak ditemukan.'});return true;}
     const [,slot,action]=match,v=a1.visual;
     if(!action&&req.method==='GET'){send(200,await v.status(actor,slot));return true;}
     if(action==='history'&&req.method==='GET'){send(200,await v.history(actor,slot));return true;}
     if(action==='preview'&&req.method==='GET'){send(200,await v.preview(actor,slot));return true;}
     if(action==='draft'&&req.method==='POST'){await v.authorize(actor);send(200,await v.upload(actor,slot,await json(req,7*1024*1024+4096)));return true;}
+    if(action==='save'&&req.method==='POST'){await v.authorize(actor);send(200,await v.save(actor,slot,await json(req,7*1024*1024+4096)));return true;}
     if(action==='publish'&&req.method==='POST'){send(200,await v.publish(actor,slot,await json(req)));return true;}
     if(action==='revert'&&req.method==='POST'){send(200,await v.revert(actor,slot,await json(req)));return true;}
     send(405,{error:'Tindakan tidak tersedia.'});return true;

@@ -47,7 +47,7 @@ export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
     enabled,
     async authorize(actor){enabled();return db.runTransaction(tx=>authorize(tx,actor));},
     async status(actor,slot){
-      visualSlot(slot);enabled();return db.runTransaction(async tx=>{await authorize(tx,actor);const row=state(slot,(await tx.get(states.doc(slot))).data());await authorize(tx,actor);return {slot,revision:row.revision,draft:row.draft?{metadata:row.draft.metadata}:null,published:row.published?{revision:row.published.revision,metadata:row.published.metadata,src:href(slot,row.published.revision)}:null};});
+      visualSlot(slot);enabled();return db.runTransaction(async tx=>{await authorize(tx,actor);const row=state(slot,(await tx.get(states.doc(slot))).data());await authorize(tx,actor);return {slot,revision:row.revision,draft:row.draft?{metadata:row.draft.metadata}:null,published:row.published?{revision:row.published.revision,metadata:row.published.metadata,src:row.published.assetId?href(slot,row.published.revision):null}:null};});
     },
     async history(actor,slot){
       visualSlot(slot);enabled();return db.runTransaction(async tx=>{
@@ -74,6 +74,26 @@ export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
     async preview(actor,slot){
       visualSlot(slot);enabled();return db.runTransaction(async tx=>{await authorize(tx,actor);const row=state(slot,(await tx.get(states.doc(slot))).data());if(!row.draft)fail(404,'Draf tidak tersedia.');const bytes=await readAsset(tx,slot,row.draft.assetId);await authorize(tx,actor);return {revision:row.revision,metadata:metadata(row.draft.metadata),image:bytes.toString('base64')};});
     },
+    async save(actor,slot,value){
+      visualSlot(slot);if(!keys(value,['mutation','metadata','image']))fail(400,'Permintaan tidak valid.');
+      const command=visualMutation(value.mutation),meta=metadata(value.metadata);
+      await db.runTransaction(tx=>authorize(tx,actor));
+      let image=null,assetId=null,parts=[];
+      if(value.image!==undefined){
+        if(typeof value.image!=='string'||value.image.length>Math.ceil(maxImage/3)*4||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.image))fail(400,'Gambar PNG tidak valid.');
+        image=sanitizeVisualPng(Buffer.from(value.image,'base64'));if(image.bytes.length>maxImage)fail(400,'Gambar hasil pemrosesan melebihi batas.');
+        assetId=randomUUID();for(let i=0;i<image.bytes.length;i+=chunkSize)parts.push(image.bytes.subarray(i,i+chunkSize).toString('base64'));
+      }
+      return mutate(actor,slot,'save',command,{metadata:meta,digest:image?digest(image.bytes):null},async(tx,row)=>{
+        const currentAsset=image?assetId:row.draft?.assetId??row.published?.assetId??null;
+        if(!image&&currentAsset)await readAsset(tx,slot,currentAsset);
+        const publication={assetId:currentAsset,metadata:meta,revision:row.revision+1};
+        return {fields:{published:publication,draft:null},publication,write:image?tx=>{
+          tx.create(assets.doc(assetId),{slot,count:parts.length,size:image.bytes.length,digest:digest(image.bytes),width:image.width,height:image.height});
+          parts.forEach((data,index)=>tx.create(chunks.doc(assetId+'-'+index),{assetId,slot,index,data}));
+        }:undefined};
+      });
+    },
     async publish(actor,slot,value){
       if(!keys(value,['mutation']))fail(400,'Permintaan tidak valid.');
       return mutate(actor,slot,'publish',value.mutation,{},async(tx,row)=>{
@@ -86,12 +106,12 @@ export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
       if(!keys(value,['mutation','targetRevision'])||!Number.isSafeInteger(value.targetRevision)||value.targetRevision<0)fail(400,'Revisi tujuan tidak valid.');
       return mutate(actor,slot,'revert',value.mutation,{targetRevision:value.targetRevision},async(tx,row)=>{
         let publication=null;
-        if(value.targetRevision){const old=(await tx.get(history.doc(id(slot,value.targetRevision)))).data();if(!old||old.slot!==slot||old.revision!==value.targetRevision||!old.publication)fail(404,'Revisi publikasi tidak ditemukan.');if(!old.publication.fallback){await readAsset(tx,slot,old.publication.assetId);publication={assetId:old.publication.assetId,metadata:metadata(old.publication.metadata),revision:row.revision+1};}}
+        if(value.targetRevision){const old=(await tx.get(history.doc(id(slot,value.targetRevision)))).data();if(!old||old.slot!==slot||old.revision!==value.targetRevision||!old.publication)fail(404,'Revisi publikasi tidak ditemukan.');if(!old.publication.fallback){if(old.publication.assetId)await readAsset(tx,slot,old.publication.assetId);publication={assetId:old.publication.assetId,metadata:metadata(old.publication.metadata),revision:row.revision+1};}}
         return {fields:{published:publication},publication:publication??{fallback:true}};
       });
     },
     async publicRead(slot,revision){
-      visualSlot(slot);enabled();return db.runTransaction(async tx=>{const row=(await tx.get(states.doc(slot))).data();const p=row?.published;if(!p||revision!==undefined&&p.revision!==revision)return null;const bytes=await readAsset(tx,slot,p.assetId);enabled();return {slot,revision:p.revision,metadata:metadata(p.metadata),src:href(slot,p.revision),bytes};});
+      visualSlot(slot);enabled();return db.runTransaction(async tx=>{const row=(await tx.get(states.doc(slot))).data();const p=row?.published;if(!p||revision!==undefined&&p.revision!==revision)return null;const bytes=p.assetId?await readAsset(tx,slot,p.assetId):null;enabled();return {slot,revision:p.revision,metadata:metadata(p.metadata),src:bytes?href(slot,p.revision):null,bytes};});
     }
   };
 }

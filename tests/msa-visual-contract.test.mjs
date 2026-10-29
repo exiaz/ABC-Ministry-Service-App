@@ -17,3 +17,11 @@ test('Visual publication commands require confirmation, revision, reason and bou
   assert.deepEqual(visualMutation(valid),valid);
   for(const value of [{...valid,expectedRevision:-1},{...valid,expectedRevision:1.5},{...valid,requestId:'../x'},{...valid,reason:'abc'},{...valid,reason:'alasan\nbaru'},{...valid,confirmed:false},{...valid,slot:'login'}])bad(()=>visualMutation(value));
 });
+
+test('Visual zoom and login copy are bounded, optional and backwards compatible',()=>{
+  const base={alt:'',x:0,y:100};
+  assert.deepEqual(visualMetadata(base),base);
+  assert.deepEqual(visualMetadata({...base,zoom:1.6,headline:'  Selamat datang  ',description:'Masuk untuk melayani.'}),{...base,zoom:1.6,headline:'Selamat datang',description:'Masuk untuk melayani.'});
+  assert.equal(visualMetadata({...base,description:'Baris satu\nBaris dua'}).description,'Baris satu\nBaris dua');
+  for(const value of [{zoom:0.99},{zoom:3.01},{zoom:NaN},{zoom:'2'},{zoom:1.001},{headline:'a'.repeat(121)},{description:'a'.repeat(301)},{headline:'x\n'},{description:'x\u0000'},{headline:{html:'x'}}])bad(()=>visualMetadata({...base,...value}));
+});

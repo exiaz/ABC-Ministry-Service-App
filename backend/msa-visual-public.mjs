@@ -9,6 +9,7 @@ export async function visualPublicRoute(req,res,url,visual){
     const revision=match[2]===undefined?undefined:Number(match[2]);
     if(revision!==undefined&&!Number.isSafeInteger(revision))return missing();
     const result=await visual.publicRead(match[1],revision);if(!result)return missing();
+    if(revision!==undefined&&!result.bytes)return missing();
     const body=revision===undefined?Buffer.from(JSON.stringify({slot:result.slot,revision:result.revision,metadata:result.metadata,src:result.src})):result.bytes;
     res.writeHead(200,{'Content-Type':revision===undefined?'application/json; charset=utf-8':'image/png','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'"});
     res.end(req.method==='HEAD'?undefined:body);return true;

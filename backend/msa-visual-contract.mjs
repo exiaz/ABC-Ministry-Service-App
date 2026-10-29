@@ -10,8 +10,11 @@ export function visualSlot(value){
 }
 
 export function visualMetadata(value){
-  if(!keys(value,['alt','x','y'])||typeof value.alt!=='string'||value.alt.length>160||/[\p{Cc}\p{Cf}\p{Cs}]/u.test(value.alt)||![value.x,value.y].every(n=>Number.isInteger(n)&&n>=0&&n<=100))fail();
-  return {alt:value.alt.trim(),x:value.x,y:value.y};
+  if(!keys(value,['alt','x','y','zoom','headline','description'])||typeof value.alt!=='string'||value.alt.length>160||/[\p{Cc}\p{Cf}\p{Cs}]/u.test(value.alt)||![value.x,value.y].every(n=>Number.isInteger(n)&&n>=0&&n<=100))fail();
+  const result={alt:value.alt.trim(),x:value.x,y:value.y};
+  if(value.zoom!==undefined){if(typeof value.zoom!=='number'||!Number.isFinite(value.zoom)||value.zoom<1||value.zoom>3||Math.abs(value.zoom*100-Math.round(value.zoom*100))>0.000001)fail();result.zoom=value.zoom;}
+  for(const [key,limit] of [['headline',120],['description',300]])if(value[key]!==undefined){if(typeof value[key]!=='string'||value[key].length>limit||/[\p{Cc}\p{Cf}\p{Cs}]/u.test(key==='description'?value[key].replace(/\n/g,''):value[key]))fail();result[key]=value[key].trim();}
+  return result;
 }
 
 export function visualMutation(value){
