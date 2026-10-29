@@ -7,6 +7,8 @@ import {sanitizeVisualPng} from './msa-visual-image.mjs';
 // be read without an actor; chunk identifiers are never accepted from clients.
 const chunkSize=180000,maxImage=5*1024*1024;
 const keys=(v,allowed)=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).every(k=>allowed.includes(k));
+// A repeated four-character group can exhaust V8's regexp stack on large PNGs.
+const validImage=value=>typeof value==='string'&&value.length<=Math.ceil(maxImage/3)*4&&value.length%4===0&&/^[A-Za-z0-9+/]*={0,2}$/.test(value);
 const digest=b=>hash(b);
 export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
   const col=n=>root.collection(n),states=col('msaVisualSlots'),assets=col('msaVisualAssets'),chunks=col('msaVisualChunks'),history=col('msaVisualHistory'),receipts=col('msaVisualReceipts'),audit=col('msaVisualAudit');
@@ -59,7 +61,7 @@ export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
       });
     },
     async upload(actor,slot,value){
-      visualSlot(slot);if(!keys(value,['mutation','metadata','image'])||typeof value.image!=='string'||value.image.length>Math.ceil(maxImage/3)*4||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.image))fail(400,'Gambar PNG tidak valid.');
+      visualSlot(slot);if(!keys(value,['mutation','metadata','image'])||!validImage(value.image))fail(400,'Gambar PNG tidak valid.');
       const command=visualMutation(value.mutation),meta=metadata(value.metadata);
       // Reject unauthorized clients before decoding or processing their image.
       await db.runTransaction(tx=>authorize(tx,actor));
@@ -80,7 +82,7 @@ export function createMsaVisual({db,root,accounts,enabled,now=Date.now}){
       await db.runTransaction(tx=>authorize(tx,actor));
       let image=null,assetId=null,parts=[];
       if(value.image!==undefined){
-        if(typeof value.image!=='string'||value.image.length>Math.ceil(maxImage/3)*4||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.image))fail(400,'Gambar PNG tidak valid.');
+        if(!validImage(value.image))fail(400,'Gambar PNG tidak valid.');
         image=sanitizeVisualPng(Buffer.from(value.image,'base64'));if(image.bytes.length>maxImage)fail(400,'Gambar hasil pemrosesan melebihi batas.');
         assetId=randomUUID();for(let i=0;i<image.bytes.length;i+=chunkSize)parts.push(image.bytes.subarray(i,i+chunkSize).toString('base64'));
       }

@@ -148,3 +148,11 @@ test('Rejected asynchronous adapters return the existing generic error without d
     assert.equal(response.status,500);assert.deepEqual(await response.json(),{error:'Roster tidak dapat dibaca.'});
   }
 });
+
+
+test('Visual internal failures return a media error without leaking details or using a roster message',async t=>{
+  const adminAuthentication={authorize:async()=>({kind:'unauthenticated'}),a1:{authorize:async()=>({uid:'fictional-visual'}),visual:{enabled(){},authorize:async()=>{},save:async()=>{throw Error('PRIVATE_STORAGE_DETAIL');}}}};
+  const base=await start(t,createRosterServer({adminAuthentication}));
+  const response=await fetch(base+'/api/visual/welcome/save',{method:'POST',headers:{Origin:base,Authorization:'Bearer fictional','Content-Type':'application/json'},body:'{}'});
+  assert.equal(response.status,500);assert.deepEqual(await response.json(),{error:'Perubahan gambar tidak dapat diproses.'});
+});

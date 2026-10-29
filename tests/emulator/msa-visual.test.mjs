@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,randomBytes} from 'node:crypto';
 import {deflateSync} from 'node:zlib';
 import {once} from 'node:events';
 import {mkdir} from 'node:fs/promises';
@@ -12,11 +12,13 @@ import {createAdminServer} from '../../admin-server.mjs';
 const require=createRequire(import.meta.url);let chromium;
 try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}
 
-function png(pixel){
+function png(pixel,size=1){
   const crc=data=>{let c=0xffffffff;for(const b of data){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0;};
   const chunk=(name,data)=>{const type=Buffer.from(name),result=Buffer.alloc(data.length+12);result.writeUInt32BE(data.length);type.copy(result,4);data.copy(result,8);result.writeUInt32BE(crc(Buffer.concat([type,data])),8+data.length);return result;};
-  const h=Buffer.alloc(13);h.writeUInt32BE(1);h.writeUInt32BE(1,4);h[8]=8;h[9]=6;
-  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',h),chunk('IDAT',deflateSync(Buffer.from([0,pixel,40,50,255]))),chunk('IEND',Buffer.alloc(0))]).toString('base64');
+  const h=Buffer.alloc(13);h.writeUInt32BE(size);h.writeUInt32BE(size,4);h[8]=8;h[9]=6;
+  const pixels=size===1?Buffer.from([0,pixel,40,50,255]):randomBytes((size*4+1)*size);
+  for(let y=0;y<size;y++)pixels[y*(size*4+1)]=0;
+  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',h),chunk('IDAT',deflateSync(pixels)),chunk('IEND',Buffer.alloc(0))]).toString('base64');
 }
 function widePng(){
   const crc=data=>{let c=0xffffffff;for(const b of data){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0;};
@@ -319,4 +321,30 @@ test('Atomic visual save preserves authorization, copy-only fallback, idempotenc
   assert.equal((await f.request(path('login','revert'),{mutation:command(2),targetRevision:1})).status,200);assert.equal((await (await publicRead(f.base,'login')).json()).src,null);
   const reset={mutation:command(3),metadata:{alt:'',x:50,y:50,zoom:1,headline:'',description:''}};assert.equal((await f.request(path('login','save'),reset)).status,200);
   const cleanBrowser=await chromium.launch({channel:'chrome',headless:true,args:['--disable-gpu']});try{const page=await cleanBrowser.newPage();await page.goto(mentorBase+'/mentor-account.html');await page.getByRole('heading',{name:'Akun Mentor / Volunteer',exact:true}).waitFor();await page.waitForFunction(()=>document.querySelector('[data-visual-slot=login] img')?.complete);assert.equal(await page.locator('[data-visual-description=login]').textContent(),'Masuk dengan akun yang sudah ditinjau dan ditautkan oleh penanggung jawab.');}finally{await cleanBrowser.close();}
+});
+
+
+test('Visual save and draft accept a large multi-chunk PNG through the portal',async t=>{
+  const previous=process.env.ABC_MSA_VISUAL_V1A;process.env.ABC_MSA_VISUAL_V1A='1';t.after(()=>{if(previous===undefined)delete process.env.ABC_MSA_VISUAL_V1A;else process.env.ABC_MSA_VISUAL_V1A=previous;});
+  const f=await msaFixture(t,{namespace:'test-auth-pilot-'+randomUUID()});
+  const manager=await f.enroll();assert.equal((await f.change(manager.uid,{role:'superadmin',scope:{organizationId:null}})).status,200);
+  const portal=createAdminServer({adminAuthentication:f.adminAuthentication,pairing:f.pairing,portal:true});portal.listen(0,'127.0.0.1');await once(portal,'listening');
+  t.after(()=>new Promise(resolve=>{portal.close(resolve);portal.closeAllConnections();}));
+  const base='http://127.0.0.1:'+portal.address().port;
+  const login=await fetch(base+'/api/portal/login',{method:'POST',headers:{'Content-Type':'application/json',Origin:base,'X-MSA-Portal':'1'},body:JSON.stringify({username:manager.username,password:manager.password})});assert.equal(login.status,200);
+  const cookie=login.headers.get('set-cookie').split(';')[0],image=png(0,1100);
+  assert.ok(Buffer.from(image,'base64').length>4*1024*1024);
+  const send=(slot,action,value)=>fetch(base+'/api/portal/dispatch/api/visual/'+slot+'/'+action,{method:'POST',headers:{'Content-Type':'application/json',Origin:base,'X-MSA-Portal':'1',Cookie:cookie},body:JSON.stringify(value)});
+  for(const [slot,action] of [['welcome','save'],['login','draft']]){
+    const value={mutation:command(0),metadata:{alt:'Noise fiktif',x:50,y:50},image};
+    for(let attempt=0;attempt<2;attempt++){const result=await send(slot,action,value);assert.equal(result.status,200,JSON.stringify(await result.json()));}
+    const state=(await f.root.collection('msaVisualSlots').doc(slot).get()).data();assert.equal(state.revision,1);
+    assert.equal((await f.root.collection('msaVisualAudit').where('slot','==',slot).get()).size,1);
+  }
+  assert.ok((await f.root.collection('msaVisualChunks').get()).size>40);
+  assert.deepEqual((await f.adminAuthentication.a1.visual.publicRead('welcome')).bytes,Buffer.from(image,'base64'));
+  assert.equal(await f.adminAuthentication.a1.visual.publicRead('login'),null);
+  for(const image of ['AAAA=','A===','AA=A','AAAA\n','____']){
+    const result=await send('registration','save',{mutation:command(0),metadata:{alt:'',x:50,y:50},image});assert.equal(result.status,400);
+  }
 });

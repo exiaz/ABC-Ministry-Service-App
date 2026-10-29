@@ -1,5 +1,15 @@
 # ABC Attendance — status revisi
 
+## 29 Oktober 2026 — Visual Studio: stack overflow saat menyimpan gambar besar
+
+**IMPLEMENTED / TESTED pada emulator; produksi NO-GO.** Penyebab kegagalan upload berhasil direproduksi: regex Base64 dengan grup empat karakter berulang di `backend/msa-visual.mjs` melempar `RangeError: Maximum call stack size exceeded` pada PNG fiktif 1100×1100 sekitar 4,62 MiB, masih di bawah batas 5 MiB. Error internal API visual sebelumnya jatuh ke pesan generik **Roster tidak dapat dibaca.**; ini tidak menunjukkan roster hilang. Diagnosis ini melengkapi pemeriksaan instance lama sebelumnya; file dan sesi pengguna tidak dipakai untuk reproduksi.
+
+Validator jalur save dan draft kini memeriksa panjang kelipatan empat, alfabet Base64 serta padding dengan pola tanpa grup berulang. Batas ukuran, sanitizer PNG, otorisasi, transaksi, receipt dan privasi draf tetap berlaku. Kegagalan internal API visual kini memakai pesan khusus gambar tanpa membocorkan detail storage. Pop-up keberhasilan existing dipertahankan. Tidak ada perubahan data roster, akun, launcher atau gate produksi.
+
+**Verifikasi aktual:** `node tests/stage3.mjs --visual` lulus sintaks/import **233 modul**, unit **213/213**, integrasi/emulator/Chrome **3/3** (`run-SWJZ60`). Tes tambahan mengirim PNG >4 MiB melalui cookie sesi portal untuk save dan draft, mengulang body identik tanpa revisi/audit ganda, membandingkan seluruh byte publikasi, memastikan draf tetap privat, serta menolak Base64 rusak. Unit memverifikasi error internal visual tetap generik dan tidak menjadi pesan roster. Sebelum perbaikan, run `run-0qF7sb` gagal pada tes gambar besar dengan stack overflow di validator save (dua tes integrasi lama lulus). Percobaan awal dalam sandbox gagal `connect EACCES 127.0.0.1` sebelum integrasi; dijalankan ulang dengan akses loopback tanpa mengubah assertion. `git diff --check` lulus.
+
+**Batas / langkah berikutnya:** backend aktif perlu dimulai ulang untuk memuat perbaikan. Instance pengguna tidak dihentikan; Stop MSA.cmd → Start MSA.cmd membuat namespace/data uji baru sesuai perilaku pilot saat ini. Pilih kembali gambar setelah restart. Pengujian memakai data fiktif, tidak mengulang upload asli pengguna; perangkat fisik/browser selain Chrome tidak diuji. Tidak ada commit/push/deploy.
+
 ## 29 Oktober 2026 — Penyelarasan roadmap dokumentasi
 
 **PLANNED:** P0 stabilisasi/penerimaan Visual Studio, AUTH-UX 1, AUTH-SESSION 1, AUTH-GOOGLE 1–2 dan Production Readiness ditambahkan tanpa mengubah nomor Stage 1–13. Stage 10 dibagi Core, Templates dan Publish/Sharing; Stage 11–13 tetap Sheets, Volunteers dan Special Programs. Dependensi, acceptance, urutan dan keputusan terbuka berada di [MSA_PRODUCT_VISION.md bagian 11–12](MSA_PRODUCT_VISION.md#11-roadmap-dan-urutan--status-29-oktober-2026); batas akun di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md). Ini penyelarasan rencana, bukan implementasi atau pengujian fitur baru. Bukti historis di bawah tetap berlaku sesuai lingkup dan tanggalnya; produksi/cutover tetap NO-GO.
