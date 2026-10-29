@@ -68,5 +68,5 @@ const link=document.createElement('a');link.href=document.body.dataset.mentorOri
 const mentorEntry=link.cloneNode(true);mentorEntry.textContent='Masuk sebagai Mentor';$('portal-mentor-entry').append(mentorEntry);
 const personal=link.cloneNode(true);$('portal-personal').append('Untuk akses Mentor, masuk kembali di halaman perangkat. Aktivasi dan bukti kunci tetap wajib. ',personal);
 void action(async()=>{try{await show(await request('session'));}catch{clear();note('Gunakan username dan kata sandi akun fiktif Anda.');}});
-window.addEventListener('focus',()=>{if(!$('portal-workspace').hidden)void action(async()=>{clear();await show(await request('session'));});});
+window.addEventListener('focus',()=>{if(!$('portal-workspace').hidden)void action(async()=>{await show(await request('session'));});});
 window.addEventListener('pageshow',e=>{if(e.persisted){clear();void action(async()=>show(await request('session')));}});

@@ -1,5 +1,11 @@
 # ABC Attendance — status revisi
 
+## 29 Oktober 2026 — Form login muncul saat fokus kembali
+
+**IMPLEMENTED / TESTED terarah; produksi NO-GO.** Tab Edge teramati berganti dari judul Beranda ke form login dengan status Memeriksa saat mendapat fokus. Handler `focus` portal memanggil `clear()` sebelum menunggu pemeriksaan sesi, sehingga sesi yang masih sah juga menampilkan login selama request berlangsung. Pemanggilan `clear()` prematur dihapus; pemeriksaan server tetap berjalan, penolakan 401 tetap membersihkan workspace dan menampilkan login. Tidak ada perubahan cookie, masa sesi, password, UID, grant atau backend. Instance/sesi pengguna yang sedang berjalan tidak dihentikan atau direset; reload halaman memuat kode baru.
+
+Regresi unit baru gagal pada kode lama dan lulus setelah perbaikan; mencakup respons sesi tertunda, fokus berulang tanpa request duplikat dan penolakan 401. Uji Chrome terisolasi dengan respons sesi fixture lulus 1/1, termasuk beranda tetap tampil saat request tertunda dan login muncul pada 401. Percobaan Chrome pertama ditolak guard namespace test; harness diperbaiki memakai konfigurasi pilot fiktif tanpa mengubah guard. `npm.cmd run check` lulus 231 modul; `npm.cmd test` lulus 211/211; `git diff --check` lulus. Uji ini memverifikasi transisi UI dan regresi unit; alur emulator lengkap dan pengisian kredensial pengguna tidak diulang. Penyebab lain bila ada penolakan login nyata masih memerlukan bukti respons/error spesifik.
+
 ## 28 Oktober 2026 — Perbaikan startup Windows dan setup akun pilot
 
 **IMPLEMENTED / TESTED otomatis pada Windows; penerimaan manual terbatas, produksi NO-GO.** `Start MSA.cmd` tidak lagi meminta password Superadmin/Admin sebelum membuka portal Opsi G. Provisioning membuat dua akun fiktif dengan rahasia acak hanya di memori; username `momor1n` diikat melalui verifikasi password dan `expectedUid` ke owner UID baru yang sudah diizinkan setup trusted. `pic.pilot` tetap memiliki UID, password dan grant terpisah. Tidak ada pencarian username untuk membuat/promosi akun operasional. Tidak ada migrasi, perubahan akun/grant/data operasional, commit, push atau deploy.
