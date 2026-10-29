@@ -72,7 +72,23 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
     const screenshotDir='.emulator-data/visual-studio-v1b3a';await mkdir(screenshotDir,{recursive:true});
     for(const slot of ['welcome','login','registration','dashboard']){
       await page.locator('#slot').selectOption(slot);
-      await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:widePng()});
+      await page.waitForFunction(()=>!document.querySelector('#image').disabled);
+      const mimeType=slot==='welcome'?'image/jpeg':slot==='registration'?'image/webp':'image/png';
+      const converted=await page.evaluate(async({source,type})=>{
+        const raw=Uint8Array.from(atob(source),c=>c.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([raw],{type:'image/png'}));
+        const canvas=document.createElement('canvas');canvas.width=type==='image/png'?24:bitmap.width;canvas.height=type==='image/png'?96:bitmap.height;const ctx=canvas.getContext('2d');if(type==='image/png'){ctx.translate(24,0);ctx.rotate(Math.PI/2);ctx.drawImage(bitmap,0,0,96,24);}else ctx.drawImage(bitmap,0,0);bitmap.close();
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,type));
+        return new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.readAsDataURL(blob);});
+      },{source:widePng().toString('base64'),type:mimeType});
+      await page.locator('#image').setInputFiles({name:'fiktif.'+(mimeType==='image/jpeg'?'jpg':mimeType==='image/webp'?'webp':'png'),mimeType,buffer:Buffer.from(converted,'base64')});
+      await page.waitForFunction(()=>document.querySelector('#image-info').textContent.includes('Siap untuk pratinjau')).catch(async()=>{throw Error('Persiapan gambar '+slot+': '+await page.locator('#image-info').textContent()+'; '+await page.locator('#feedback').textContent());});
+      if(slot==='login'){
+        await page.locator('#crop-stage').scrollIntoViewIfNeeded();const box=await page.locator('#crop-stage').boundingBox();
+        await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2,box.y+box.height/2+25,{steps:4});await page.mouse.up();
+        const shifted=Number(await page.locator('#y').inputValue());assert.ok(shifted<50,'Dragging portrait down must move the crop toward the top');
+        await page.locator('#crop-stage').focus();await page.keyboard.press('ArrowDown');assert.equal(Number(await page.locator('#y').inputValue()),shifted+1);
+        await page.locator('#position-reset').click();assert.equal(await page.locator('#y').inputValue(),'50');
+      }
       await page.locator('#alt').fill('Pratinjau fiktif');await page.locator('#x').fill('40');await page.locator('#y').fill('60');
       for(const [mode,width] of [['mobile',390],['desktop',1365]]){
         await page.locator('#mode').selectOption(mode);
@@ -81,7 +97,7 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
         assert.equal(await frame.locator('html').evaluate(el=>el.clientWidth),width);
         assert.equal(await img.evaluate(el=>getComputedStyle(el).objectFit),'cover');
         if(mode==='mobile'){
-          await page.locator('#x').fill('0');const left=await img.screenshot();await page.locator('#x').fill('100');const right=await img.screenshot();assert.notDeepEqual(left,right);await page.locator('#x').fill('40');
+          const axis=mimeType==='image/png'?'#y':'#x';await page.locator(axis).fill('0');const left=await img.screenshot();await page.locator(axis).fill('100');const right=await img.screenshot();assert.notDeepEqual(left,right);await page.locator(axis).fill(axis==='#x'?'40':'60');
         }
         await page.locator('.preview-wrap').evaluate(el=>{el.style.width='1400px';});
         await page.locator('#layout-preview').screenshot({path:`${screenshotDir}/${slot}-${width}.png`});
@@ -104,6 +120,7 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
         }finally{await reference.close();}
       }
       assert.equal((await publicRead(portalBase,slot)).status,404);
+      if(slot==='login')for(const width of [360,390,768,1365]){await page.setViewportSize({width,height:900});await page.evaluate(()=>window.scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:`${screenshotDir}/studio-portrait-${width}.png`,fullPage:true});}
     }
     await page.locator('#slot').selectOption('welcome');
     await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:Buffer.from(png(17),'base64')});
@@ -114,19 +131,24 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
     await page.getByText('Pratinjau draf privat; belum diterbitkan.').waitFor();
     await page.waitForFunction(()=>document.querySelector('#layout-preview').contentDocument?.querySelector('[data-visual-slot="welcome"] img')?.alt==='Gambar fiktif');
     await page.locator('#reason').fill('Pengujian gambar fiktif');
-    for(const width of [360,390,768,1365]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
+    assert.equal(await page.locator('#image').inputValue(),'');
+    await page.locator('#y').fill('25');await page.locator('#confirm').check();await page.locator('#editor button[type=submit]').click();
+    await page.getByText('Revisi slot: 2',{exact:true}).waitFor();await page.reload();await page.locator('#studio').waitFor({state:'visible'});
+    assert.equal(await page.locator('#y').inputValue(),'25');await page.locator('#reason').fill('Pengujian gambar fiktif');
+    for(const width of [360,390,768,1365]){await page.setViewportSize({width,height:900});await page.evaluate(()=>window.scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:`${screenshotDir}/studio-settings-${width}.png`,fullPage:true});}
     let firstBody='',retryBody='';
     const routePattern='**/api/portal/dispatch/api/visual/welcome/publish';
     await page.route(routePattern,async route=>{firstBody=route.request().postData();await route.fetch();await route.abort();},{times:1});
     await page.locator('#confirm').check();await page.locator('#publish').click();await page.locator('#retry').waitFor({state:'visible'});
     page.on('request',req=>{if(req.url().endsWith('/api/visual/welcome/publish'))retryBody=req.postData();});
-    await page.locator('#retry').click();await page.getByText('Revisi publikasi 2').waitFor();assert.equal(retryBody,firstBody);
+    await page.locator('#retry').click();await page.getByText('Revisi publikasi 3').waitFor();assert.equal(retryBody,firstBody);
     await page.getByText('Tidak ada draf; menampilkan publikasi saat ini.').waitFor();
-    await page.locator('#confirm').check();await page.locator('#revert').click();await page.getByText('Menggunakan gambar bawaan.').waitFor();
+    await page.locator('.restore-panel summary').click();await page.locator('#confirm').check();await page.locator('#revert').click();await page.getByText('Menggunakan gambar bawaan.').waitFor();
     await page.getByText('Tidak ada draf; menampilkan gambar bawaan.').waitFor();
     await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:Buffer.from(png(19),'base64')});
     await page.evaluate(()=>window.dispatchEvent(new Event('msa-session-ended')));
     assert.equal(await page.locator('#studio').isHidden(),true);assert.equal(await page.locator('#layout-preview').getAttribute('srcdoc'),'');
+    assert.equal(await page.locator('#crop-image').getAttribute('src'),null);
     await page.reload();await page.locator('#studio').waitFor({state:'visible'});
     await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:Buffer.from(png(19),'base64')});
     assert.equal((await f.change(manager.uid,{role:'superadmin',scope:{organizationId:null},status:'revoked',expectedRevision:2})).status,200);
@@ -163,7 +185,7 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
     await lifecyclePage.locator('#slot').selectOption(slot);await lifecyclePage.getByText('Pratinjau draf privat; belum diterbitkan.').waitFor();
     await lifecyclePage.waitForFunction(s=>{const img=document.querySelector('#layout-preview').contentDocument?.querySelector(`[data-visual-slot="${s}"] img`);return img?.alt==='Gambar fiktif'&&img.complete&&img.naturalWidth>0;},slot);
   }
-  assert.equal((await f.root.collection('msaVisualAudit').get()).size,6);
+  assert.equal((await f.root.collection('msaVisualAudit').get()).size,7);
   const privateChunk=(await f.root.collection('msaVisualChunks').limit(1).get()).docs[0];
   const rawFirestore='http://'+process.env.FIRESTORE_EMULATOR_HOST+'/v1/projects/demo-abc-attendance/databases/(default)/documents/'+privateChunk.ref.path;
   assert.equal((await fetch(rawFirestore)).status,403);
