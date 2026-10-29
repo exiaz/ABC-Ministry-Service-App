@@ -139,14 +139,29 @@ test('Visual lifecycle isolates drafts and revisions, checks authorization, rest
     await page.locator('#headline').fill('Selamat melayani bersama');await page.locator('#description').fill('Ruang pelayanan fiktif untuk semua.');
     await page.locator('#image').setInputFiles({name:'fiktif.png',mimeType:'image/png',buffer:Buffer.from(png(17),'base64')});await page.locator('#image-editor').waitFor({state:'visible'});await page.locator('#crop-apply').click();
     let firstBody='',retryBody='';const routePattern='**/api/portal/dispatch/api/visual/welcome/save';
+    // An older running backend can serve the latest editor but lack /save.
+    await page.route(routePattern,route=>route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({error:'Tidak ditemukan.'})}),{times:1});
+    await page.locator('#save').click();await page.locator('#feedback').filter({hasText:'Layanan simpan tidak tersedia.'}).waitFor();
+    assert.equal(await page.locator('#save-result').isVisible(),false);
+    assert.equal(await page.locator('#headline').inputValue(),'Selamat melayani bersama');
+    assert.ok(await page.locator('#image-thumb').getAttribute('src').then(src=>src.startsWith('blob:')));
+    assert.equal((await publicRead(portalBase,'welcome')).status,404);
+    await page.waitForFunction(()=>!document.querySelector('#save').disabled);
     await page.route(routePattern,async route=>{firstBody=route.request().postData();await route.fetch();await route.abort();},{times:1});
     await page.locator('#save').click();await page.locator('#retry').waitFor({state:'visible'});
+    assert.equal(await page.locator('#save-result').isVisible(),false);
     page.on('request',req=>{if(req.url().endsWith('/api/visual/welcome/save'))retryBody=req.postData();});
     await page.locator('#retry').click();await page.getByText('Revisi slot: 1',{exact:true}).waitFor();assert.equal(retryBody,firstBody);
+    await page.getByRole('dialog',{name:'Berhasil disimpan'}).waitFor();
+    assert.equal(await page.locator('#save-message').textContent(),'Perubahan tersimpan.');
+    await page.locator('#save-result-close').press('Enter');assert.equal(await page.locator('#save-result').isVisible(),false);
     await page.reload();await page.locator('#studio').waitFor({state:'visible'});assert.equal(await page.locator('#headline').inputValue(),'Selamat melayani bersama');
     const actual=await uiBrowser.newPage();await actual.goto(portalBase+'/');await actual.getByText('Selamat melayani bersama',{exact:true}).waitFor();await actual.close();
     await page.locator('#image-edit').click();await page.locator('#zoom').evaluate(el=>{el.value='1.8';el.dispatchEvent(new Event('input'));});await page.locator('#crop-apply').click();
-    await page.locator('#description').fill('Kalimat baru fiktif.');await page.route('**/api/portal/dispatch/api/visual/welcome',route=>route.abort(),{times:1});await page.locator('#save').click();await page.getByText('Tersimpan. Muat ulang untuk melihat hasilnya.',{exact:true}).waitFor();await page.locator('#reload').click();await page.getByText('Revisi slot: 2',{exact:true}).waitFor();
+    await page.locator('#description').fill('Kalimat baru fiktif.');await page.route('**/api/portal/dispatch/api/visual/welcome',route=>route.abort(),{times:1});await page.locator('#save').click();await page.locator('#save-message').filter({hasText:'Tersimpan. Muat ulang untuk melihat hasilnya.'}).waitFor();
+    for(const width of [360,390,768,1365]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:screenshotDir+'/studio-saved-'+width+'.png',fullPage:true});}
+    await page.locator('#save-result-close').press('Escape');assert.equal(await page.locator('#save-result').isVisible(),false);
+    await page.locator('#reload').click();await page.getByText('Revisi slot: 2',{exact:true}).waitFor();
     await page.reload();await page.locator('#studio').waitFor({state:'visible'});assert.equal(await page.locator('#zoom').inputValue(),'1.8');assert.equal(await page.locator('#description').inputValue(),'Kalimat baru fiktif.');
     const active=await (await publicRead(portalBase,'welcome')).json();assert.equal(active.metadata.zoom,1.8);assert.equal(active.metadata.description,'Kalimat baru fiktif.');
     const publishedPage=await uiBrowser.newPage();try{await publishedPage.goto(portalBase+'/');await publishedPage.waitForFunction(()=>document.querySelector('[data-visual-slot=welcome] img')?.style.transform==='scale(1.8)');await publishedPage.getByText('Kalimat baru fiktif.',{exact:true}).waitFor();}finally{await publishedPage.close();}

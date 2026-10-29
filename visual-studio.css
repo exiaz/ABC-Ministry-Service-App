@@ -6,3 +6,5 @@
 #visual-main [hidden]{display:none!important}
 
 @media(min-width:651px){.settings-nav label[for=slot],.settings-nav #slot{display:none}}@media(max-width:650px){.slot-navigation{display:none}}
+
+#visual-main #save-result{width:min(420px,calc(100vw - 32px));box-sizing:border-box;padding:24px;max-height:90dvh;overflow:auto;border:1px solid #dce1df;border-radius:16px;color:#182b42;background:#fff}#save-result::backdrop{background:#182b4280}#save-result h2{margin:0 0 12px}#save-result p{margin:0 0 20px}#save-result-close{float:right}

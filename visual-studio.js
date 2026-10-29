@@ -7,12 +7,15 @@ let status=null,draftUrl='',fileUrl='',pending=null,busy=false,epoch=0,previewSl
 let selected={file:null,blob:null,url:''},cropSnapshot=null,dirty=false,drag=null;
 const sources=new Map(),files=new Set(['msa-visual-default.jpg','msa-visual-welcome.jpg','msa-visual-auth.jpg','msa-visual-dashboard.jpg','msa-visual-program.jpg','msa-visual-campaign.jpg']);
 const say=message=>{$('feedback').textContent=message;};
+function saved(message){say(message);$('save-message').textContent=message;$('save-result').showModal();}
+$('save-result-close').onclick=()=>$('save-result').close();
 function revoke(url){if(url?.startsWith('blob:'))URL.revokeObjectURL(url);}
 function clearPrivate(){
   epoch++;pending=null;status=null;dirty=false;drag=null;
   for(const url of new Set([fileUrl,draftUrl,cropSnapshot?.selected.url]))revoke(url);
   selected={file:null,blob:null,url:''};cropSnapshot=null;fileUrl=draftUrl='';previewSlot='';previewDoc=null;
   if($('image-editor').open)$('image-editor').close();
+  if($('save-result').open)$('save-result').close();
   for(const id of ['crop-image','image-thumb'])$(id).removeAttribute('src');
   for(const id of ['image','alt','headline','description'])$(id).value='';
   $('image-info').textContent='';$('layout-preview').srcdoc='';$('layout-preview').hidden=true;$('studio').hidden=true;
@@ -127,7 +130,20 @@ cropStage.addEventListener('pointermove',event=>{if(!drag||drag.id!==event.point
 for(const event of ['pointerup','pointercancel','lostpointercapture'])cropStage.addEventListener(event,()=>{drag=null;});
 cropStage.addEventListener('keydown',event=>{const step=event.shiftKey?10:1,move={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]}[event.key];if(move){event.preventDefault();position(Number($('x').value)+move[0],Number($('y').value)+move[1]);}});
 for(const key of ['headline','description','alt'])$(key).addEventListener('input',changed);$('mode').addEventListener('input',layout);
-async function sendPending(){if(!pending)return;const version=epoch;try{await request(pending.path,pending.body);}catch(error){if(version!==epoch)return;if(!error.uncertain)pending=null;if(error.status===409){status=null;say('Tampilan sudah berubah. Pilih Batalkan untuk memuat versi terbaru.');return;}say(error.message+(pending?' Gunakan Coba lagi untuk memastikan hasil.':''));return;}if(version!==epoch)return;pending=null;dirty=false;try{await load();say('Perubahan tersimpan.');}catch{status=null;say('Tersimpan. Muat ulang untuk melihat hasilnya.');}}
+async function sendPending(){
+  if(!pending)return;const version=epoch;
+  try{await request(pending.path,pending.body);}catch(error){
+    if(version!==epoch)return;if(!error.uncertain)pending=null;
+    if(error.status===409){status=null;say('Tampilan sudah berubah. Pilih Batalkan untuk memuat versi terbaru.');return;}
+    say(error.status===404?'Perubahan belum disimpan. Layanan simpan tidak tersedia. Jika pilot belum dimulai ulang setelah pembaruan, jalankan Stop MSA.cmd lalu Start MSA.cmd dan pilih gambar kembali. Restart membuat data uji baru.':error.message+(pending?' Gunakan Coba lagi untuk memastikan hasil.':''));
+    $('feedback').focus();return;
+  }
+  if(version!==epoch)return;pending=null;dirty=false;
+  try{await load();if(version+1===epoch)saved('Perubahan tersimpan.');}catch(error){
+    if(version+1!==epoch||error.denied)return;
+    status=null;saved('Tersimpan. Muat ulang untuk melihat hasilnya.');
+  }
+}
 $('editor').onsubmit=event=>{event.preventDefault();if($('image-editor').open||pending||(!dirty&&!status?.draft))return;void run(async()=>{
   if(!status||!$('editor').reportValidity())return;const version=epoch,body={mutation:{expectedRevision:status.revision,requestId:crypto.randomUUID(),reason:'Pembaruan tampilan '+$('section-title').textContent+' melalui Visual Studio',confirmed:true},metadata:metadata()};
   if(selected.blob){const bytes=new Uint8Array(await selected.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));body.image=btoa(binary);}
