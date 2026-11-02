@@ -9,7 +9,8 @@ export function mentorCors(req,url,origin,personalEnabled=false){
   if(personalEnabled){routes['/api/a2-3/devices']=['GET'];if(/^\/api\/a2-3\/devices\/[A-Za-z0-9_-]{1,128}\/revoke$/.test(url.pathname))routes[url.pathname]=['POST'];}
   if(personalEnabled)routes['/api/a2-3/recovery-request']=['POST'];
   if(personalEnabled&&process.env.ABC_MSA_SESSION_1A==='1')for(const action of ['login','restore','logout'])routes['/api/mentor-session/'+action]=['POST'];
-  const allowedHeaders=personalEnabled?new Set([...headers,'x-msa-session']):headers;
+  // Always a per-request copy: adding to the module-level set would leak into every later request.
+  const allowedHeaders=new Set(personalEnabled?[...headers,'x-msa-session']:headers);
   if(url.pathname.startsWith('/api/mentor-session/'))allowedHeaders.add('x-msa-mentor-session');
   if(!origin||!routes[url.pathname])return null;
   if(!req.headers.origin)return null;

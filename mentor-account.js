@@ -3,10 +3,11 @@ import {createPairingClient} from './pairing-client.js';
 import {createSecureMentor} from './secure-mentor.js';
 import {createAccountDevicesUI} from './account-devices-ui.js';
 import {mountVisuals} from './msa-visual.js';
+import {renewalPlan,renewalFailure} from './mentor-session-schedule.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const api=document.querySelector('meta[name="abc-api-origin"]').content;
 const devicesUI=createAccountDevicesUI({root:$('account-device-management'),request:(path,body)=>request(path,body),base:()=> 'devices',changed:()=>verify()});devicesUI.reset();
-const persistentMode=document.body.dataset.mentorSession==='1';
+const persistentMode=document.body.dataset.mentorSession==='1';let sessionExpiresAt=0;
 let token='',profile=null,busy=false,message='',generation=0,wasActive=false,modalHandler,devicesOpen=false,checking=persistentMode,checkMessage='Mohon tunggu.',logoutPending=false,accessExpiresAt=0,renewTimer,expirationTimer,deniedCheckPending=false;
 if(persistentMode)$('account-remember-option').hidden=false;
 $('account-brand').innerHTML=msaBrand();
@@ -36,27 +37,40 @@ const client=createPairingClient(api,state=>{
   render();
 },{personalSession:()=>token});
 const secure=createSecureMentor({client,render,icon,personal:true,steps:()=>'',art:()=>'',closeModal,openModal:(title,body,buttons,handler)=>{$('account-modal-title').textContent=title;$('account-modal-form').innerHTML=body+'<div class="modal-actions">'+buttons+'</div>';modalHandler=handler;$('account-modal').showModal();}});
-function reset(text){generation++;clearTimeout(renewTimer);clearTimeout(expirationTimer);token='';profile=null;accessExpiresAt=0;wasActive=false;secure.reset();client.resetAccount();message=text;render();}
+function reset(text){generation++;clearTimeout(renewTimer);clearTimeout(expirationTimer);token='';profile=null;accessExpiresAt=0;sessionExpiresAt=0;wasActive=false;secure.reset();client.resetAccount();message=text;render();}
 function unavailable(text){checking=true;checkMessage=text;reset('');$('account-session-retry').hidden=false;}
 async function sessionRequest(path,body={}){
   const response=await fetch(api+'/api/mentor-session/'+path,{method:'POST',credentials:'include',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(8000),headers:{'Content-Type':'application/json','X-MSA-Mentor-Session':'1'},body:JSON.stringify(body)});
   const value=await response.json();if(!response.ok){const error=Error(value.error??'Sesi belum dapat diperiksa.');error.status=response.status;throw error;}return value;
 }
-function scheduleRenewal(){clearTimeout(renewTimer);clearTimeout(expirationTimer);const current=generation;expirationTimer=setTimeout(()=>{if(current===generation&&token&&Date.now()>=accessExpiresAt)unavailable('Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');},Math.max(0,accessExpiresAt-Date.now()));const delay=Math.max(1000,accessExpiresAt-Date.now()-60000);renewTimer=setTimeout(()=>{if(busy){renewTimer=setTimeout(scheduleRenewal,5000);return;}void action(renewSession);},delay);}
+// sessionExpiresAt from the server is the final limit: when the access token is already bounded by it there is nothing left to renew.
+function scheduleRenewal(){
+  clearTimeout(renewTimer);clearTimeout(expirationTimer);const current=generation,plan=renewalPlan({now:Date.now(),accessExpiresAt,sessionExpiresAt});
+  expirationTimer=setTimeout(()=>{if(current!==generation||!token||Date.now()<accessExpiresAt)return;if(plan.onExpire==='signed-out'){checking=false;reset('Sesi berakhir. Masuk kembali.');}else unavailable('Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');},plan.expireIn);
+  if(plan.renewIn===null)return;
+  renewTimer=setTimeout(()=>{if(busy){renewTimer=setTimeout(scheduleRenewal,5000);return;}void action(renewSession);},plan.renewIn);
+}
+function retryRenewal(delay){clearTimeout(renewTimer);const current=generation;renewTimer=setTimeout(()=>{if(current!==generation||!token)return;if(busy){retryRenewal(1000);return;}void action(renewSession);},delay);}
+const validSession=p=>validProfile(p)&&/^[-\w]{43}$/.test(p.token??'')&&Number.isSafeInteger(p.accessExpiresAt)&&p.accessExpiresAt>Date.now()&&Number.isSafeInteger(p.sessionExpiresAt)&&p.sessionExpiresAt>Date.now();
 async function acceptSession(p,current){
-  if(current!==generation)return;if(!validProfile(p)||!/^[-\w]{43}$/.test(p.token??'')||!Number.isSafeInteger(p.accessExpiresAt)||p.accessExpiresAt<=Date.now())throw Error('Respons akun belum dapat diperiksa.');
-  profile=p;token=p.token;accessExpiresAt=p.accessExpiresAt;checking=false;message='';$('account-session-retry').hidden=true;render();scheduleRenewal();await client.restore();
+  if(current!==generation)return;if(!validSession(p))throw Error('Respons akun belum dapat diperiksa.');
+  profile=p;token=p.token;accessExpiresAt=p.accessExpiresAt;sessionExpiresAt=p.sessionExpiresAt;checking=false;message='';$('account-session-retry').hidden=true;render();scheduleRenewal();await client.restore();
 }
 async function restoreSession(){
   const current=++generation;checking=true;checkMessage='Memeriksa sesi akun…';reset('');const expected=generation;
   try{const p=await sessionRequest('restore');if(current+1!==generation)return;await acceptSession(p,expected);}
-  catch(e){if(expected!==generation)return;if(e.status===401||e.status===403){checking=false;reset('Sesi tidak berlaku. Masuk kembali.');}else unavailable('Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');}
+  catch(e){if(expected!==generation)return;if(e.status===401||e.status===403){checking=false;reset('Sesi tidak berlaku. Masuk kembali.');}else unavailable(e.status===429?'Terlalu banyak pemeriksaan sesi. Tunggu beberapa menit lalu coba lagi.':'Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');}
 }
 async function renewSession(){
   if(!token||Date.now()>=accessExpiresAt)return restoreSession();
   const current=generation;
-  try{const p=await sessionRequest('restore');if(current!==generation)return;if(!validProfile(p)||!/^[-\w]{43}$/.test(p.token??'')||!Number.isSafeInteger(p.accessExpiresAt)||p.accessExpiresAt<=Date.now())throw Error('Respons akun belum dapat diperiksa.');const changed=JSON.stringify([profile.fullName,profile.mentorId,profile.groups,profile.deviceManagement])!==JSON.stringify([p.fullName,p.mentorId,p.groups,p.deviceManagement]);profile=p;token=p.token;accessExpiresAt=p.accessExpiresAt;message='';scheduleRenewal();if(changed)render();else $('account-feedback').textContent='';}
-  catch(e){if(current!==generation)return;if(e.status===401||e.status===403){checking=false;reset('Sesi tidak berlaku. Masuk kembali.');}else unavailable('Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');}
+  try{const p=await sessionRequest('restore');if(current!==generation)return;if(!validSession(p))throw Error('Respons akun belum dapat diperiksa.');const changed=JSON.stringify([profile.fullName,profile.mentorId,profile.groups,profile.deviceManagement])!==JSON.stringify([p.fullName,p.mentorId,p.groups,p.deviceManagement]);profile=p;token=p.token;accessExpiresAt=p.accessExpiresAt;sessionExpiresAt=p.sessionExpiresAt;message='';scheduleRenewal();if(changed)render();else $('account-feedback').textContent='';}
+  catch(e){
+    if(current!==generation)return;const failure=renewalFailure({status:e.status,now:Date.now(),accessExpiresAt});
+    if(failure.action==='signed-out'){checking=false;reset('Sesi tidak berlaku. Masuk kembali.');}
+    else if(failure.action==='keep'){message='Pemeriksaan sesi ditunda. Mencoba lagi sebentar lagi.';$('account-feedback').textContent=message;retryRenewal(failure.retryIn);}
+    else unavailable('Sesi belum dapat diperiksa. Periksa koneksi lalu coba lagi.');
+  }
 }
 async function logoutSession(){
   logoutPending=true;checking=true;checkMessage='Memastikan Anda keluar…';reset('');

@@ -21,7 +21,7 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
     const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
     if(await visualPublicRoute(req,res,url,mentorMode?visual:undefined))return;
     const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
-    const personal=recovery||['mentor-account.html','mentor-account.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
+    const personal=recovery||['mentor-account.html','mentor-account.js','mentor-session-schedule.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
     if(personal){
       try{if(!mentorMode)throw Error();assertMentorAccountMode(emulatorConfig());}catch{res.writeHead(404);res.end('Tidak ditemukan');return;}
       if(recovery&&(process.env.ABC_MSA_A2_4B!=='1'||process.env.ABC_MSA_A2_4A!=='1')){res.writeHead(404);res.end('Tidak ditemukan');return;}
