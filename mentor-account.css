@@ -18,3 +18,5 @@
 @media(min-width:1000px){.mentor-account #account-navigation a{flex:0 0 auto}}
 @media(max-width:999px){html:has(body.mentor-account.account-signed-in){scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom))}.mentor-account :is(button,input,select,textarea,a){scroll-margin-bottom:calc(96px + env(safe-area-inset-bottom))}}
 .mentor-account #account-login .muted{color:#50617a}
+.mentor-account .account-remember{display:flex;align-items:center;gap:10px;min-height:44px}
+.mentor-account .account-remember input{width:20px;height:20px;min-height:20px;margin:0;flex:none}

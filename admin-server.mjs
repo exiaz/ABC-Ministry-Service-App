@@ -51,6 +51,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
         if(!portal||!adminAuthentication?.a1?.visual||!source||url.search||req.method!=='GET'){send(404,'Tidak ditemukan.');return;}
         adminAuthentication.a1.visual.enabled();
         let content=await readFile(path.join(root,source),'utf8');
+        if(source==='mentor-account.html'&&process.env.ABC_MSA_SESSION_1A==='1')content=content.replace('<!--MENTOR_SESSION_OPTION-->','<label id="account-remember-option" class="account-remember"><input id="account-remember" type="checkbox" aria-describedby="account-remember-help"> Tetap masuk di perangkat ini</label><p id="account-remember-help" class="muted">Jangan pilih di perangkat bersama; sesi sementara berlaku maksimal 30 menit.</p>');
         if(source==='mentor-account.html'&&process.env.ABC_MSA_A2_4B==='1'&&process.env.ABC_MSA_A2_4A==='1')content=content.replace('</form>','</form><p><a class="btn" href="/account-recovery.html">Lupa kata sandi?</a></p>');
         res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(content);return;
       }

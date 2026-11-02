@@ -52,7 +52,7 @@ test('Pilot fixture uses a current stable session, distinct backup and no histor
 });
 
 test('Pilot reuse requires matching portal mode, source signature and ports; incompatible instances stay alive',async()=>{
-  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
+  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1',ABC_MSA_SESSION_1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
   let status={phase:'ready',protocol:1,unified:true,signature,ports:[...PILOT_PORTS]},stops=0,opens=0;
   const controller=await createController(address,command=>{if(command==='stop')stops++;return status;});
   const attempt=()=>runPilot({base:{},address,unified:true,verifyApps:async()=>{},open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});

@@ -510,7 +510,7 @@ Kontrol tambahan yang perlu dibangun: rate limit persisten untuk login/registras
 
 ## Penyelarasan roadmap autentikasi — 29 Oktober 2026
 
-**PLANNED:** AUTH-UX 1 memisahkan Welcome, Sign In dan Sign Up; AUTH-SESSION 1 merancang autentikasi Mentor persisten; AUTH-GOOGLE 1–2 merencanakan integrasi provider dan linking aman. Rincian dependensi, acceptance dan urutan ada di [roadmap](MSA_PRODUCT_VISION.md#11-roadmap-dan-urutan--status-29-oktober-2026). Belum ada klaim implementasi workstream ini. Sesi portal pengelolaan saat ini dan admission Mentor tetap terpisah; sesi persisten kelak memerlukan kontrak dan uji tersendiri. Login/provider tidak memberi hak perangkat atau absensi; linking tidak boleh otomatis berdasarkan kesamaan identitas. Keputusan durasi sesi, mekanisme lintas origin, revocation, provider, reautentikasi, konflik dan unlink tetap terbuka. Fase A0–A4 berikut adalah rencana historis; implementasi parsial aktual dan bukti tercatat di PROJECT_STATUS.md.
+**Status terbaru:** AUTH-UX 1 dan AUTH-SESSION 1A tersedia terbatas pada pilot emulator; kontrak, hasil tes dan batasnya ada di README dan PROJECT_STATUS.md. Sesi portal pengelolaan dan Mentor tetap terpisah; login tidak memberi hak perangkat atau absensi. AUTH-SESSION 1B, AUTH-GOOGLE 1–2, kebijakan provider operasional, reautentikasi, konflik dan unlink tetap direncanakan. Tidak ada linking otomatis berdasarkan kesamaan identitas, cutover, atau kesiapan produksi. Fase A0–A4 berikut adalah rencana historis.
 
 ## 9. Fase implementasi minimal yang direkomendasikan
 

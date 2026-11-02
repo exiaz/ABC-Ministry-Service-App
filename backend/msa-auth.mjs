@@ -21,6 +21,13 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
     if(!principal.uid||principal.firebase?.tenant||!Number.isSafeInteger(principal.exp)||principal.exp*1000<=now()||principal.iat*1000>now()||principal.auth_time*1000>now())throw Error();
     return principal;
   };
+  // Emulator-only provider fence: the Auth Emulator does not reliably reject a
+  // refreshed token after password/revocation changes. Never return this value.
+  const mentorProviderStamp=async uid=>{
+    let user;try{user=await auth.getUser(uid);}catch(e){if(e.code==='auth/user-not-found')fail(401,'Sesi akun tidak berlaku. Masuk kembali.');fail(503,'Sesi belum dapat diperiksa. Coba lagi.');}
+    if(user.uid!==uid||user.disabled||typeof user.passwordHash!=='string'||!user.passwordHash)fail(401,'Sesi akun tidak berlaku. Masuk kembali.');
+    return hash(JSON.stringify([user.passwordHash,user.passwordSalt??null,user.tokensValidAfterTime??null]));
+  };
   const consumeAttempt=async canonical=>{
     assertLocal();
     const throttled=await db.runTransaction(async tx=>{
@@ -38,15 +45,15 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true}),redirect:'error',signal:AbortSignal.timeout(5000)
     });
     if(!response.ok)throw Error();
-    const {idToken}=await response.json(),principal=await checkToken(idToken);return {...principal,idToken};
+    const {idToken,refreshToken}=await response.json(),principal=await checkToken(idToken);return {...principal,idToken,refreshToken};
   };
   const assertPilot=()=>{assertLocal();if(!pilotEnabled||process.env.ABC_MSA_USERNAME_PILOT!=='1'||!root.id.startsWith('test-'))fail(503,'Pilot username hanya tersedia pada namespace tes terisolasi.');};
   const legacyPilot=pilotEnabled?createLegacyUsernamePilot({db,root,auth,assertPilot,emailActor,verifyPassword,consumeAttempt,now}):undefined;
   const registration=registrationEnabled?createMsaRegistration({db,root,auth,repository,verifyPassword,now,assertEnabled:()=>{assertLocal();if(process.env.ABC_MSA_A2_2!=='1'||!root.id.startsWith('test-'))fail(503,'Pendaftaran uji tidak aktif.');}}):undefined;
   const api={
     accounts,legacyPilot,registration,
-    async login({username,password}){
-      assertLocal();prune();
+    async login({username,password},{mentorRefresh=false}={}){
+      assertLocal();if(mentorRefresh&&(process.env.ABC_MSA_SESSION_1A!=='1'||!root.id.startsWith('test-')))fail(503,'Sesi Mentor persisten tidak aktif.');prune();
       let canonical;try{canonical=normalizeUsername(username).canonical;}catch{canonical='!invalid';}
       // Shared namespace limit persists across server restarts. No forwarded IP.
       await consumeAttempt(canonical);
@@ -58,15 +65,35 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
         if(claim?.kind==='legacy-admin'&&!bound)throw Error();
         const row=bound?null:claim?.state==='ready'?(await root.collection('msaAccounts').doc(claim.uid).get()).data():null;
         const email=bound?(await auth.getUser(bound.uid)).email:row?.providerAlias??'missing@msa.example.invalid';
+        const providerStamp=mentorRefresh&&row?.uid?await mentorProviderStamp(row.uid):null;
         const principal=await verifyPassword(email,password),uid=bound?.uid??row?.uid;
         if(!uid||principal.uid!==uid||!bound&&row.canonical!==canonical)throw Error();
+        if(mentorRefresh&&(!providerStamp||providerStamp!==await mentorProviderStamp(uid)))throw Error();
         if(!bound)await accounts.profile(uid,row.revision);
-        if(sessions.size>=1000)throw Error();
+        if(sessions.size>=1000||mentorRefresh&&(!principal.refreshToken||bound))throw Error();
         const token=randomBytes(32).toString('base64url');
-        sessions.set(hash(token),{uid,revision:bound?.policy.revision??row.revision,idToken:principal.idToken,expiresAt:Math.min(now()+1800000,principal.exp*1000),...(bound?{source:'legacy-admin',canonical,linkRevision:bound.linkRevision}:{})});
-        return {token,uid};
+        const expiresAt=Math.min(now()+1800000,principal.exp*1000);
+        sessions.set(hash(token),{uid,revision:bound?.policy.revision??row.revision,idToken:principal.idToken,expiresAt,...(mentorRefresh?{providerStamp}:{}),...(bound?{source:'legacy-admin',canonical,linkRevision:bound.linkRevision}:{})});
+        return {token,uid,...(mentorRefresh?{refreshToken:principal.refreshToken,revision:row.revision,expiresAt,providerStamp}:{})};
       }catch{fail(401,'Username atau kata sandi tidak valid, atau akun belum dapat digunakan.');}
       finally{await delay(Math.max(0,150-(now()-start)));}
+    },
+    async refreshMentor({refreshToken,uid,revision,providerStamp,sessionExpiresAt,onRefresh}){
+      assertLocal();if(process.env.ABC_MSA_SESSION_1A!=='1'||!root.id.startsWith('test-'))fail(503,'Sesi Mentor persisten tidak aktif.');prune();
+      if(typeof refreshToken!=='string'||!refreshToken||typeof uid!=='string'||!Number.isSafeInteger(revision)||!/^[a-f0-9]{64}$/.test(providerStamp??'')||!Number.isSafeInteger(sessionExpiresAt)||sessionExpiresAt<=now())fail(401,'Sesi akun tidak berlaku. Masuk kembali.');
+      if(providerStamp!==await mentorProviderStamp(uid))fail(401,'Sesi akun tidak berlaku. Masuk kembali.');
+      let response;
+      try{response=await fetch('http://'+config.host+'/securetoken.googleapis.com/v1/token?key=local-emulator',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}),redirect:'error',signal:AbortSignal.timeout(5000)});}catch{fail(503,'Sesi belum dapat diperiksa. Coba lagi.');}
+      if(!response.ok){if(response.status>=500||response.status===429)fail(503,'Sesi belum dapat diperiksa. Coba lagi.');fail(401,'Sesi akun tidak berlaku. Masuk kembali.');}
+      let value,principal;
+      try{value=await response.json();principal=await checkToken(value.id_token);}catch(e){if(['auth/id-token-revoked','auth/id-token-expired','auth/argument-error','auth/user-disabled','auth/user-not-found'].includes(e.code))fail(401,'Sesi akun tidak berlaku. Masuk kembali.');fail(503,'Sesi belum dapat diperiksa. Coba lagi.');}
+      if(principal.uid!==uid||typeof value.refresh_token!=='string'||!value.refresh_token)fail(401,'Sesi akun tidak berlaku. Masuk kembali.');
+      if(typeof onRefresh==='function')onRefresh(value.refresh_token);
+      if(providerStamp!==await mentorProviderStamp(uid))fail(401,'Sesi akun tidak berlaku. Masuk kembali.');
+      try{await accounts.profile(uid,revision);}catch(e){if(e.adminAccountError&&[401,403].includes(e.status))fail(401,'Sesi akun tidak berlaku. Masuk kembali.');throw e;}
+      if(sessions.size>=1000)fail(503,'Batas sesi lokal tercapai.');
+      const token=randomBytes(32).toString('base64url'),expiresAt=Math.min(now()+1800000,principal.exp*1000,sessionExpiresAt);sessions.set(hash(token),{uid,revision,idToken:value.id_token,expiresAt,providerStamp});
+      return {token,refreshToken:value.refresh_token,uid,revision,expiresAt};
     },
     async authorize(header){
       try{
@@ -74,6 +101,7 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
         const match=typeof header==='string'&&/^Bearer ([A-Za-z0-9_-]{43})$/.exec(header),s=match&&sessions.get(hash(match[1]));
         if(!s)throw Error();
         const principal=await checkToken(s.idToken);if(principal.uid!==s.uid)throw Error();
+        if(s.providerStamp&&(process.env.ABC_MSA_SESSION_1A!=='1'||s.providerStamp!==await mentorProviderStamp(s.uid)))throw Error();
         if(s.source==='legacy-admin'){
           const bound=await legacyPilot.resolve(s.canonical);
           if(bound.uid!==s.uid||bound.policy.revision!==s.revision||bound.linkRevision!==s.linkRevision)throw Error();
