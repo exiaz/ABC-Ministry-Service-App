@@ -27,6 +27,20 @@ test('Mentor session enforces lifetime, cookie isolation, CSRF and transient fai
   const old=await call('login',{username:'fiktif',password:'fiktif',persistent:true}),oldCookie=old.headers.get('set-cookie').split(';')[0],oldToken=(await old.json()).token;sessions.close();sessions=createMentorSessions(mentor,{origin,now:()=>now});assert.ok(revoked.includes(oldToken));assert.equal((await call('restore',{},oldCookie)).status,401);
 });
 
+test('Mentor session limit holds under concurrent logins and expired sessions are released without a new login',async t=>{
+  const prior=process.env.ABC_MSA_SESSION_1A;process.env.ABC_MSA_SESSION_1A='1';t.after(()=>{if(prior===undefined)delete process.env.ABC_MSA_SESSION_1A;else process.env.ABC_MSA_SESSION_1A=prior;});
+  let now=1000000,gate;const revoked=[],origin='http://127.0.0.1:4276',token=()=>randomBytes(32).toString('base64url'),opened=new Promise(resolve=>{gate=resolve;});
+  const mentor={enabled(){},async persistentLogin(){await opened;return {uid:'fictional',revision:1,refreshToken:'private-provider-token',token:token(),expiresAt:now+1800000,profile:{fullName:'Fiktif',mentorId:'m',groups:[]}};},async revokeIssued(_uid,t){revoked.push(t);},forgetIssued(t){revoked.push(t);}};
+  const sessions=createMentorSessions(mentor,{origin,now:()=>now,limit:2});
+  const server=http.createServer(async(req,res)=>{const send=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};try{if(!await sessions.handle(req,res,new URL(req.url,'http://127.0.0.1'),send))send(404,{});}catch(e){send(e.status??500,{error:e.message});}});server.listen(0,'127.0.0.1');await once(server,'listening');t.after(async()=>{sessions.close();await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});});
+  const base='http://127.0.0.1:'+server.address().port,call=(action,body,persistent=false)=>fetch(base+'/api/mentor-session/'+action,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-MSA-Mentor-Session':'1'},body:JSON.stringify(action==='login'?{username:'fiktif',password:'fiktif',persistent,...body}:body)});
+  const pending=[1,2,3,4,5].map(()=>call('login',{}));await new Promise(resolve=>setTimeout(resolve,200));gate();
+  const statuses=(await Promise.all(pending)).map(r=>r.status).sort();assert.deepEqual(statuses,[200,200,503,503,503]);
+  const settled=await Promise.all([call('login',{})]);assert.equal(settled[0].status,503);
+  now+=1800001;assert.equal(revoked.length,0);assert.equal((await call('restore',{})).status,401);assert.equal(revoked.length,2);
+  assert.equal((await call('login',{})).status,200);
+});
+
 test('Visual Studio login preview includes the same enabled session option as the Mentor page',async()=>{
   const prior={...process.env};Object.assign(process.env,pilotEnvironment({},{unified:true}));
   const mentor=createPrototypeServer({mentorMode:true}),admin=createAdminServer({portal:true,adminAuthentication:{a1:{visual:{enabled(){}}},revoke(){}}});

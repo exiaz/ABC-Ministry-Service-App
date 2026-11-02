@@ -6,8 +6,8 @@ const maximum=30*24*60*60*1000,sharedLifetime=30*60*1000;
 
 // Process-local and gated to the fictional emulator. Refresh credentials never
 // leave this process and are lost when the pilot namespace is restarted.
-export function createMentorSessions(mentor,{origin,now=Date.now}={}){
-  const sessions=new Map();
+export function createMentorSessions(mentor,{origin,now=Date.now,limit=1000}={}){
+  const sessions=new Map();let reserved=0;
   const name=req=>'msa_mentor_'+req.socket.localPort;
   const cookie=(req,res,value,persistent)=>res.setHeader('Set-Cookie',`${name(req)}=${value}; Path=${path}; HttpOnly; SameSite=Strict${value?(persistent?'; Max-Age='+Math.floor(maximum/1000):''):'; Max-Age=0'}`);
   const guard=req=>{
@@ -24,6 +24,9 @@ export function createMentorSessions(mentor,{origin,now=Date.now}={}){
     if(!s)return;s.revoked=true;sessions.delete(key);s.refreshToken='';
     await Promise.allSettled(s.issued.map(row=>mentor.revokeIssued(s.uid,row.token)));s.issued=[];
   };
+  // Expired sessions must not keep refresh tokens in memory until the next login.
+  const prune=async()=>{for(const [key,s] of [...sessions])if(s.expiresAt<=now())await revoke(key,s);};
+  const sweep=setInterval(()=>{void prune().catch(()=>{});},60000);sweep.unref();
   const read=async req=>{
     if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??''))fail(400,'Permintaan harus berupa JSON.');
     let size=0;const chunks=[];req.setTimeout(5000,()=>req.destroy());
@@ -35,16 +38,21 @@ export function createMentorSessions(mentor,{origin,now=Date.now}={}){
     async handle(req,res,url,send){
       if(!url.pathname.startsWith(path))return false;
       guard(req);if(url.search)fail(400,'Parameter sesi tidak diizinkan.');
+      await prune();
       const {key,session:s}=lookup(req);
       if(url.pathname===path+'login'&&req.method==='POST'){
         const v=await read(req);if(Object.keys(v).some(k=>!['username','password','persistent'].includes(k))||typeof v.persistent!=='boolean')fail(400,'Parameter login tidak valid.');
-        for(const [oldKey,oldSession] of sessions)if(oldSession.expiresAt<=now())await revoke(oldKey,oldSession);
-        if(sessions.size>=1000)fail(503,'Batas sesi lokal tercapai.');
-        let result;try{result=await mentor.persistentLogin({username:v.username,password:v.password});}finally{v.password='';}
-        if(s)await revoke(key,s);
-        const handle=randomBytes(32).toString('base64url'),expiresAt=now()+(v.persistent?maximum:sharedLifetime);
-        sessions.set(hash(handle),{uid:result.uid,revision:result.revision,providerStamp:result.providerStamp,refreshToken:result.refreshToken,expiresAt,issued:[{token:result.token,expiresAt:result.expiresAt}],revoked:false,pending:null});
-        cookie(req,res,handle,v.persistent);send(200,{...result.profile,token:result.token,accessExpiresAt:result.expiresAt,sessionExpiresAt:expiresAt});return true;
+        // Reserve a slot before the awaited login so concurrent logins cannot exceed the limit.
+        if(sessions.size+reserved>=limit)fail(503,'Batas sesi lokal tercapai.');
+        reserved++;
+        try{
+          let result;try{result=await mentor.persistentLogin({username:v.username,password:v.password});}finally{v.password='';}
+          if(s)await revoke(key,s);
+          const handle=randomBytes(32).toString('base64url'),expiresAt=now()+(v.persistent?maximum:sharedLifetime);
+          sessions.set(hash(handle),{uid:result.uid,revision:result.revision,providerStamp:result.providerStamp,refreshToken:result.refreshToken,expiresAt,issued:[{token:result.token,expiresAt:result.expiresAt}],revoked:false,pending:null});
+          cookie(req,res,handle,v.persistent);send(200,{...result.profile,token:result.token,accessExpiresAt:result.expiresAt,sessionExpiresAt:expiresAt});
+        }finally{reserved--;}
+        return true;
       }
       if(url.pathname===path+'logout'&&req.method==='POST'){
         if(Object.keys(await read(req)).length)fail(400,'Parameter keluar tidak valid.');
@@ -65,6 +73,6 @@ export function createMentorSessions(mentor,{origin,now=Date.now}={}){
       }
       fail(405,'Metode sesi tidak diizinkan.');
     },
-    close(){for(const s of sessions.values()){s.revoked=true;s.refreshToken='';for(const row of s.issued)mentor.forgetIssued(row.token);s.issued=[];}sessions.clear();}
+    close(){clearInterval(sweep);for(const s of sessions.values()){s.revoked=true;s.refreshToken='';for(const row of s.issued)mentor.forgetIssued(row.token);s.issued=[];}sessions.clear();}
   };
 }
