@@ -7,42 +7,32 @@ body[data-msa-portal]{background:var(--msa-canvas);color:var(--msa-ink);font:16p
 body[data-msa-portal] h1{font-size:clamp(26px,3vw,34px);line-height:1.2;letter-spacing:-.7px}
 body[data-msa-portal] h2{font-size:22px;line-height:1.3}
 body[data-msa-portal] h3{font-size:17px}
-body[data-msa-portal] :is(input,select,textarea){font-size:16px;min-height:44px;border-color:#8290a4}
-body[data-msa-portal] :is(button,a.btn){min-height:44px;font-size:16px;box-shadow:none}
-body[data-msa-portal] button{background:var(--msa-blue);color:white;border:1px solid var(--msa-blue);border-radius:8px}
+body[data-msa-portal] :is(input,select,textarea):not(.ui-input){font-size:16px;min-height:44px;border-color:#8290a4}
+body[data-msa-portal] :is(button,a.btn):not(.ui-btn){min-height:44px;font-size:16px;box-shadow:none}
+body[data-msa-portal] button:not(.ui-btn){background:var(--msa-blue);color:white;border:1px solid var(--msa-blue);border-radius:8px}
 body[data-msa-portal] button.btn:not(.primary):not(.danger){background:white;color:var(--msa-blue);border-color:var(--msa-line)}
 body[data-msa-portal] button.btn.primary{background:var(--msa-blue);color:white}
 body[data-msa-portal] button.btn.danger{background:#fff2f0;color:#9c2828;border-color:#dfb6b6}
 body[data-msa-portal] button.secondary{color:var(--msa-blue);background:white;border:1px solid var(--msa-line)}
 body[data-msa-portal] :is(form,article,dialog){border-color:var(--msa-line);border-radius:var(--msa-radius);box-shadow:none}
-body[data-msa-portal] :is(a,summary){color:var(--msa-blue)}
-body[data-msa-portal] main a{display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}
+body[data-msa-portal] :is(a:not(.ui-btn),summary){color:var(--msa-blue)}
+body[data-msa-portal] main a:not(.ui-btn){display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}
 body[data-msa-portal] :focus-visible{outline:3px solid #1455bd;outline-offset:3px}
 body[data-msa-portal] :is(main,section,nav,article,header,footer){min-width:0}
-body[data-msa-portal] button:disabled{opacity:.6;cursor:wait}
+body[data-msa-portal] button:disabled:not(.ui-btn){opacity:.6;cursor:wait}
 body[data-msa-portal] .msa-eyebrow{font-size:12px;letter-spacing:1px;font-weight:750;color:var(--msa-muted);margin:0 0 8px}
 body[data-msa-portal] .msa-muted{font-size:14px;color:var(--msa-muted)}
 body[data-msa-portal] .msa-section-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:28px 0 12px}
 body[data-msa-portal] .msa-section-heading h2{margin:0}
 body[data-msa-portal] .msa-primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:8px;background:var(--msa-blue);color:white;text-decoration:none;font-weight:650}
 body[data-msa-portal].msa-portal main.intake{max-width:520px;padding:32px 24px}
-.msa-portal #portal-brand{padding:0 0 28px}
 .msa-portal .portal-heading h1{margin:0;max-width:440px}
-.msa-portal #portal-intro{margin:12px 0 24px;color:var(--msa-muted)}
-.msa-portal #portal-login{margin:0;padding:24px;background:white;border-top:3px solid #f4c64f}
-.msa-portal #portal-login h2{margin:0 0 20px;font-size:20px}
-.msa-portal #portal-login label{font-size:14px;font-weight:650}
-.msa-portal #portal-show{background:transparent;border:0;text-align:left;padding-left:0;margin:4px 0 12px;font-size:14px}
-.msa-portal #portal-submit{display:block;width:100%;font-weight:650;margin:0}
-body[data-msa-portal] #portal-login .portal-recovery{display:flex;justify-content:center;margin-top:12px;text-decoration:none}
 .msa-portal #portal-feedback:empty{display:none}
 .msa-portal #portal-feedback{padding:12px 0;margin:0}
 .msa-portal .msa-local-note{font-size:13px;color:var(--msa-muted);margin:24px 0 8px}
 .msa-portal #portal-local details{font-size:14px}
 body[data-msa-portal].msa-shell-active{padding-bottom:88px}
 body[data-msa-portal].msa-shell-active main.intake,body[data-msa-portal].msa-shell-active>main{max-width:1180px;padding:24px}
-.msa-shell-active.msa-portal #portal-brand{display:none}
-.msa-shell-active.msa-portal #portal-intro{margin-bottom:8px}
 .msa-shell-active .msa-account{font-size:14px;color:var(--msa-muted);margin:8px 0 16px}
 body[data-msa-portal] #portal-modules{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
 body[data-msa-portal] #portal-modules a{display:flex;flex-direction:column;align-items:start;justify-content:center;gap:6px;padding:20px;border:1px solid var(--msa-line);border-radius:12px;color:var(--msa-ink);text-decoration:none}
@@ -95,12 +85,10 @@ body[data-msa-portal] #admin-root .admin-tabs button.active{color:var(--msa-blue
   #msa-navigation .msa-extra-module{display:flex;font-size:13px}
   #portal-schedule{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
-@media(max-width:480px){
-  body[data-msa-portal].msa-portal main.intake,body[data-msa-portal].msa-shell-active>main{padding:24px 16px}
-  body[data-msa-portal] #portal-login{padding:20px}
+@media(max-width:480px){body[data-msa-portal].msa-portal main.intake,body[data-msa-portal].msa-shell-active>main{padding:24px 16px}
   body[data-msa-portal] #portal-modules a{padding:16px}
-  body[data-msa-portal] #admin-root .content{padding:16px}
-}
+  body[data-msa-portal] #admin-root .content{padding:16px}}
+
 
 /* Workspace presentation: tokens and portal-only dashboard. */
 body[data-msa-portal]{--msa-canvas:#f7f6f1;--msa-ink:#172b46;--msa-muted:#4d5c6d;--msa-blue:#174f91;--msa-line:#d9ddd9;--msa-paper:#fffefa;--msa-red:#a62e36;--msa-yellow:#f2ca63;--msa-space:16px;--msa-radius:12px}
@@ -301,3 +289,8 @@ body[data-msa-portal] #msa-users #msa-feedback:not(:empty){padding:10px 12px;bor
  body[data-msa-portal] #msa-users .account-card button{justify-self:start}
  body[data-msa-portal] #msa-users #msa-detail>article{padding:16px}
 }
+
+/* Setelah masuk (Beranda): merek disembunyikan, pengantar dirapatkan. */
+.msa-portal #portal-intro{margin:12px 0 24px;color:var(--msa-muted)}
+.msa-shell-active.msa-portal #portal-brand{display:none}
+.msa-shell-active.msa-portal #portal-intro{margin-bottom:8px}

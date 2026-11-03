@@ -11,7 +11,7 @@ import {createPrototypeServer} from '../server.mjs';
 import {jakartaToday} from '../dates.js';
 import {runPilot} from '../local-auth-pilot.mjs';
 import {randomUUID} from 'node:crypto';
-import {spawn} from 'node:child_process';
+import {execFileSync,spawn} from 'node:child_process';
 
 test('Pilot uses fresh test namespace, isolated ports and scoped flags; invalid/cloud configuration fails closed',()=>{
   const base={ABC_EMULATOR_IMPORT_DIR:'ignored-regular-snapshot'},first=pilotEnvironment(base),second=pilotEnvironment(base);
@@ -37,10 +37,13 @@ test('Failed prerequisites stop before provisioning/browser and release the pilo
     assert.equal(await controlRequest(address,'status'),null);
   }finally{process.exitCode=exitCode;}
 });
-test('Windows Start launcher refuses production configuration before starting services',{skip:process.platform!=='win32'},async()=>{
+test('Windows Start launcher refuses production configuration before starting services',{skip:process.platform!=='win32',timeout:30000},async()=>{
   const result=await new Promise((resolve,reject)=>{
-    let output='';const child=spawn('cmd.exe',['/d','/c','Start MSA.cmd'],{cwd:path.resolve(import.meta.dirname,'..'),env:{...process.env,NODE_ENV:'production'},windowsHide:true});
-    child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.stdin.end('\n');child.once('error',reject);child.once('exit',code=>resolve({code,output}));
+    // Absolute path: cmd.exe reads the relative name "Start MSA.cmd" as its internal START command and waits forever.
+    const root=path.resolve(import.meta.dirname,'..');let output='';const child=spawn('cmd.exe',['/d','/c',path.join(root,'Start MSA.cmd')],{cwd:root,env:{...process.env,NODE_ENV:'production'},windowsHide:true});
+    // Stop only this child's own process tree if it does not exit (e.g. pause waiting for input).
+    const timer=setTimeout(()=>{try{execFileSync('taskkill',['/T','/F','/PID',String(child.pid)],{stdio:'ignore'});}catch{}reject(Error('Start MSA.cmd tidak berakhir dalam 20 detik.'));},20000);
+    child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.stdin.end('\n');child.once('error',e=>{clearTimeout(timer);reject(e);});child.once('exit',code=>{clearTimeout(timer);resolve({code,output});});
   });
   assert.equal(result.code,1);assert.match(result.output,/Mode cloud\/produksi terdeteksi/);
 });
@@ -52,7 +55,7 @@ test('Pilot fixture uses a current stable session, distinct backup and no histor
 });
 
 test('Pilot reuse requires matching portal mode, source signature and ports; incompatible instances stay alive',async()=>{
-  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
+  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:'1',ABC_MSA_SESSION_1A:'1'}),address=controllerPath(path.resolve('pilot-reuse-'+randomUUID()));
   let status={phase:'ready',protocol:1,unified:true,signature,ports:[...PILOT_PORTS]},stops=0,opens=0;
   const controller=await createController(address,command=>{if(command==='stop')stops++;return status;});
   const attempt=()=>runPilot({base:{},address,unified:true,verifyApps:async()=>{},open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});

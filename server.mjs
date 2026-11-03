@@ -8,11 +8,13 @@ import {assertMentorAccountMode} from './backend/msa-mentor-devices.mjs';
 import {visualPublicRoute} from './backend/msa-visual-public.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||4173);
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};
 const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
 // Legacy fictional prototype only. The protected roster API runs separately.
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
+// UI overhaul: token, komponen, font dan ikon self-host (tanpa halaman aplikasi).
+for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])allowed.add(file);
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
@@ -21,7 +23,7 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
     const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
     if(await visualPublicRoute(req,res,url,mentorMode?visual:undefined))return;
     const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
-    const personal=recovery||['mentor-account.html','mentor-account.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
+    const personal=recovery||['mentor-account.html','mentor-account.js','mentor-session-schedule.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
     if(personal){
       try{if(!mentorMode)throw Error();assertMentorAccountMode(emulatorConfig());}catch{res.writeHead(404);res.end('Tidak ditemukan');return;}
       if(recovery&&(process.env.ABC_MSA_A2_4B!=='1'||process.env.ABC_MSA_A2_4A!=='1')){res.writeHead(404);res.end('Tidak ditemukan');return;}
@@ -31,6 +33,7 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
     let body;try{body=await readFile(path.join(root,mentorMode&&name==='index.html'?'mentor.html':name));}catch(e){if(e.code==='ENOENT'){res.writeHead(404);res.end('Tidak ditemukan');return;}throw e;}
     if(mentorMode&&name==='index.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
     if(personal&&name==='mentor-account.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
+    if(personal&&name==='mentor-account.html'&&process.env.ABC_MSA_SESSION_1A==='1')body=body.toString('utf8').replace('<body class="mentor-account">','<body class="mentor-account" data-mentor-session="1">').replace('id="account-login" class="panel"','id="account-login" class="panel" hidden').replace('id="account-session-check" class="panel" hidden','id="account-session-check" class="panel"').replace('<!--MENTOR_SESSION_OPTION-->','<label id="account-remember-option" class="account-remember"><input id="account-remember" type="checkbox" aria-describedby="account-remember-help"> Tetap masuk di perangkat ini</label><p id="account-remember-help" class="muted">Jangan pilih di perangkat bersama; sesi sementara berlaku maksimal 30 menit.</p>');
     if(name==='account-recovery.html')body=body.toString('utf8').replace('content="__RECOVERY_API__"','content="'+apiOrigin+'"');
     if(name==='mentor-account.html'&&process.env.ABC_MSA_A2_4B==='1'&&process.env.ABC_MSA_A2_4A==='1')body=body.toString('utf8').replace('</form>','</form><p><a class="btn" href="/account-recovery.html">Lupa kata sandi?</a></p>');
     const security=mentorMode?{'Content-Security-Policy':`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${apiOrigin}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`,'Referrer-Policy':'no-referrer'}:{};

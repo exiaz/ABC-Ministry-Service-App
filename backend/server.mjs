@@ -15,13 +15,15 @@ import {AdminSessionError,createAdminSessionRoutes} from './admin-session-http.m
 import {accountRoute} from './admin-accounts-http.mjs';
 import {msaRoute} from './msa-http.mjs';
 import {msaMentorRoute,mentorSessionHeader} from './msa-mentor-http.mjs';
+import {createMentorSessions} from './msa-mentor-session.mjs';
 
 // API-only listener: never mount prototype assets, fixtures, or a service worker.
 // Default store/repository are empty, so starting this file grants no access.
 export function createRosterServer({credentials=createInMemoryCredentialRepository(),repository=createInMemoryRosterRepository(),adminAuthentication,pairing,attendance,mentorOrigin,adminLoginEnabled=false}={}){
   if(mentorOrigin!==undefined)localOrigin(mentorOrigin);
   const adminSessions=createAdminSessionRoutes();
-  return http.createServer(async(req,res)=>{
+  const mentorSessions=mentorOrigin&&adminAuthentication?.a1?.mentor&&process.env.ABC_MSA_SESSION_1A==='1'?createMentorSessions(adminAuthentication.a1.mentor,{origin:mentorOrigin}):null;
+  const server=http.createServer(async(req,res)=>{
     let corsHeaders={};
     const send=(status,body,headers={})=>{
       res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-ABC-Mode':'test-foundation','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",...corsHeaders,...headers});
@@ -35,6 +37,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       const cors=mentorCors(req,url,mentorOrigin,!!adminAuthentication?.a1?.mentor);
       if(cors?.denied||cors&&!local){send(403,{error:'Origin mentor tidak diizinkan.'});return;}
       if(cors){corsHeaders=cors.headers;if(req.method==='OPTIONS'){send(204,{});return;}}
+      if(mentorSessions&&await mentorSessions.handle(req,res,url,send))return;
       if(await msaRoute({req,url,authorization,local,adminAuthentication,send}))return;
       if(await msaMentorRoute({req,url,authorization,local,adminAuthentication,pairing,mentorOrigin,send}))return;
       // Every administrative operation must remain inside this guarded branch.
@@ -103,6 +106,8 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
       send(500,{error:req.url.startsWith('/api/visual/')?'Perubahan gambar tidak dapat diproses.':req.url.startsWith('/api/admin')?'Permintaan admin tidak dapat diproses.':req.url.startsWith('/api/attendance')?'Absensi tidak dapat diproses.':'Roster tidak dapat dibaca.'});
     }
   });
+  if(mentorSessions)server.once('close',()=>mentorSessions.close());
+  return server;
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
