@@ -53,7 +53,7 @@ test('Komponen: semua class berawalan ui-, tanpa sudut 8/16px pada tombol, input
 test('Berkas aset ada dan diizinkan server statis tanpa mengubah header keamanan',()=>{
   for(const f of ['assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/fonts/OFL-Baloo2.txt','assets/fonts/OFL-NunitoSans.txt','assets/icons/ui-sprite.svg','assets/icons/LICENSE-lucide.txt','ui-gallery.html'])assert.ok(existsSync(new URL('../'+f,import.meta.url)),f);
   const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8'),admin=readFileSync(new URL('../admin-server.mjs',import.meta.url),'utf8');
-  for(const f of ['ui/msa-tokens.css','ui/msa-components.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg']){assert.ok(server.includes(f),'server '+f);assert.ok(admin.includes(f),'admin '+f);}
+  for(const f of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg']){assert.ok(server.includes(f),'server '+f);assert.ok(admin.includes(f),'admin '+f);}
   assert.match(server,/'\.woff2':'font\/woff2'/);assert.match(admin,/woff2'\)\?'font\/woff2'/);
   assert.match(admin,/ABC_MSA_UI_GALLERY==='1'/);
   // Ikon sprite: setiap symbol yang dirujuk galeri tersedia.

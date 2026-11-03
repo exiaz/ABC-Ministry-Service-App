@@ -27,7 +27,7 @@ assets.set('/msa-shell.css','msa-shell.css');
 for(const file of ['register.html','identity-review.html','msa-registration-ui.js','msa-intake.css'])assets.set('/'+file,file);
 for(const file of ['account-devices-ui.js','account-devices.css'])assets.set('/'+file,file);
 for(const file of ['account-recovery.html','account-recovery.js','migration-readiness.html','migration-readiness.js','msa-core.html','msa-core.js','msa-events.html','msa-events.js'])assets.set('/'+file,file);
-for(const file of ['ui/msa-tokens.css','ui/msa-components.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])assets.set('/'+file,file);
+for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])assets.set('/'+file,file);
 // Galeri komponen hanya untuk lokal dan hanya bila ABC_MSA_UI_GALLERY=1.
 if(process.env.ABC_MSA_UI_GALLERY==='1')for(const file of ['ui-gallery.html','ui/ui-gallery.css','ui/ui-gallery.js'])assets.set('/'+file,file);
 for(const file of ['visual-studio.html','visual-studio.js','visual-studio.css','visual-image-client.js'])assets.set('/'+file,file);

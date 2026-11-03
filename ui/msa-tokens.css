@@ -4,7 +4,7 @@
 @font-face{font-family:"Baloo 2";font-style:normal;font-weight:700 800;font-display:swap;src:url("/assets/fonts/baloo2-latin.woff2") format("woff2")}
 @font-face{font-family:"Nunito Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url("/assets/fonts/nunito-sans-latin.woff2") format("woff2")}
 
-.ui-root{
+.ui-root,.ui-tokens{
   /* Warna */
   --surface-200:#fff8d6;--surface-100:#ffffff;
   --ink:#231f20;--ink-muted:#5c5350;
@@ -43,5 +43,5 @@
   --shadow-card:0 1px 2px rgba(35,31,32,.06),0 6px 18px rgba(35,31,32,.06);
   --shadow-float:0 8px 24px rgba(35,31,32,.18);
 
-  background:var(--surface-200);color:var(--ink);font:var(--type-body);
 }
+.ui-root{background:var(--surface-200);color:var(--ink);font:var(--type-body)}

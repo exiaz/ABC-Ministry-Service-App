@@ -13,7 +13,7 @@ if(persistentMode)$('account-remember-option').hidden=false;
 $('account-brand').innerHTML=msaBrand();
 void mountVisuals();
 if(document.body.dataset.adminOrigin){const home=document.createElement('a');home.href=document.body.dataset.adminOrigin+'/';home.className='btn';home.textContent='Beranda aplikasi';$('account-brand').append(home);}
-$('account-show-password').onclick=()=>{const show=$('account-password').type==='password';$('account-password').type=show?'text':'password';$('account-show-password').textContent=show?'Sembunyikan kata sandi':'Tampilkan kata sandi';$('account-show-password').setAttribute('aria-pressed',String(show));};
+$('account-show-password').onclick=()=>{const show=$('account-password').type==='password';$('account-password').type=show?'text':'password';$('account-show-password').textContent=show?'Sembunyikan':'Tampilkan';$('account-show-password').setAttribute('aria-label',show?'Sembunyikan kata sandi':'Tampilkan kata sandi');$('account-show-password').setAttribute('aria-pressed',String(show));};
 const closeModal=()=>{$('account-modal').close();$('account-modal-title').textContent='';$('account-modal-form').replaceChildren();modalHandler=undefined;};
 function showAssignmentWeek(groups){
   const root=$('account-dates');root.replaceChildren();
@@ -112,7 +112,7 @@ async function action(fn){if(busy)return;busy=true;try{await fn();}catch(e){if(p
 function checkDeniedAccount(){if(!token){deniedCheckPending=false;return;}if(busy){setTimeout(checkDeniedAccount,100);return;}void action(async()=>{try{await request('context');}finally{deniedCheckPending=false;}});}
 $('account-login-form').onsubmit=e=>{e.preventDefault();void action(async()=>{
   const current=++generation,username=$('account-username').value,password=$('account-password').value;$('account-password').value='';const submit=$('account-login-form').querySelector('button[type=submit]');submit.disabled=true;submit.textContent='Memeriksa akun…';$('account-login-form').setAttribute('aria-busy','true');
-  $('account-password').type='password';$('account-show-password').textContent='Tampilkan kata sandi';$('account-show-password').setAttribute('aria-pressed','false');
+  $('account-password').type='password';$('account-show-password').textContent='Tampilkan';$('account-show-password').setAttribute('aria-label','Tampilkan kata sandi');$('account-show-password').setAttribute('aria-pressed','false');
   try{const p=persistentMode?await sessionRequest('login',{username,password,persistent:$('account-remember').checked}):await request('login',{username,password});if(current!==generation)return;if(persistentMode)await acceptSession(p,current);else{if(!validProfile(p)||!/^[-\w]{43}$/.test(p.token??''))throw Error('Respons akun belum dapat diperiksa.');profile=p;token=p.token;message='';render();await client.restore();}}
   finally{submit.disabled=false;submit.textContent='Masuk';$('account-login-form').removeAttribute('aria-busy');}
 });};
