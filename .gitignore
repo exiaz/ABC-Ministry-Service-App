@@ -142,3 +142,7 @@ dist
 firestore-debug.log
 ui-debug.log
 firebase-debug.log*
+
+
+cd "D:\Work\ABC Ministry Service App\MSA-claude"
+git switch -c claude/collab-workflow
