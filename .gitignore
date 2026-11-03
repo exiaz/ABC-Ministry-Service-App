@@ -142,3 +142,6 @@ dist
 firestore-debug.log
 ui-debug.log
 firebase-debug.log*
+
+# Worktree buatan Claude Code
+.claude/worktrees/
