@@ -99,15 +99,17 @@ Format: hook ← tes yang menyentuhnya. “JS” = dibaca/ditulis kode halaman. 
 | Teks lama | Lokasi sumber | Tes yang mengikat | Teks baru (BRIEF) |
 |---|---|---|---|
 | `Welcome back` (`#portal-title`) | `msa-portal.html:6`, `msa-portal.js:20` | `tests/msa-portal-browser.mjs:98`, `tests/msa-portal-focus-browser.mjs:49` | Selamat datang kembali |
-| `Enter your credentials to continue.` | `msa-portal.html:6`, `msa-portal.js:21` | tidak ada | (Indonesia; usul: “Masukkan username dan kata sandi untuk melanjutkan.”) |
+| `Enter your credentials to continue.` | `msa-portal.html:6`, `msa-portal.js:21` | tidak ada | Masuk untuk melihat jadwal dan ruang pelayanan Anda. |
 | `Log in` (submit) | `msa-portal.html:7`, `msa-portal.js:67` (di-reset setelah “Memeriksa…”) | tidak ada | Masuk |
 | `Sign up`, `Don't have an account?` | `msa-portal.html:7` | tidak ada (`.auth-switch a` dipakai) | Daftar; “Belum punya akun?” |
-| `Show` / `Hide`, `aria-label` `Show password`/`Hide password` | `msa-portal.html:7`, `msa-portal.js:23,69` | tidak ada teksnya; `aria-pressed`/`type` diuji (pb:96, pf:51) | Tampilkan / Sembunyikan |
+| `Show` / `Hide`, `aria-label` `Show password`/`Hide password` | `msa-portal.html:7`, `msa-portal.js:23,69` | tidak ada teksnya; `aria-pressed`/`type` diuji (pb:96, pf:51) | Tampilkan / Sembunyikan; aria-label “Tampilkan kata sandi” / “Sembunyikan kata sandi” (sama dengan halaman Mentor) |
 | `Forgot password?` (`a.portal-recovery`) | `msa-portal.html:7` | tidak ada di portal; **tautan Mentor** “Lupa kata sandi?” diuji (`e/msa-a2-4b-ui.mjs:18`, `apb:68`) — beda halaman | Lupa kata sandi? |
 | placeholder `Username` / `Password`, label `Password` | `msa-portal.html:7` | tidak ada | Username / Kata sandi |
-| `Create an account` (`#registration h1`) | `register.html:4` | **`msa-portal-focus-browser.mjs:53`** | Buat akun (usul) |
-| `Password` (label), `Create account`, `Already have an account? Log in` | `register.html:8` | tidak ada | Kata sandi; Buat akun; “Sudah punya akun? Masuk” |
-| `Headline`, `Mobile`, `Desktop`, `Pratinjau tata letak Opsi G` | `visual-studio.html:5` | tidak langsung (id tetap) | opsional |
+| `Create an account` (`#registration h1`) | `register.html:4` | **`msa-portal-focus-browser.mjs:53`** | Buat Akun Volunteer (selaras dengan tautan “Buat Akun Mentor” di Selamat datang dan judul tab “Pendaftaran Volunteer”; istilah Volunteer dipertahankan) |
+| `Password` (label), `Create account`, `Already have an account? Log in` | `register.html:8` | tidak ada | Kata sandi; Daftar (tombol tunggal, tetap satu `button`); “Sudah punya akun? Masuk” |
+| `Headline`, `Mobile`, `Desktop`, `Pratinjau tata letak Opsi G` | `visual-studio.html:5` | tidak langsung (id tetap) | Judul utama; Ponsel; Komputer; Pratinjau tata letak halaman |
+
+Padanan lain di halaman yang sama: placeholder `Username` tetap “Username”, placeholder/label `Password` menjadi “Kata sandi” (konsisten dengan halaman Mentor dan pemulihan). Nada: sapaan hangat dan ringkas ala “Selamat melayani”, tanpa istilah teknis.
 
 Catatan: `msa-portal.js:67` menimpa teks submit lagi di `finally` — kedua tempat harus diubah bersama. `portal-title` `Welcome back` juga ditulis ulang `clear()` (`msa-portal.js:20`).
 
