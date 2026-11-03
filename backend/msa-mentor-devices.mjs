@@ -112,6 +112,20 @@ export function createMsaMentorAuthentication({a1,devices}){
   };
   return {
     enabled:devices.enabled,
+    async persistentLogin(value){
+      devices.enabled();const result=await a1.login(value,{mentorRefresh:true});
+      try{const p={uid:result.uid,revision:result.revision,expiresAt:result.expiresAt,sessionId:hash(result.token)};await devices.admit(p);return {...result,profile:{...await devices.context(p),...(process.env.ABC_MSA_A2_4A==='1'?{deviceManagement:true}:{})}};}
+      catch(e){a1.logout('Bearer '+result.token);throw e;}
+    },
+    async persistentRefresh(value){
+      devices.enabled();const result=await a1.refreshMentor(value);
+      try{const p={uid:result.uid,revision:result.revision,expiresAt:result.expiresAt,sessionId:hash(result.token)};await devices.admit(p);return {...result,profile:{...await devices.context(p),...(process.env.ABC_MSA_A2_4A==='1'?{deviceManagement:true}:{})}};}
+      catch(e){a1.logout('Bearer '+result.token);throw e;}
+    },
+    async revokeIssued(uid,token){
+      try{await devices.logout({uid,sessionId:hash(token)});}finally{a1.logout('Bearer '+token);}
+    },
+    forgetIssued(token){a1.logout('Bearer '+token);},
     async login(value){
       devices.enabled();const result=await a1.login(value),header='Bearer '+result.token;
       try{const p=await resolve(header);await devices.admit(p);return {token:result.token,...await devices.context(p),...(process.env.ABC_MSA_A2_4A==='1'?{deviceManagement:true}:{})};}
