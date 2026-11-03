@@ -2,9 +2,8 @@ import {SCHOOL_CONFIG} from './group-config.js';
 import {SAMPLE_SERVICES,SERVICE_CONFIG_REVISION} from './service-config.js';
 import {syncFutureMentorSnapshots} from './assignments.js';
 
-import {TIME_ZONE,jakartaToday} from './dates.js';
-export {TIME_ZONE} from './dates.js';
-export function isValidDate(date){return typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date+'T12:00:00+07:00'))&&new Date(date+'T12:00:00+07:00').toISOString().slice(0,10)===date;}
+import {TIME_ZONE,jakartaToday,isValidDate} from './dates.js';
+export {TIME_ZONE,isValidDate} from './dates.js';
 export function isFriday(date){return isValidDate(date)&&new Intl.DateTimeFormat('en-US',{weekday:'long',timeZone:TIME_ZONE}).format(new Date(date+'T12:00:00+07:00'))==='Friday';}
 export function longDate(date){return new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TIME_ZONE}).format(new Date(date+'T12:00:00+07:00'));}
 export function monthLabel(month){return new Intl.DateTimeFormat('id-ID',{month:'long',year:'numeric',timeZone:TIME_ZONE}).format(new Date(month+'-01T12:00:00+07:00'));}
@@ -15,7 +14,7 @@ export function serviceProgress(db,visit){
   return {total:visit.groupIds.length,completed,state:completed===visit.groupIds.length&&completed>0?'completed':rows.length?'draft':'pending'};
 }
 export function serviceTiming(visit,today=jakartaToday()){return visit.date>today?'upcoming':visit.date===today?'active':'past';}
-export function scheduledForSchool(db,schoolId){return (db.serviceSessions||[]).filter(v=>v.schoolId===schoolId&&!v.legacy&&isFriday(v.date)).sort((a,b)=>a.date.localeCompare(b.date));}
+export function scheduledForSchool(db,schoolId){return (db.serviceSessions||[]).filter(v=>v.schoolId===schoolId&&!v.legacy&&!v.provisional&&isValidDate(v.date)).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));}
 export function annotateRecord(session,record){Object.assign(record,{schoolId:session.schoolId,serviceSessionId:session.serviceSessionId,serviceDate:session.date,groupId:session.groupId});return record;}
 export function addAttendanceRecord(db,session,record){
   if(db.sessions.some(s=>s.serviceSessionId===session.serviceSessionId&&s.records.some(r=>r.studentId===record.studentId)))throw Error('Siswa ini sudah tercatat pada tanggal pelayanan yang sama.');
@@ -50,8 +49,7 @@ export function saveService(db,values,id){
   if(id&&!original)throw Error('Jadwal tidak ditemukan.');
   if(original?.legacy)throw Error('Arsip lama dipertahankan pada tanggal aslinya.');
   if(!db.schools.some(s=>s.id===values.schoolId))throw Error('Pilih sekolah yang tersedia.');
-  if(!isFriday(values.date))throw Error('Pilih tanggal pelayanan pada hari Jumat.');
-  if(db.serviceSessions.some(s=>s.id!==id&&s.schoolId===values.schoolId&&s.date===values.date))throw Error('Sekolah ini sudah memiliki jadwal pada Jumat tersebut.');
+  if(!isValidDate(values.date))throw Error('Pilih tanggal pelayanan yang valid.');
   const groupIds=[...new Set(values.groupIds)];
   if(!groupIds.length||groupIds.some(gid=>!db.groups.some(g=>g.id===gid&&g.schoolId===values.schoolId)))throw Error('Pilih minimal satu kelompok dari sekolah yang sama.');
   const batches=db.sessions.filter(s=>s.serviceSessionId===id);
@@ -75,18 +73,19 @@ export function reportEntries(db,{schoolId='',month='',serviceSessionId='',group
     .flatMap(visit=>availableGroups(db,visit.id).filter(g=>!groupId||g.id===groupId).map(group=>({visit,group,batch:db.sessions.find(s=>s.serviceSessionId===visit.id&&s.groupId===group.id)})));
 }
 
-// The mentor UI calls this only after explicit confirmation for a new Friday.
-export function selectFridayService(db,schoolId,date,{confirmed=false}={}){
-  if(!isFriday(date))throw Error('Pilih tanggal pelayanan pada hari Jumat.');
-  const existing=db.serviceSessions.find(v=>v.schoolId===schoolId&&v.date===date);
-  if(existing)return existing;
-  if(!confirmed)throw Error('Konfirmasi diperlukan untuk pelayanan yang belum dijadwalkan.');
-  const visit=saveService(db,{schoolId,date,groupIds:db.groups.filter(g=>g.schoolId===schoolId&&!g.retired).map(g=>g.id)});
-  visit.provisional=true;return visit;
+// Selection is read-only. A date is a filter, never a session identity.
+export function selectService(db,schoolId,date,serviceSessionId=''){
+  if(!isValidDate(date))throw Error('Pilih tanggal pelayanan yang valid.');
+  const rows=scheduledForSchool(db,schoolId).filter(v=>v.date===date);
+  if(serviceSessionId){const visit=rows.find(v=>v.id===serviceSessionId);if(!visit)throw Error('Pelayanan tidak tersedia pada sekolah dan tanggal ini.');return visit;}
+  if(rows.length!==1)throw Error(rows.length?'Pilih salah satu sesi pelayanan.':'Belum dijadwalkan. Hubungi admin untuk mengatur pelayanan.');
+  return rows[0];
 }
+// Compatibility for callers of the old helper; confirmation cannot create data.
+export const selectFridayService=(db,schoolId,date,options={})=>selectService(db,schoolId,date,options.serviceSessionId);
 export function canSubmitAttendance(db,session,today=jakartaToday()){
   const visit=db.serviceSessions.find(v=>v.id===session.serviceSessionId);
-  return !!visit&&visit.schoolId===session.schoolId&&visit.groupIds.includes(session.groupId)&&visit.date<=today;
+  return !!visit&&!visit.provisional&&isValidDate(visit.date)&&visit.schoolId===session.schoolId&&visit.groupIds.includes(session.groupId)&&visit.date<=today;
 }
 export function submitAttendance(db,session,today=jakartaToday()){
   if(!canSubmitAttendance(db,session,today))throw Error('Absensi dapat dikirim mulai tanggal pelayanan (WIB).');
@@ -97,5 +96,5 @@ export function submitAttendance(db,session,today=jakartaToday()){
 
 export function mentorGroups(db,serviceId){
   const visit=db.serviceSessions.find(v=>v.id===serviceId);
-  return visit?db.groups.filter(g=>g.schoolId===visit.schoolId&&!g.retired):[];
+  return visit&&!visit.provisional?db.groups.filter(g=>g.schoolId===visit.schoolId&&visit.groupIds.includes(g.id)&&!g.retired):[];
 }

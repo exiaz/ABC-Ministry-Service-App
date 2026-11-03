@@ -1,28 +1,30 @@
+import {mkdir} from 'node:fs/promises';
 // Targeted form QA only; uses an isolated browser profile and fictional fixtures.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {createPrototypeServer} from '../server.mjs';
 import {seed,KEY} from '../data.js';
-import {selectFridayService} from '../scheduling.js';
-const {chromium}=createRequire(import.meta.url)('playwright');
+import {saveService} from '../scheduling.js';
+const require=createRequire(import.meta.url);let chromium;try{({chromium}=require('playwright'));}catch{({chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}
 const fixture=seed();fixture.authorized=true;fixture.mentorPreferences={schoolId:'s1',groupId:'g13'};
-selectFridayService(fixture,'s1','2026-10-16',{confirmed:true});
+saveService(fixture,{schoolId:'s1',date:'2026-10-16',groupIds:fixture.groups.filter(g=>g.schoolId==='s1'&&!g.retired).map(g=>g.id)});
 const originalSessions=structuredClone(fixture.sessions);
-const server=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4174'},windowsHide:true,stdio:'pipe'});
+const server=createPrototypeServer();server.listen(0,'127.0.0.1');await once(server,'listening');const port=server.address().port;
 let browser;
 try{
-  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error('Form QA server exited: '+code)));});
+  await mkdir('screenshots',{recursive:true});
   browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   const context=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID',timezoneId:'Asia/Jakarta'});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.clock.install({time:new Date('2026-10-21T05:00:00Z')});
   await page.addInitScript(({key,value})=>{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(value));},{key:KEY,value:fixture});
-  await page.goto('http://127.0.0.1:4174/');
+  await page.goto('http://127.0.0.1:'+port+'/');
   const action=(name,id)=>page.locator(`[data-action="${name}"]${id?`[data-id="${id}"]`:''}`);
   const submit=()=>page.locator('#modal button[type=submit]');
   const close=()=>page.locator('#modal .close').click();
   const db=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)),KEY);
-  await action('continue-date').click();await action('select-group','g13').click();await action('add-provisional').click();
+  await action('calendar-toggle').click();await action('calendar-date','2026-10-16').click();await action('continue-date').click();await action('select-group','g13').click();await action('add-provisional').click();
   assert.equal(await page.locator('#modal input').count(),4);assert.equal(await page.locator('#modal select').count(),0);
   assert.match(await page.locator('.student-context').innerText(),/SDN Pacarkeling V[\s\S]*Hagai · Kak Louis[\s\S]*16 Oktober 2026/);
   await page.screenshot({path:'screenshots/student-temporary-form.png'});
@@ -31,7 +33,7 @@ try{
   assert.equal(pending.schoolId,'s1');assert.equal(pending.groupId,'g13');assert.equal(pending.schoolClass,'3B');assert.equal(pending.state,'pending');
   const sourceBatch=structuredClone(stored.sessions.find(s=>s.id===pending.sessionId));
   await action('back-groups').click();await action('back-dates').click();await action('back-schools').click();
-  await action('select-school','s2').click();await action('continue-date').click();await action('select-group','g4').click();await action('add-provisional').click();
+  await action('select-school','s2').click();await action('calendar-toggle').click();await action('calendar-date','2026-10-16').click();await action('continue-date').click();await action('select-group','g4').click();await action('add-provisional').click();
   const summary=await page.locator('.student-context').innerText();assert.match(summary,/SDN Airlangga III[\s\S]*Amos · Kak Chriz/);assert.ok(!summary.includes('Hagai'));await close();
   await action('admin').last().click();await page.locator('#field-code').fill('ABC2026');await submit().click();
   await action('admin-tab','students').click();await action('student-form').filter({hasText:'Tambah siswa'}).click();
@@ -66,4 +68,4 @@ try{
   assert.deepEqual(stored.sessions.find(s=>s.id===pending.sessionId),sourceBatch);
   assert.deepEqual(errors,[]);
   console.log('Student form browser checks passed: mentor name/class/gender context, switching schools, global/dependent admin selectors, optional profile edit/nulls, contextual admin prefill, privacy rendering, approval/history/reload.');
-}finally{await browser?.close();server.kill();}
+}finally{await browser?.close();await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}

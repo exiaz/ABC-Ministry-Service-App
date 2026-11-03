@@ -1,0 +1,296 @@
+/* Shared visual tokens, scoped to the opt-in MSA portal. No legacy layout reset. */
+body[data-msa-portal],body.mentor-account{
+  --msa-ink:#20314d;--msa-muted:#526177;--msa-blue:#1455bd;--msa-line:#dce3ec;
+  --msa-paper:#fff;--msa-canvas:#f6f7fa;--msa-radius:12px;
+}
+body[data-msa-portal]{background:var(--msa-canvas);color:var(--msa-ink);font:16px/1.5 system-ui,"Segoe UI",sans-serif}
+body[data-msa-portal] h1{font-size:clamp(26px,3vw,34px);line-height:1.2;letter-spacing:-.7px}
+body[data-msa-portal] h2{font-size:22px;line-height:1.3}
+body[data-msa-portal] h3{font-size:17px}
+body[data-msa-portal] :is(input,select,textarea):not(.ui-input){font-size:16px;min-height:44px;border-color:#8290a4}
+body[data-msa-portal] :is(button,a.btn):not(.ui-btn){min-height:44px;font-size:16px;box-shadow:none}
+body[data-msa-portal] button:not(.ui-btn){background:var(--msa-blue);color:white;border:1px solid var(--msa-blue);border-radius:8px}
+body[data-msa-portal] button.btn:not(.primary):not(.danger){background:white;color:var(--msa-blue);border-color:var(--msa-line)}
+body[data-msa-portal] button.btn.primary{background:var(--msa-blue);color:white}
+body[data-msa-portal] button.btn.danger{background:#fff2f0;color:#9c2828;border-color:#dfb6b6}
+body[data-msa-portal] button.secondary{color:var(--msa-blue);background:white;border:1px solid var(--msa-line)}
+body[data-msa-portal] :is(form,article,dialog){border-color:var(--msa-line);border-radius:var(--msa-radius);box-shadow:none}
+body[data-msa-portal] :is(a:not(.ui-btn),summary){color:var(--msa-blue)}
+body[data-msa-portal] main a:not(.ui-btn){display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}
+body[data-msa-portal] :focus-visible{outline:3px solid #1455bd;outline-offset:3px}
+body[data-msa-portal] :is(main,section,nav,article,header,footer){min-width:0}
+body[data-msa-portal] button:disabled:not(.ui-btn){opacity:.6;cursor:wait}
+body[data-msa-portal] .msa-eyebrow{font-size:12px;letter-spacing:1px;font-weight:750;color:var(--msa-muted);margin:0 0 8px}
+body[data-msa-portal] .msa-muted{font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal] .msa-section-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:28px 0 12px}
+body[data-msa-portal] .msa-section-heading h2{margin:0}
+body[data-msa-portal] .msa-primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:8px;background:var(--msa-blue);color:white;text-decoration:none;font-weight:650}
+body[data-msa-portal].msa-portal main.intake{max-width:520px;padding:32px 24px}
+.msa-portal .portal-heading h1{margin:0;max-width:440px}
+.msa-portal #portal-feedback:empty{display:none}
+.msa-portal #portal-feedback{padding:12px 0;margin:0}
+.msa-portal .msa-local-note{font-size:13px;color:var(--msa-muted);margin:24px 0 8px}
+.msa-portal #portal-local details{font-size:14px}
+body[data-msa-portal].msa-shell-active{padding-bottom:88px}
+body[data-msa-portal].msa-shell-active main.intake,body[data-msa-portal].msa-shell-active>main{max-width:1180px;padding:24px}
+.msa-shell-active .msa-account{font-size:14px;color:var(--msa-muted);margin:8px 0 16px}
+body[data-msa-portal] #portal-modules{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+body[data-msa-portal] #portal-modules a{display:flex;flex-direction:column;align-items:start;justify-content:center;gap:6px;padding:20px;border:1px solid var(--msa-line);border-radius:12px;color:var(--msa-ink);text-decoration:none}
+#portal-modules a:hover{border-color:var(--msa-blue);background:#f0f5ff}
+#portal-modules a span{font-size:14px;color:var(--msa-muted)}
+#portal-schedule{display:grid;gap:16px}
+#portal-schedule>section{min-width:0}
+#portal-schedule h3{margin:12px 0}
+#portal-schedule article{padding:16px;margin:12px 0;background:white}
+#portal-schedule h4{font-size:17px;margin:6px 0}
+#portal-schedule article p{font-size:14px;margin:8px 0}
+#portal-schedule article .msa-event-date{font-size:12px;color:var(--msa-blue);font-weight:700}
+#portal-schedule a{font-size:14px;font-weight:650}
+#portal-schedule .msa-empty{border:1px dashed var(--msa-line);padding:16px;border-radius:12px;color:var(--msa-muted);font-size:14px}
+.portal-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+#msa-navigation{position:fixed;inset:auto 0 0;background:white;border-top:1px solid var(--msa-line);z-index:20;padding:8px 8px max(8px,env(safe-area-inset-bottom));}
+#msa-navigation :is(.msa-shell-name,.msa-shell-account,.msa-shell-local){display:none}
+#msa-navigation .msa-shell-brand{display:none}
+#msa-navigation nav{display:flex;gap:4px;justify-content:space-around}
+#msa-navigation a{display:flex;align-items:center;justify-content:center;min-height:48px;flex:1;padding:8px 4px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:650;color:var(--msa-muted)}
+#msa-navigation a[aria-current]{background:#edf3ff;color:var(--msa-blue)}
+#msa-navigation .msa-extra-module{display:none}
+#msa-skip{position:fixed;top:-100px;left:16px;background:white;color:var(--msa-blue);z-index:100;padding:12px;min-height:44px}
+#msa-skip:focus{top:12px}
+body[data-msa-portal] :is(#event-brand,#core-brand){margin-bottom:20px}
+body[data-msa-portal] #calendar-nav{display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;border-bottom:1px solid var(--msa-line)}
+body[data-msa-portal] #dashboard-content{gap:16px}
+body[data-msa-portal] #dashboard-content .calendar-card{border-left:3px solid #f4c64f}
+body[data-msa-portal] .draft-badge{font-size:13px}
+body[data-msa-portal] summary{min-height:44px;cursor:pointer}
+body[data-msa-portal] #admin-root>.sidebar{display:none}
+body[data-msa-portal] #admin-root>.shell{margin-left:0}
+body[data-msa-portal] #admin-root .topbar{height:auto;min-height:60px;padding:12px 24px}
+body[data-msa-portal] #admin-root .content{padding:24px}
+body[data-msa-portal] #admin-root .admin-tabs{gap:20px}
+body[data-msa-portal] #admin-root .admin-tabs button{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--msa-muted)}
+body[data-msa-portal] #admin-root .admin-tabs button.active{color:var(--msa-blue);border-color:var(--msa-blue)}
+@media(min-width:900px){
+  body[data-msa-portal].msa-shell-active{padding-left:248px;padding-bottom:0}
+  body[data-msa-portal].msa-shell-active>main,body[data-msa-portal].msa-shell-active main.intake{padding:32px}
+  #msa-navigation{inset:0 auto 0 0;width:248px;border-top:0;border-right:1px solid var(--msa-line);padding:28px 16px;overflow:auto}
+  #msa-navigation .msa-shell-name{display:block;font-weight:750;font-size:20px;line-height:1.3;margin:0 8px 12px}
+  #msa-navigation .msa-shell-brand{display:block;margin:0 8px 24px}
+  #msa-navigation .brand-logo{width:82px;height:40px;object-fit:contain}
+  #msa-navigation .brand-copy{font-size:10px}
+  #msa-navigation .msa-shell-account{display:block;font-size:13px;color:var(--msa-muted);margin:0 8px 24px;overflow-wrap:anywhere}
+  #msa-navigation .msa-shell-local{display:block;font-size:12px;color:var(--msa-muted);margin:24px 8px}
+  #msa-navigation nav{display:flex;flex-direction:column;gap:4px}
+  #msa-navigation a{justify-content:start;flex:auto;padding:12px;font-size:14px}
+  #msa-navigation .msa-extra-module{display:flex;font-size:13px}
+  #portal-schedule{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:480px){body[data-msa-portal].msa-portal main.intake,body[data-msa-portal].msa-shell-active>main{padding:24px 16px}
+  body[data-msa-portal] #portal-modules a{padding:16px}
+  body[data-msa-portal] #admin-root .content{padding:16px}}
+
+
+/* Workspace presentation: tokens and portal-only dashboard. */
+body[data-msa-portal]{--msa-canvas:#f7f6f1;--msa-ink:#172b46;--msa-muted:#4d5c6d;--msa-blue:#174f91;--msa-line:#d9ddd9;--msa-paper:#fffefa;--msa-red:#a62e36;--msa-yellow:#f2ca63;--msa-space:16px;--msa-radius:12px}
+body[data-msa-portal].msa-shell-active.msa-portal main.intake{max-width:1200px}
+.msa-shell-active.msa-portal .portal-heading{border-bottom:1px solid var(--msa-line);padding-bottom:18px}
+.msa-shell-active.msa-portal .portal-heading h1{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px}
+.msa-shell-active.msa-portal #portal-eyebrow{color:var(--msa-red)}
+.msa-shell-active.msa-portal #portal-account{margin:12px 0 0}
+.msa-portal #portal-services .msa-section-heading{margin-top:28px}
+.msa-portal #portal-service-state{font-size:14px;color:var(--msa-muted)}
+#portal-schedule{gap:22px;align-items:start}
+#portal-schedule>section{border-top:2px solid var(--msa-ink);padding-top:4px}
+#portal-schedule h3{margin:12px 0;font-size:16px}
+#portal-schedule .portal-event{display:flex;gap:14px;padding:16px;margin:10px 0;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px}
+#portal-schedule .portal-date{flex:0 0 52px;align-self:start;text-align:center;background:#e7f1f5;border-top:3px solid var(--msa-red);padding:5px 3px;color:var(--msa-ink);border-radius:3px 3px 7px 7px}
+#portal-schedule .portal-date strong,#portal-schedule .portal-date span{display:block;line-height:1.2}
+#portal-schedule .portal-date strong{font-size:22px}
+#portal-schedule .portal-date span{font-size:12px;text-transform:uppercase;font-weight:700}
+#portal-schedule .portal-event-content{min-width:0}
+#portal-schedule .portal-event h4{line-height:1.3;overflow-wrap:anywhere}
+#portal-schedule .portal-event p{color:var(--msa-muted)}
+#portal-schedule .portal-event .msa-event-date{color:var(--msa-blue)}
+#portal-schedule .msa-empty{background:#f0f0e9;border:0;border-radius:6px;line-height:1.5}
+#msa-navigation nav{align-items:stretch}
+#msa-navigation .msa-nav-primary{display:flex;flex:1}
+#msa-navigation .msa-nav-primary a{flex:1}
+#msa-navigation .msa-nav-icon{display:none}
+#msa-navigation .msa-nav-menu{flex:1;min-width:0}
+#msa-navigation .msa-nav-menu summary{display:flex;justify-content:center;align-items:center;min-height:48px;border-radius:8px;font-size:13px;font-weight:700;color:var(--msa-muted);cursor:pointer;list-style:none}
+#msa-navigation .msa-nav-menu summary::-webkit-details-marker{display:none}
+#msa-navigation .msa-nav-menu[open] summary{background:#e8eff5;color:var(--msa-blue)}
+#msa-navigation .msa-nav-group{background:var(--msa-paper);padding:4px 12px}
+#msa-navigation .msa-nav-group p{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--msa-muted);font-weight:700;margin:12px 8px 4px}
+#msa-navigation .msa-nav-menu[open]{position:relative}
+#msa-navigation .msa-nav-menu[open] .msa-nav-group{position:relative}
+#msa-navigation .msa-nav-menu[open] .msa-nav-group:first-of-type{border-radius:12px 12px 0 0}
+#msa-navigation .msa-nav-menu[open] .msa-nav-group:last-of-type{border-radius:0 0 12px 12px}
+@media(max-width:899px){
+ #msa-navigation .msa-nav-menu[open]{position:static}
+ #msa-navigation .msa-nav-panel{position:absolute;left:8px;right:8px;bottom:100%;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:12px;box-shadow:0 8px 24px #172b4622;max-height:60vh;overflow:auto;padding:6px}
+ #msa-navigation .msa-nav-group a{justify-content:flex-start}
+}
+@media(min-width:900px){
+ #msa-navigation{background:#fffefa;padding:28px 16px}
+ #msa-navigation nav,#msa-navigation .msa-nav-primary{display:flex;flex-direction:column;gap:3px}
+ #msa-navigation .msa-nav-menu summary{display:none}
+ #msa-navigation .msa-nav-group{padding:10px 0 0;background:transparent}
+ #msa-navigation .msa-nav-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;flex:none;font-size:19px;line-height:1}
+ #msa-navigation a{gap:10px;border-left:3px solid transparent}
+ #msa-navigation a[aria-current]{border-left-color:var(--msa-red);background:#eaf1f4;color:var(--msa-ink)}
+ #msa-navigation a:hover{background:#f1f3ef}
+}
+@media(prefers-reduced-motion:no-preference){#msa-navigation a,#portal-schedule .portal-event{transition:background-color .16s ease,border-color .16s ease}#portal-schedule .portal-event:hover{border-color:#8597a2}}
+@media(prefers-reduced-motion:reduce){#msa-navigation a,#portal-schedule .portal-event{transition:none}}
+
+body[data-msa-portal] main a.msa-primary{padding:10px 16px}
+
+@media(max-width:899px){html:has(body[data-msa-portal].msa-shell-active){scroll-padding-bottom:100px}}
+
+/* Service and calendar workspace, using the portal tokens. */
+body[data-msa-portal].msa-events #event-brand{display:none}
+body[data-msa-portal].msa-events #event-heading{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0}
+body[data-msa-portal].msa-events #event-intro{color:var(--msa-muted);margin:8px 0 16px}
+body[data-msa-portal].msa-events .event-account-actions{display:flex;gap:8px;flex-wrap:wrap}
+body[data-msa-portal].msa-events .event-account-actions button{margin:0}
+body[data-msa-portal].msa-events #calendar-nav{margin:16px 0 24px;gap:4px}
+body[data-msa-portal].msa-events #calendar-nav button{margin:0;background:transparent;border-color:transparent;color:var(--msa-muted);font-weight:650;border-radius:6px}
+body[data-msa-portal].msa-events #calendar-nav button[aria-pressed=true]{background:#e7f1f5;color:var(--msa-ink);box-shadow:inset 0 -3px var(--msa-red)}
+body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization,#dashboard-workspace)>h2{margin:0 0 8px}
+body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization)>p{color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters,#event-form,#event-detail,#calendar-detail){background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px;box-shadow:none}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters){padding:16px;margin:8px 0 16px}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) label{margin:4px 0 6px;font-size:14px;font-weight:650}
+body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) .grid{gap:12px 16px}
+body[data-msa-portal].msa-events #calendar-filter-details>summary{font-weight:650;text-decoration:none}
+body[data-msa-portal].msa-events .calendar-date-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+body[data-msa-portal].msa-events .calendar-date-nav button{margin:0}
+body[data-msa-portal].msa-events #calendar-range{font-weight:700;color:var(--msa-ink);margin:16px 0 4px}
+body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result,#event-empty,#event-read-only,#feedback){color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result){font-size:14px;margin:4px 0 18px}
+body[data-msa-portal].msa-events .calendar-day{border-top:2px solid var(--msa-ink);padding-top:10px;margin:20px 0}
+body[data-msa-portal].msa-events .calendar-day>h3{margin:0 0 10px;font-size:16px}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article){background:var(--msa-paper);border:1px solid var(--msa-line);border-left:3px solid var(--msa-red);border-radius:8px;padding:16px;margin:8px 0}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) :is(h3,h4){margin:5px 0;line-height:1.3}
+body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) p{margin:6px 0;font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events .draft-badge{display:inline-block;font-size:12px!important;font-weight:750;letter-spacing:.03em;color:var(--msa-blue)!important;background:#e7f1f5;border-radius:4px;padding:3px 8px}
+body[data-msa-portal].msa-events .draft-badge[data-status=cancelled]{color:#8a2530!important;background:#f9e9e6}
+body[data-msa-portal].msa-events .draft-badge[data-status=draft]{color:#694800!important;background:#faedc5}
+body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:20px;margin:12px 0 20px}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) h2{margin:8px 0 16px;overflow-wrap:anywhere}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:6px 16px}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dt{font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin:0;min-width:0}
+body[data-msa-portal].msa-events :is(#event-form,#calendar-export-form) label{font-size:14px;font-weight:650}
+body[data-msa-portal].msa-events #calendar-export-form{padding:16px;margin:8px 0;background:#f1f3ee;border:0}
+body[data-msa-portal].msa-events :is(#pic-help,#calendar-export-help){font-size:14px;color:var(--msa-muted)}
+body[data-msa-portal].msa-events :is(#event-conflict,#calendar-operation-feedback,#recurrence-feedback):not(:empty){border-left:3px solid var(--msa-red);padding:8px 12px;background:#fbf1ec}
+body[data-msa-portal].msa-events #dashboard-content>section{border-top:2px solid var(--msa-ink);padding-top:4px}
+body[data-msa-portal].msa-events #dashboard-content>section>p{background:#f0f0e9;border-radius:6px;padding:14px;color:var(--msa-muted);font-size:14px}
+body[data-msa-portal].msa-events dialog{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
+@media(min-width:900px){
+ body[data-msa-portal].msa-events .event-layout{grid-template-columns:minmax(0,3fr) minmax(220px,2fr);align-items:start}
+ body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden]))){display:none}
+ body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden])))+#event-list{grid-column:1/-1}
+ body[data-msa-portal].msa-events #calendar-list:not(.calendar-days) .calendar-day{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+ body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:16px}
+ body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{grid-template-columns:1fr;gap:2px}
+ body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin-bottom:10px}
+}
+
+/* Organization workspace; capabilities and context come from the server. */
+body[data-msa-portal].msa-core #core-brand{display:none}
+body[data-msa-portal].msa-core main>h1{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0}
+body[data-msa-portal].msa-core .core-intro{color:var(--msa-muted);margin:8px 0 16px;max-width:70ch}
+body[data-msa-portal].msa-core .core-account-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+body[data-msa-portal].msa-core .core-account-actions button{margin:0}
+body[data-msa-portal].msa-core :is(#feedback,#core-empty){color:var(--msa-muted)}
+body[data-msa-portal].msa-core #feedback:empty{display:none}
+body[data-msa-portal].msa-core .core-context{border-top:3px solid var(--msa-red);border-bottom:1px solid var(--msa-line);padding:16px 0;margin-bottom:24px}
+body[data-msa-portal].msa-core .core-context label{font-size:14px;font-weight:700;margin:0 0 6px}
+body[data-msa-portal].msa-core #core-org{max-width:560px}
+body[data-msa-portal].msa-core #core-role{display:inline-block;margin:16px 0 4px;padding:4px 8px;border-radius:4px;background:#e7f1f5;color:var(--msa-ink);font-size:13px;font-weight:700}
+body[data-msa-portal].msa-core #core-org-name{margin:6px 0;font-size:clamp(24px,3vw,30px);overflow-wrap:anywhere}
+body[data-msa-portal].msa-core :is(#core-org-note,.core-context-help,.core-help,#core-program-access){color:var(--msa-muted);font-size:14px;margin:8px 0}
+body[data-msa-portal].msa-core .core-sections{gap:24px;margin:0 0 24px;align-items:start}
+body[data-msa-portal].msa-core .core-sections>section{min-width:0;border-top:2px solid var(--msa-ink);padding-top:8px}
+body[data-msa-portal].msa-core .core-sections h3{margin:0 0 8px;font-size:18px}
+body[data-msa-portal].msa-core #core-program-list ul{list-style:none;margin:12px 0;padding:0;border-top:1px solid var(--msa-line)}
+body[data-msa-portal].msa-core #core-program-list li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--msa-line);overflow-wrap:anywhere}
+body[data-msa-portal].msa-core #core-program-list li>span:first-child{min-width:0;font-weight:650}
+body[data-msa-portal].msa-core .core-status{display:inline-block;flex:none;color:var(--msa-blue);background:#e7f1f5;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700}
+body[data-msa-portal].msa-core .core-status[data-state=revoked]{color:#8a2530;background:#f9e9e6}
+body[data-msa-portal].msa-core .core-status[data-state=review]{color:#694800;background:#faedc5}
+body[data-msa-portal].msa-core :is(#core-program-info,.core-empty-state){background:#f0f0e9;border-radius:6px;padding:12px;color:var(--msa-muted);font-size:14px;overflow-wrap:anywhere}
+body[data-msa-portal].msa-core .core-member{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;margin:0;border:0;border-bottom:1px solid var(--msa-line);border-radius:0;background:transparent}
+body[data-msa-portal].msa-core .core-member h4{margin:0;grid-column:1}
+body[data-msa-portal].msa-core .core-member p{margin:0;color:var(--msa-muted);font-size:14px}
+body[data-msa-portal].msa-core .core-member .core-status{grid-column:2;grid-row:1/3;align-self:center;color:var(--msa-blue);font-size:12px}
+body[data-msa-portal].msa-core .core-member .core-status[data-state=revoked]{color:#8a2530}
+body[data-msa-portal].msa-core .core-member .core-status[data-state=review]{color:#694800}
+body[data-msa-portal].msa-core #core-program-form{max-width:740px;padding:20px;margin:20px 0;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px}
+body[data-msa-portal].msa-core #core-program-form h3{margin:0}
+body[data-msa-portal].msa-core #core-program-form label{font-weight:650;font-size:14px}
+body[data-msa-portal].msa-core #core-platform{border-top:1px solid var(--msa-line);margin-top:20px}
+body[data-msa-portal].msa-core #core-platform summary{font-weight:700}
+body[data-msa-portal].msa-core #core-platform-list article{padding:16px;margin:0;background:var(--msa-paper)}
+body[data-msa-portal].msa-core #core-platform-list article :is(h3,p){margin:4px 0}
+body[data-msa-portal].msa-core #core-confirm{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
+@media(max-width:480px){body[data-msa-portal].msa-core #core-program-form{padding:16px}body[data-msa-portal].msa-core .core-member{grid-template-columns:1fr}body[data-msa-portal].msa-core .core-member .core-status{grid-column:1;grid-row:auto;justify-self:start;margin-top:4px}}
+
+/* User and permission management in the portal workspace. */
+body[data-msa-portal] #msa-users{max-width:1200px;color:var(--msa-ink);background:var(--msa-canvas)}
+body[data-msa-portal] #msa-users header{border-bottom:1px solid var(--msa-line);padding-bottom:18px}
+body[data-msa-portal] #msa-users header #msa-brand{display:none}
+body[data-msa-portal] #msa-users h1{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0;line-height:1.15}
+body[data-msa-portal] #msa-users header p{margin:8px 0 0;color:var(--msa-muted)}
+body[data-msa-portal] #msa-users>p:has(a[href="/"]){display:none}
+body[data-msa-portal] #msa-users :is(#msa-session,#msa-management){background:transparent;border:0;border-radius:0;padding:0;margin:20px 0}
+body[data-msa-portal] #msa-session{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+body[data-msa-portal] #msa-session[hidden]{display:none}
+body[data-msa-portal] #msa-session p{color:var(--msa-muted);margin:0}
+body[data-msa-portal] #msa-users #msa-management>h2{border-top:3px solid var(--msa-red);padding-top:16px;margin:0 0 12px}
+body[data-msa-portal] #msa-users #msa-search{align-items:end;gap:12px 16px;padding:16px;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px}
+body[data-msa-portal] #msa-users #msa-search label{font-size:14px;font-weight:650;margin:0}
+body[data-msa-portal] #msa-users #msa-search :is(input,select){margin-top:6px}
+body[data-msa-portal] #msa-users #msa-search button{margin:0}
+body[data-msa-portal] #msa-users #msa-list{display:block;margin:20px 0}
+body[data-msa-portal] #msa-users #msa-list .account-card{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) auto;gap:4px 16px;align-items:center;margin:0;padding:14px 0;border:0;border-bottom:1px solid var(--msa-line);border-radius:0;background:transparent}
+body[data-msa-portal] #msa-users .account-card h3{grid-column:1;margin:0;overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users .account-card p{grid-column:1;margin:0;color:var(--msa-muted);font-size:14px}
+body[data-msa-portal] #msa-users .account-card ul{grid-column:2;grid-row:1/4;margin:0;padding-left:18px;font-size:14px}
+body[data-msa-portal] #msa-users .account-card li{margin:3px 0}
+body[data-msa-portal] #msa-users .account-card button{grid-column:3;grid-row:1/4;width:auto;margin:0}
+body[data-msa-portal] #msa-users .account-card button[aria-pressed=true]{border-color:var(--msa-red);background:#e7f1f5;color:var(--msa-ink)}
+body[data-msa-portal] #msa-users .msa-user-status{display:inline-block;padding:2px 7px;border-radius:4px;background:#e7f1f5;color:var(--msa-blue);font-size:12px;font-weight:700}
+body[data-msa-portal] #msa-users .msa-user-status[data-state=suspended],body[data-msa-portal] #msa-users .msa-user-status[data-state=rejected],body[data-msa-portal] #msa-users .msa-user-status[data-state=disabled]{background:#f9e9e6;color:#8a2530}
+body[data-msa-portal] #msa-users .msa-user-status[data-state=pending]{background:#faedc5;color:#694800}
+body[data-msa-portal] #msa-users #msa-detail:empty{display:none}
+body[data-msa-portal] #msa-users #msa-detail>article{background:var(--msa-paper);border:1px solid var(--msa-line);border-top:3px solid var(--msa-red);border-radius:10px;padding:20px;margin:20px 0}
+body[data-msa-portal] #msa-users #msa-detail h2{margin:0 0 10px}
+body[data-msa-portal] #msa-users #msa-detail p{overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users #msa-change fieldset{border:1px solid var(--msa-line);border-radius:8px;background:#f6f6f0;margin:16px 0;padding:16px}
+body[data-msa-portal] #msa-users #msa-change legend{font-weight:700}
+body[data-msa-portal] #msa-users #msa-change label{font-size:14px;font-weight:650}
+body[data-msa-portal] #msa-users #msa-change .grid{gap:12px 16px}
+body[data-msa-portal] #msa-users #msa-history article{background:transparent;border:0;border-top:1px solid var(--msa-line);border-radius:0;margin:0;padding:12px 0}
+body[data-msa-portal] #msa-users #msa-history article p{margin:4px 0}
+body[data-msa-portal] #msa-users #msa-history summary{font-weight:650}
+body[data-msa-portal] #msa-users #msa-history pre{background:var(--msa-paper);border:1px solid var(--msa-line);padding:12px;overflow-wrap:anywhere}
+body[data-msa-portal] #msa-users #msa-confirm{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
+body[data-msa-portal] #msa-users #msa-feedback:empty{display:none}
+body[data-msa-portal] #msa-users #msa-feedback:not(:empty){padding:10px 12px;border-left:3px solid var(--msa-red);background:#f0f0e9}
+@media(max-width:700px){
+ body[data-msa-portal] #msa-users #msa-list .account-card{grid-template-columns:minmax(0,1fr);gap:6px}
+ body[data-msa-portal] #msa-users .account-card :is(h3,p,ul,button){grid-column:1;grid-row:auto}
+ body[data-msa-portal] #msa-users .account-card button{justify-self:start}
+ body[data-msa-portal] #msa-users #msa-detail>article{padding:16px}
+}
+
+/* Setelah masuk (Beranda): merek disembunyikan, pengantar dirapatkan. */
+.msa-portal #portal-intro{margin:12px 0 24px;color:var(--msa-muted)}
+.msa-shell-active.msa-portal #portal-brand{display:none}
+.msa-shell-active.msa-portal #portal-intro{margin-bottom:8px}

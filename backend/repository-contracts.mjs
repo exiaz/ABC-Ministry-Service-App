@@ -1,0 +1,67 @@
+/**
+ * Server-only repository contracts. Future persistent adapters must pass the same
+ * contract tests. Null means no access/data; storage failures reject the Promise
+ * and must never fall back to another data source or the fictional prototype.
+ * Test credential issuance/revocation remain trusted in-process operations.
+ *
+ * @typedef {{schoolId:string, groupId:string, serviceSessionId:string}} RosterScope
+ * @typedef {{expiresAt:number, grants:RosterScope[], backupGrants?:Array<RosterScope & {assignmentId:string,mentorId:string}>}} CredentialPrincipal
+ * @typedef {{grants:RosterScope[], ttlMs?:number, deviceId?:string}} CredentialOptions
+ * @typedef {{id:string, name:string, schoolClass:string|null}} RosterStudent
+ * @typedef {RosterScope & {students:RosterStudent[]}} RosterResponse
+ *
+ * @typedef {object} CredentialRepository
+ * @property {(options:CredentialOptions)=>Promise<string>} issue
+ * @property {(token:string)=>Promise<boolean>} revoke
+ * @property {(authorization:string|undefined, requestProof?:{deviceId:string}|null)=>Promise<CredentialPrincipal|null>} authenticate
+ * authenticate must check server time and revocation on every call. Never return
+ * an expired/revoked principal, trust a client role, or expose the raw token.
+ * For paired devices, requestProof is an internal capability produced only
+ * after signature/freshness/persistent nonce verification by the API. It must
+ * never be copied from a client-supplied device ID. Legacy/in-memory adapters
+ * retain their existing behavior without this optional context.
+ *
+ * @typedef {object} RosterRepository
+ * @property {(scope:RosterScope)=>Promise<RosterResponse|null>} read
+ * @property {(scope:RosterScope)=>Promise<object|null>} [describe]
+ * Optional navigation metadata: only server school/group names, service date,
+ * effective mentor name and scope IDs. Never include student/profile data.
+ * Internal data adapter only: validate school/group/session relations, preserve
+ * snapshots and IDs, and never create a batch or change attendance during reads.
+ * Only the authorized repository may expose these reads to the API.
+ *
+ * @typedef {{kind:'ok', roster:RosterResponse}|{kind:'unauthenticated'|'invalid-scope'|'forbidden'}} AuthorizedRosterResult
+ * @typedef {object} AuthorizedRosterRepository
+ * @property {(authorization:string|undefined, scope:RosterScope|null)=>Promise<AuthorizedRosterResult>} readAuthorized
+ * @property {(authorization:string|undefined)=>Promise<object>} contextAuthorized
+ * Deny by default; authenticate before scope validation, enforce the exact tuple,
+ * revalidate credentials after I/O, and project only the public roster fields.
+ * Context may label delegated scopes with accessKind:'backup'. Delegation is
+ * resolved from server assignments on every request, never persisted as a new
+ * primary credential or accepted from client metadata. Attendance shares these
+ * reads in its transaction so assignment revocation conflicts with writes.
+ *
+ * @typedef {object} DeviceAuthorizationRepository
+ * @property {(options:{deviceId:string,grants:RosterScope[],ttlMs?:number})=>Promise<string>} issue
+ * @property {(deviceId:string)=>Promise<boolean>} revoke
+ * Emulator-only trusted operator extension: validate existing roster relations
+ * before issuance; revoke all credentials for a device. Never a public endpoint.
+ */
+export {};
+
+/**
+ * M2B.4A AttendanceRepository (Firestore Emulator only):
+ * executeAuthorized({authorization,proof,scope,action,body}) -> minimal current
+ * batch {schoolId,groupId,serviceSessionId,batchId,revision,state,updatedAt,
+ * finalizedAt,records:[{studentId,status,updatedAt}]}. proof is an internal
+ * capability from the existing paired-device verifier, never client input.
+ * Actions: read/save/finalize/correct. Mutations require expectedRevision and
+ * idempotencyKey; save/correct accept explicit record patches, finalize requires
+ * confirm:true. A completed batch requires correction with a reason, then an
+ * explicit finalization again. unmarked is never converted to absent.
+ * Server snapshot determines historical enrollment; new batches capture active
+ * enrollment once. Transactions include auth, relations, roster, service guard,
+ * revision, immutable history and receipts. Failures never fall back to memory.
+ * Internal credentials.authenticate may receive a transaction as its third
+ * argument to share existing device/grant checks atomically with writes.
+ */
