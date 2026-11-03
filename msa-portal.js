@@ -1,5 +1,5 @@
 import {msaBrand} from './msa-brand.js';
-import {msaFetch,mountMsaShell,clearMsaShell,msaRoleLabel} from './msa-session.js';
+import {msaFetch,mountMsaShell,clearMsaShell,setMsaCreate,msaRoleLabel} from './msa-session.js';
 import {mountVisuals} from './msa-visual.js';
 const $=id=>document.getElementById(id);
 $('portal-brand').innerHTML=msaBrand();
@@ -27,16 +27,16 @@ async function show(profile){
   $('portal-login').hidden=true;$('portal-welcome').hidden=true;$('portal-heading').hidden=false;$('portal-back').hidden=true;$('portal-workspace').hidden=false;$('portal-local').hidden=true;delete document.body.dataset.authScreen;
   $('portal-title').textContent='Beranda';$('portal-eyebrow').textContent=msaRoleLabel(profile.role);
   $('portal-intro').textContent='Selamat melayani. Mulai dari jadwal atau ruang pelayanan Anda.';$('portal-account').textContent='@'+profile.username;
-  document.title='ABC Ministry Service App | Beranda';mountMsaShell(profile);
+  document.title='ABC Ministry Service App | Beranda';void mountMsaShell(profile,{accountActions:$('portal-actions')});
   const modules=profile.modules;
   note(modules.length?'':'Belum ada modul pengelolaan yang diizinkan. Hubungi Admin.');
   $('portal-personal').hidden=modules.length>0;
   expiry=setTimeout(()=>{clear();note('Sesi berakhir. Masuk kembali.');},Math.max(0,profile.expiresAt-Date.now()));
-  if(!modules.some(m=>m.href==='/msa-events.html'))return;
+  if(!modules.some(m=>m.href==='/msa-events.html')){setMsaCreate(false);return;}
   $('portal-services').hidden=false;$('portal-service-state').textContent='Memuat jadwal pelayanan…';$('portal-schedule').replaceChildren();$('portal-new').hidden=true;
   try{
     const r=await request('dispatch/api/stage9b2/dashboard');if(current!==generation)return;
-    $('portal-new').hidden=!r.organizations.some(o=>o.canCreate);
+    const canCreate=r.organizations.some(o=>o.canCreate);$('portal-new').hidden=!canCreate;setMsaCreate(canCreate);
     $('portal-service-state').textContent='Jadwal mendatang dalam '+r.horizonDays+' hari.';
     const groups=[['Mendatang',r.upcoming,'Belum ada pelayanan terbit mendatang.'],['Tanggung jawab Anda',r.assigned,'Belum ada pelayanan yang menugaskan Anda.'],['Draf perlu ditinjau',r.drafts,'Tidak ada draf yang perlu Anda tindak lanjuti.']];
     $('portal-schedule').replaceChildren(...groups.map(([title,rows,empty])=>{
@@ -53,7 +53,7 @@ async function show(profile){
       if(rows.length>2){const a=document.createElement('a');a.href='/msa-events.html';a.textContent='Lihat semua '+rows.length+' pelayanan';section.append(a);}
       return section;
     }));
-  }catch(e){if(current===generation)$('portal-service-state').textContent='Jadwal belum dapat dimuat. '+e.message+' Gunakan Periksa ulang izin untuk mencoba kembali.';}
+  }catch(e){if(current===generation){setMsaCreate(false);}if(current===generation)$('portal-service-state').textContent='Jadwal belum dapat dimuat. '+e.message+' Gunakan Periksa ulang izin untuk mencoba kembali.';}
 
 }
 async function request(path,body){
@@ -62,9 +62,9 @@ async function request(path,body){
 }
 async function action(fn){
   if(busy)return;busy=true;$('portal-login').setAttribute('aria-busy','true');$('portal-workspace').setAttribute('aria-busy','true');
-  document.querySelectorAll('main button').forEach(n=>n.disabled=true);$('portal-submit').textContent='Memeriksa…';
+  document.querySelectorAll('main button,#msa-account button').forEach(n=>n.disabled=true);$('portal-submit').textContent='Memeriksa…';
   try{await fn();}catch(e){note(e.name==='TimeoutError'||e instanceof TypeError?'Koneksi belum tersedia. Coba lagi.':e.message);$('portal-feedback').focus();}
-  finally{busy=false;document.querySelectorAll('main button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Masuk';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
+  finally{busy=false;document.querySelectorAll('main button,#msa-account button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Masuk';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
 }
 $('portal-show').onclick=()=>{const show=$('portal-password').type==='password';$('portal-password').type=show?'text':'password';$('portal-show').textContent=show?'Sembunyikan':'Tampilkan';$('portal-show').setAttribute('aria-label',show?'Sembunyikan kata sandi':'Tampilkan kata sandi');$('portal-show').setAttribute('aria-pressed',String(show));};
 $('portal-login').onsubmit=e=>{e.preventDefault();void action(async()=>{note('Memeriksa akun dan izin…');let password=$('portal-password').value;$('portal-password').value='';try{await show(await request('login',{username:$('portal-username').value,password}));note('');}finally{password='';}});};

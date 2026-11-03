@@ -1,4 +1,4 @@
-import {msaFetch,resumeMsaSession} from './msa-session.js';
+import {msaFetch,resumeMsaSession,setMsaCreate} from './msa-session.js';
 import {msaBrand} from './msa-brand.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('event-brand').innerHTML=msaBrand();let token='',busy=false,organizations=[],options={programs:[],pics:[]},editing=null,pending,focusAfter,calendarOrganizations=[],calendarEvents=[],calendarCurrent,calendarPending,calendarAvailable=false,schedulingAvailable=false,seriesPending;
@@ -146,7 +146,7 @@ function dashboardCards(rows){return rows.map(e=>`<article class="calendar-card"
 async function showDashboard(){
   setView('dashboard-show');
   document.body.classList.add('dashboard-active');closeForm();clearCalendar();$('calendar-workspace').hidden=true;$('event-organization').hidden=true;$('dashboard-workspace').hidden=false;$('dashboard-content').replaceChildren();$('dashboard-new').hidden=true;$('dashboard-result').textContent='Memuat pelayanan sesuai izin Anda…';
-  try{const r=await request('/api/stage9b2/dashboard');$('dashboard-new').hidden=!r.organizations.some(o=>o.canCreate);$('dashboard-result').textContent='Jadwal mendatang · 90 hari. Tampil sesuai izin Anda.';
+  try{const r=await request('/api/stage9b2/dashboard');{const canCreate=r.organizations.some(o=>o.canCreate);$('dashboard-new').hidden=!canCreate;setMsaCreate(canCreate);}$('dashboard-result').textContent='Jadwal mendatang · 90 hari. Tampil sesuai izin Anda.';
     $('dashboard-content').innerHTML=[['Mendatang',r.upcoming,'Belum ada pelayanan terbit mendatang.'],['Tanggung jawab Anda',r.assigned,'Belum ada pelayanan mendatang yang menugaskan Anda sebagai penanggung jawab.'],['Draf perlu ditinjau',r.drafts,'Tidak ada draf yang memerlukan tindakan sesuai izin Anda.']].map(([title,rows,empty])=>`<section><h3>${title}</h3>${rows.length?dashboardCards(rows.slice(0,3))+(rows.length>3?'<details><summary>Lihat '+(rows.length-3)+' pelayanan lainnya</summary>'+dashboardCards(rows.slice(3))+'</details>':''):'<p>'+empty+'</p>'}</section>`).join('');note('');
   }catch(e){$('dashboard-result').textContent='Beranda belum dapat dimuat. Periksa koneksi atau izin, lalu muat ulang. Kalender tetap tersedia untuk mempersempit hasil.';throw e;}
 }
