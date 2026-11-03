@@ -8,11 +8,13 @@ import {assertMentorAccountMode} from './backend/msa-mentor-devices.mjs';
 import {visualPublicRoute} from './backend/msa-visual-public.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||4173);
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};
 const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
 // Legacy fictional prototype only. The protected roster API runs separately.
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
+// UI overhaul: token, komponen, font dan ikon self-host (tanpa halaman aplikasi).
+for(const file of ['ui/msa-tokens.css','ui/msa-components.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])allowed.add(file);
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
