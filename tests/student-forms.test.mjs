@@ -2,11 +2,11 @@ import test,{mock} from 'node:test';
 import assert from 'node:assert/strict';
 import {seed,getSession} from '../data.js';
 import {applyStudentSchema,initialStudentContext,studentGroups,attendanceStudentContext,addTemporaryStudent,saveRegisteredStudent,mentorStudent} from '../student-data.js';
-import {selectFridayService} from '../scheduling.js';
+import {saveService} from '../scheduling.js';
 mock.timers.enable({apis:['Date'],now:new Date('2026-10-21T05:00:00Z')});
 const values={gender:'male',name:'Siswa Fiktif Form',schoolClass:'4A',schoolId:'s1',groupId:'g13'};
 function context(db,groupId='g13',schoolId='s1',date='2026-10-16'){
-  const visit=selectFridayService(db,schoolId,date,{confirmed:true}),batch=getSession(db,groupId,visit.id);
+  const visit=saveService(db,{schoolId,date,groupIds:db.groups.filter(g=>g.schoolId===schoolId&&!g.retired).map(g=>g.id)}),batch=getSession(db,groupId,visit.id);
   return {schoolId,groupId,serviceSessionId:visit.id,sessionId:batch.id,serviceDate:date};
 }
 

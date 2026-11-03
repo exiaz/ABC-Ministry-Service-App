@@ -1,0 +1,11 @@
+{
+  "preset": "neutral",
+  "slots": {
+    "welcome": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "login": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "registration": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "dashboard": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "program": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "campaign": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" }
+  }
+}

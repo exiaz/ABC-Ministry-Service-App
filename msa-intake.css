@@ -1,0 +1,39 @@
+*{box-sizing:border-box}body{margin:0;background:#f2f7fb;color:#17364f;font:16px/1.5 system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:24px}header img{width:72px}h1{font-size:clamp(1.6rem,4vw,2.2rem)}form,article,#detail{padding:24px;background:white;border:1px solid #cbdce8;border-radius:16px;margin:20px 0;min-width:0}label{display:block;margin:16px 0 8px}input,select,textarea,button{font:inherit;min-height:44px;border:1px solid #8198ab;border-radius:8px;padding:10px;max-width:100%}input,select,textarea{display:block;width:100%;font-size:16px}button{cursor:pointer;background:#175c96;color:white;margin:8px 8px 8px 0}input[type=checkbox]{width:24px;height:24px;min-height:24px;flex-shrink:0}.check{display:flex;align-items:center;gap:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}p,h2,article{overflow-wrap:anywhere}fieldset{min-width:0;border:1px solid #8198ab;border-radius:8px}dialog{max-width:min(540px,calc(100% - 32px));border:1px solid #8198ab;border-radius:16px;padding:24px}dialog::backdrop{background:#142b4e99}:focus-visible{outline:3px solid #175c96;outline-offset:3px}[hidden]{display:none!important}#feedback{white-space:pre-wrap}#history p{border-bottom:1px solid #cbdce8;padding:8px 0}@media(max-width:480px){main{padding:16px}form,article,#detail{padding:16px}}
+/* Shared MSA brand geometry; keep the supplied image bytes unchanged. */
+.brand.msa-brand{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%}.msa-brand .brand-logo{width:82px;height:40px;object-fit:contain}.msa-brand .brand-copy{border-left:1px solid #8198ab;padding-left:8px;font-size:10px;line-height:1.4;letter-spacing:0}
+
+.account-recovery summary,.account-recovery a{display:inline-flex;align-items:center;min-height:44px;padding:8px 0}.account-recovery #request-screen{max-width:560px}.account-recovery .check{min-height:44px}
+
+@media(min-width:900px){.account-recovery .recovery-layout{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,2fr);align-items:start;gap:20px}.account-recovery .recovery-layout>*{min-width:0}}
+
+.msa-core summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-core .grid>section{min-width:0}
+.msa-events .secondary{background:white;color:#175c96}.msa-events summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-events .grid>*,.msa-events .event-layout>*{min-width:0}.msa-events dd{margin-left:0;margin-bottom:12px;overflow-wrap:anywhere}.msa-events dt{font-weight:600}.msa-events .draft-badge{font-weight:600;color:#175c96}.msa-events .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(min-width:900px){.msa-events .event-layout{display:grid;grid-template-columns:minmax(220px,2fr) minmax(0,3fr);gap:24px;align-items:start}}
+.msa-events .calendar-card{margin:12px 0;padding:16px}.msa-events .calendar-card h4{font-size:1.1rem;margin:8px 0;overflow-wrap:anywhere}.msa-events .calendar-card p{margin:8px 0}.msa-events [data-status=cancelled]{color:#8a2530}.msa-events .calendar-day{min-width:0}.msa-events #calendar-confirm form{border:0;margin:0;padding:0}.msa-events #calendar-confirm p{overflow-wrap:anywhere}@media(min-width:900px){.msa-events .calendar-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}.msa-events .calendar-days .calendar-day{display:flex;flex-wrap:wrap;align-content:start;gap:0 16px}.msa-events .calendar-days .calendar-day>h3{flex-basis:100%}.msa-events .calendar-days .calendar-card{flex:1 1 260px;min-width:0}.msa-events #calendar-list:not(.calendar-days) .calendar-day{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.msa-events #calendar-list:not(.calendar-days) .calendar-day>h3{grid-column:1/-1}}
+
+.msa-events #calendar-filter-details>summary{color:#175c96;text-decoration:underline}.msa-events #calendar-filter-details>summary::after{content:"+";margin-left:8px}.msa-events #calendar-filter-details[open]>summary::after{content:"−"}
+
+.msa-events #dashboard-content>section{min-width:0}.msa-events #dashboard-workspace>button{margin-right:4px}.msa-events.dashboard-active #dashboard-show{display:none}.msa-events.dashboard-active h1{margin-bottom:8px}.msa-events.dashboard-active #event-intro{margin:8px 0}.msa-events #dashboard-title{margin:16px 0}.msa-events #recurrence-dates{padding-left:24px}@media(min-width:900px){.msa-events #dashboard-content{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}}
+
+body[data-msa-portal] main.intake{max-width:680px}body[data-msa-portal] main.intake a:not(.ui-btn),body[data-msa-portal] main.intake summary{display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}#portal-modules{display:grid;gap:12px}#portal-modules a{padding:16px;border:1px solid #8198ab;border-radius:8px;background:white;color:#175c96}
+
+body[data-msa-portal] a.btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px}
+
+/* Identity and recovery workspaces share the existing MSA palette and controls. */
+:is(.identity-review,.account-recovery) .review-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;margin:24px 0 12px}
+:is(.identity-review,.account-recovery) .review-toolbar h2{margin:0}
+:is(.identity-review,.account-recovery) :is(#queue,#recovery-queue) article{margin:0;padding:16px;border-color:var(--msa-line,#cbdce8)}
+:is(.identity-review,.account-recovery) :is(#queue,#recovery-queue) article h3{margin:0;font-size:1.05rem}
+:is(.identity-review,.account-recovery) :is(#queue,#recovery-queue) article p{margin:8px 0}
+.account-recovery #recovery-queue{display:grid;gap:12px;margin:20px 0}
+:is(.identity-review,.account-recovery) .review-state,.account-device-list .device-state{display:inline-block;padding:3px 9px;border-radius:6px;background:#edf3ff;color:#173d71;font-size:.875rem;font-weight:650;overflow-wrap:anywhere}
+.identity-review #detail,.account-recovery #recovery-review{border-top:3px solid #f4c64f}
+.identity-review #review-form{border:0;padding:0;margin:20px 0}
+.identity-review .review-history{border-top:1px solid var(--msa-line,#cbdce8);margin-top:24px}
+.identity-review .review-history summary{min-height:44px;display:flex;align-items:center;font-weight:650;cursor:pointer}
+:is(.identity-review,.account-recovery) fieldset{padding:16px;margin:20px 0}
+:is(.identity-review,.account-recovery) legend{font-weight:650;padding:0 6px}
+:is(.identity-review,.account-recovery) #feedback:empty{display:none}
+:is(.identity-review,.account-recovery) #feedback:not(:empty){padding:12px 16px;border-left:3px solid var(--msa-blue,#175c96);background:#edf3ff}
+:is(.identity-review,.account-recovery) dialog{color:inherit;overflow-wrap:anywhere}
+@media(max-width:480px){:is(.identity-review,.account-recovery) .review-toolbar>div{display:flex;flex-wrap:wrap;gap:8px}:is(.identity-review,.account-recovery) .review-toolbar button{margin:0}}
+.identity-review .review-history summary::after,.account-device-card summary::after{content:"+";margin-left:8px}.identity-review .review-history[open] summary::after,.account-device-card details[open] summary::after{content:"−"}

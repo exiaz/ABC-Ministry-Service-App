@@ -69,9 +69,7 @@ export function schoolDisplayName(db,item){return db.schools.find(s=>s.id===item
 export function getSession(db, groupId, serviceSessionId) {
   const visit=db.serviceSessions?.find(v=>v.id===serviceSessionId);
   const g=db.groups.find(g=>g.id===groupId);
-  if(!visit||!g||visit.schoolId!==g.schoolId||(!visit.groupIds.includes(groupId)&&g.retired))throw Error('Kelompok dan tanggal pelayanan tidak sesuai. Pilih kembali jadwal.');
-  // Starting an additional school group joins this service without replacing its admin plan.
-  if(!visit.groupIds.includes(groupId))visit.groupIds.push(groupId);
+  if(!visit||visit.provisional||!g||visit.schoolId!==g.schoolId||!visit.groupIds.includes(groupId))throw Error('Kelompok dan tanggal pelayanan tidak sesuai. Pilih kembali jadwal.');
   let session = db.sessions.find(s => s.groupId===groupId && s.serviceSessionId===serviceSessionId);
   if (!session) {
     const usedStudents=new Set(db.sessions.filter(s=>s.serviceSessionId===serviceSessionId).flatMap(s=>s.records.map(r=>r.studentId)));
