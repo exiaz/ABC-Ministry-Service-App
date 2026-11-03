@@ -2,7 +2,10 @@
 // Penjaga kolaborasi Claude + Codex (lihat bagian Kolaborasi di AGENTS.md).
 // Pemakaian: node collab-guard.mjs <claude|codex>   (payload hook JSON lewat stdin)
 //   SessionStart -> menyuntikkan status penjaga dan pemeriksaan tumpang tindih sebagai konteks.
-//   PreToolUse   -> deny/ask sebelum Write/Edit/NotebookEdit yang melanggar aturan.
+//   PreToolUse   -> deny/ask sebelum penulisan berkas (Write/Edit/NotebookEdit/apply_patch) atau
+//                   perintah git berisiko (Bash) yang melanggar aturan.
+// Codex hanya mendukung permissionDecision "deny" (bukan "ask"): keputusan ask dipetakan menjadi
+// deny untuk path terlindungi/tumpang tindih, dan menjadi peringatan konteks untuk path bersama.
 // Darurat: MSA_GUARD_OFF=1 menonaktifkan penjaga (hanya atas keputusan pengguna).
 import { execFileSync } from 'node:child_process';
 import { writeSync } from 'node:fs';
@@ -14,15 +17,21 @@ if (!OTHER || process.env.MSA_GUARD_OFF === '1') process.exit(0);
 
 const WORKTREE = { claude: 'MSA-claude', codex: 'MSA-codex' };
 
-// Path milik agen lain -> ditolak. Path bersama/ditentukan pengguna -> ditanyakan.
+// Path milik agen lain -> ditolak.
 const OWNED = {
   codex: [/^backend\//, /-server\.mjs$/, /^local-[^/]*\.mjs$/, /^firestore\.rules$/, /\.cmd$/],
   claude: [/^ui\//, /^msa-[^/]*\.css$/, /^docs\/ui-overhaul\//],
 };
-const ASK = [
+// Hanya saat merge atau atas permintaan pengguna.
+const PROTECTED = [
   /^sw\.js$/, /^server\.mjs$/, /^PROJECT_STATUS\.md$/, /^AGENTS\.md$/, /^CLAUDE\.md$/, /^\.gitignore$/,
-  /^\.codex\//, /^\.agents\//, /^package(-lock)?\.json$/, /^msa-[^/]*\.js$/, /^tests\//,
+  /^\.codex\//, /^\.agents\//,
 ];
+// Ditentukan pengguna per tugas.
+const SHARED = [/^package(-lock)?\.json$/, /^msa-[^/]*\.js$/, /^tests\//];
+// Perintah git yang mengubah branch/riwayat; membuat branch tugas baru (switch -c, checkout -b) diizinkan.
+const RISKY_GIT = /(?:^|[;&|(]\s*)git(?:\s+-C\s+(?:"[^"]*"|\S+))?\s+(reset|rebase|stash|switch|checkout|worktree\s+(?:add|remove)|branch\s+-[dD]\b|push\b[^;&|]*\s(?:--force\b|-f\b))/;
+const NEW_BRANCH = /\s(?:switch\s+-c|checkout\s+-b)\s/;
 
 const git = (cwd, ...args) => {
   try {
@@ -80,6 +89,18 @@ function otherTouched() {
 const emit = (hookEventName, extra) =>
   writeSync(1, JSON.stringify({ hookSpecificOutput: { hookEventName, ...extra } })); // sinkron: process.exit tidak memotong keluaran
 
+// Berkas yang akan ditulis: file_path/notebook_path (Claude) atau header patch (Codex apply_patch).
+function targetsOf(toolInput = {}) {
+  const direct = toolInput.file_path || toolInput.notebook_path;
+  if (direct) return [direct];
+  const found = [];
+  for (const v of Object.values(toolInput)) {
+    if (typeof v !== 'string') continue;
+    for (const m of v.matchAll(/^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+?)\s*$/gm)) found.push(m[1]);
+  }
+  return found;
+}
+
 if (input.hook_event_name === 'SessionStart') {
   const problem = guardProblem();
   const touched = otherTouched();
@@ -103,46 +124,71 @@ if (input.hook_event_name === 'SessionStart') {
 }
 
 if (input.hook_event_name === 'PreToolUse') {
-  const target = input.tool_input?.file_path || input.tool_input?.notebook_path;
-  if (!target) process.exit(0);
-  const abs = norm(path.resolve(cwd, target));
   const here = norm(top);
-  const verdict = (permissionDecision, reason) =>
-    emit('PreToolUse', { permissionDecision, permissionDecisionReason: `[collab-guard] ${reason}` });
+  const msg = (reason) => `[collab-guard] ${reason}`;
+  const deny = (reason) => emit('PreToolUse', { permissionDecision: 'deny', permissionDecisionReason: msg(reason) });
+  // hard=true: perlu persetujuan pengguna (Claude: ask; Codex tidak punya ask -> deny).
+  // hard=false: peringatan saja untuk Codex.
+  const confirm = (reason, hard) => {
+    if (agent === 'claude') emit('PreToolUse', { permissionDecision: 'ask', permissionDecisionReason: msg(reason) });
+    else if (hard) deny(`${reason} Berhenti dan minta persetujuan pengguna di chat.`);
+    else emit('PreToolUse', { additionalContext: msg(`${reason} Pastikan pengguna menugaskan ini.`) });
+  };
 
-  const insideHere = abs === here || abs.startsWith(`${here}/`);
-  if (!insideHere) {
-    // Di folder proyek tapi bukan worktree ini (worktree agen lain atau folder integrasi) -> tolak.
-    if (workRoot && abs.startsWith(`${workRoot}/`)) {
-      verdict('deny', `${abs} berada di worktree/folder lain. ${agent} hanya menulis di ${here}. Tulis permintaannya di berkas status.`);
-    }
-    process.exit(0); // di luar proyek (scratchpad, memori, dll.): bebas
-  }
-
-  const problem = guardProblem();
-  if (problem) {
-    verdict('deny', `${problem}. Berhenti dan tanyakan kepada pengguna.`);
-    process.exit(0);
-  }
-
-  const rel = abs.slice(here.length + 1);
-  if (rel.startsWith('.git/') || rel.startsWith('docs/status/') || rel.startsWith('docs/reviews/')) {
-    if (rel.startsWith('.git/')) verdict('deny', 'tidak boleh menulis ke .git.');
-    else if (!path.basename(rel).includes(agent) && path.basename(rel) !== '_TEMPLATE.md') {
-      verdict('ask', `berkas status/review sebaiknya memuat nama agen "${agent}" pada namanya (${rel}).`);
+  if (input.tool_name === 'Bash') {
+    const cmd = String(input.tool_input?.command ?? '');
+    if (RISKY_GIT.test(cmd) && !NEW_BRANCH.test(cmd)) {
+      confirm('perintah git ini mengubah branch/riwayat/worktree dan di luar tugas agen (lihat AGENTS.md).', true);
     }
     process.exit(0);
   }
-  if (OWNED[OTHER].some((re) => re.test(rel))) {
-    verdict('deny', `${rel} milik ${OTHER}. Jangan disentuh; tulis permintaannya di docs/status/.`);
-    process.exit(0);
-  }
-  if (ASK.some((re) => re.test(rel))) {
-    verdict('ask', `${rel} bersifat bersama/ditentukan pengguna atau hanya disentuh saat merge. Konfirmasi dulu.`);
-    process.exit(0);
-  }
-  const clash = otherTouched().filter((t) => t.files.includes(rel));
-  if (clash.length) {
-    verdict('ask', `${rel} juga disentuh ${clash.map((t) => t.ref).join(', ')}. Risiko tumpang tindih: konfirmasi dulu.`);
+
+  for (const target of targetsOf(input.tool_input)) {
+    const abs = norm(path.resolve(cwd, target));
+    if (!(abs === here || abs.startsWith(`${here}/`))) {
+      // Di folder proyek tapi bukan worktree ini (worktree agen lain atau folder integrasi) -> tolak.
+      if (workRoot && abs.startsWith(`${workRoot}/`)) {
+        deny(`${abs} berada di worktree/folder lain. ${agent} hanya menulis di ${here}. Tulis permintaannya di berkas status.`);
+        process.exit(0);
+      }
+      continue; // di luar proyek (scratchpad, memori, dll.): bebas
+    }
+
+    const problem = guardProblem();
+    if (problem) {
+      deny(`${problem}. Berhenti dan tanyakan kepada pengguna.`);
+      process.exit(0);
+    }
+
+    const rel = abs.slice(here.length + 1);
+    if (rel.startsWith('.git/')) {
+      deny('tidak boleh menulis ke .git.');
+      process.exit(0);
+    }
+    if (rel.startsWith('docs/status/') || rel.startsWith('docs/reviews/')) {
+      const name = path.basename(rel);
+      if (!name.includes(agent) && name !== '_TEMPLATE.md') {
+        confirm(`berkas status/review sebaiknya memuat nama agen "${agent}" pada namanya (${rel}).`, false);
+        process.exit(0);
+      }
+      continue;
+    }
+    if (OWNED[OTHER].some((re) => re.test(rel))) {
+      deny(`${rel} milik ${OTHER}. Jangan disentuh; tulis permintaannya di docs/status/.`);
+      process.exit(0);
+    }
+    if (PROTECTED.some((re) => re.test(rel))) {
+      confirm(`${rel} hanya disentuh saat merge atau atas permintaan pengguna.`, true);
+      process.exit(0);
+    }
+    const clash = otherTouched().filter((t) => t.files.includes(rel));
+    if (clash.length) {
+      confirm(`${rel} juga disentuh ${clash.map((t) => t.ref).join(', ')} (tumpang tindih).`, true);
+      process.exit(0);
+    }
+    if (SHARED.some((re) => re.test(rel))) {
+      confirm(`${rel} bersifat bersama/ditentukan pengguna per tugas.`, false);
+      process.exit(0);
+    }
   }
 }

@@ -34,6 +34,28 @@
           }
         ],
         "matcher": "startup|resume|clear"
+      },
+      {
+        "hooks": [
+          {
+            "command": "node .claude/hooks/collab-guard.mjs codex",
+            "statusMessage": "Checking collaboration guard",
+            "type": "command"
+          }
+        ],
+        "matcher": "startup|resume|clear"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "node .claude/hooks/collab-guard.mjs codex",
+            "statusMessage": "Checking collaboration guard",
+            "type": "command"
+          }
+        ],
+        "matcher": "apply_patch|Edit|Write|Bash"
       }
     ],
     "UserPromptSubmit": [
