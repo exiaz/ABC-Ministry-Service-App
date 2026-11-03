@@ -17,10 +17,10 @@ function clear(){
   generation++;clearTimeout(expiry);clearMsaShell();
   $('portal-workspace').hidden=true;$('portal-account').textContent='';$('portal-personal').hidden=true;
   $('portal-schedule').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
-  $('portal-title').textContent='Welcome back';$('portal-eyebrow').textContent='SELAMAT DATANG';$('portal-back').hidden=false;
-  $('portal-intro').textContent='Enter your credentials to continue.';
+  $('portal-title').textContent='Selamat datang kembali';$('portal-eyebrow').textContent='SELAMAT DATANG';$('portal-back').hidden=false;
+  $('portal-intro').textContent='Masuk untuk melihat jadwal dan ruang pelayanan Anda.';
   $('portal-local').hidden=false;$('portal-password').value='';route();
-  $('portal-password').type='password';$('portal-show').textContent='Show';$('portal-show').setAttribute('aria-label','Show password');$('portal-show').setAttribute('aria-pressed','false');
+  $('portal-password').type='password';$('portal-show').textContent='Tampilkan';$('portal-show').setAttribute('aria-label','Tampilkan kata sandi');$('portal-show').setAttribute('aria-pressed','false');
 }
 async function show(profile){
   const current=++generation;clearTimeout(expiry);
@@ -64,9 +64,9 @@ async function action(fn){
   if(busy)return;busy=true;$('portal-login').setAttribute('aria-busy','true');$('portal-workspace').setAttribute('aria-busy','true');
   document.querySelectorAll('main button').forEach(n=>n.disabled=true);$('portal-submit').textContent='Memeriksa…';
   try{await fn();}catch(e){note(e.name==='TimeoutError'||e instanceof TypeError?'Koneksi belum tersedia. Coba lagi.':e.message);$('portal-feedback').focus();}
-  finally{busy=false;document.querySelectorAll('main button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Log in';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
+  finally{busy=false;document.querySelectorAll('main button').forEach(n=>n.disabled=false);$('portal-submit').textContent='Masuk';$('portal-login').setAttribute('aria-busy','false');$('portal-workspace').setAttribute('aria-busy','false');}
 }
-$('portal-show').onclick=()=>{const show=$('portal-password').type==='password';$('portal-password').type=show?'text':'password';$('portal-show').textContent=show?'Hide':'Show';$('portal-show').setAttribute('aria-label',show?'Hide password':'Show password');$('portal-show').setAttribute('aria-pressed',String(show));};
+$('portal-show').onclick=()=>{const show=$('portal-password').type==='password';$('portal-password').type=show?'text':'password';$('portal-show').textContent=show?'Sembunyikan':'Tampilkan';$('portal-show').setAttribute('aria-label',show?'Sembunyikan kata sandi':'Tampilkan kata sandi');$('portal-show').setAttribute('aria-pressed',String(show));};
 $('portal-login').onsubmit=e=>{e.preventDefault();void action(async()=>{note('Memeriksa akun dan izin…');let password=$('portal-password').value;$('portal-password').value='';try{await show(await request('login',{username:$('portal-username').value,password}));note('');}finally{password='';}});};
 $('portal-refresh').onclick=()=>void action(async()=>{clear();await show(await request('session'));});
 $('portal-logout').onclick=()=>void action(async()=>{await request('logout',{});clear();note('Anda sudah keluar.');});
