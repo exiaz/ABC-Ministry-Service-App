@@ -15,7 +15,8 @@ Rincian arsitektur dan roadmap perluasan MSA yang berstatus **PLANNED / NOT IMPL
 - Utamakan perubahan kode minimal dan terarah; hindari refaktor di luar lingkup.
 - Jalankan tes yang relevan setelah perubahan kode; gunakan `npm.cmd run check` dan `npm.cmd test` sesuai lingkup. Jika npm tidak tersedia, jalankan skrip Node ekuivalen dan laporkan batas verifikasi.
 - Catat kemajuan implementasi signifikan, hasil validasi, dan batasan yang tersisa di `docs/status/<tanggal>-<agen>-<tugas>.md` (template: `docs/status/_TEMPLATE.md`). `PROJECT_STATUS.md` hanya diperbarui oleh integrator saat merge.
-- Jangan deploy, mengaktifkan billing, commit, merge, atau push tanpa persetujuan pengguna. Persetujuan berlaku untuk sesi yang memberikannya.
+- Pengguna memberi izin tetap kepada Codex dan Claude untuk menjalankan `git fetch origin`, membuat commit dari perubahan tugas yang sudah diperiksa di branch tugas milik sendiri (`codex/*` atau `claude/*`), dan melakukan push biasa ke branch dengan nama yang sama di `origin` tanpa meminta izin ulang. Gunakan tujuan eksplisit, misalnya `git push origin HEAD:refs/heads/codex/<tugas>` untuk Codex.
+- Push ke branch bersama atau branch agen lain, force-push, penghapusan branch remote, penulisan ulang riwayat, merge ke `development`, deploy, dan aktivasi billing tetap memerlukan persetujuan eksplisit untuk tindakan tersebut.
 
 ## Penyuntingan teks dengan No AI Slop
 
@@ -25,7 +26,7 @@ Rincian arsitektur dan roadmap perluasan MSA yang berstatus **PLANNED / NOT IMPL
 
 ## Pelaporan pengembangan rutin
 
-Laporkan secara ringkas dalam bahasa Indonesia (isi lengkapnya ditulis ke berkas status tugas, lihat bagian kolaborasi): perubahan, tes yang benar-benar dijalankan beserta hasilnya (atau belum dijalankan), masalah penting yang tersisa, langkah berikutnya, serta usulan **Summary** dan **Description** siap salin untuk commit di GitHub Desktop. Laporan ini tidak otomatis mengaktifkan skill editorial; usulan commit tidak memberi izin commit, push, atau deploy.
+Laporkan secara ringkas dalam bahasa Indonesia (isi lengkapnya ditulis ke berkas status tugas, lihat bagian kolaborasi): perubahan, tes yang benar-benar dijalankan beserta hasilnya (atau belum dijalankan), masalah penting yang tersisa, langkah berikutnya, serta usulan **Summary** dan **Description** siap salin untuk commit di GitHub Desktop. Laporan rutin mengikuti izin Git proyek di atas.
 
 ## Arsitektur dan teknologi (fakta repositori)
 
@@ -82,7 +83,7 @@ Jika tugas memerlukan path milik agen lain, jangan menyentuhnya; tulis permintaa
 
 ### Berbagi informasi antaragen
 
-Worktree terpisah, tetapi semuanya berbagi satu repositori Git. Yang sudah di-commit terlihat oleh agen lain tanpa checkout; yang belum di-commit tidak terlihat. Karena itu laporan status harus di-commit (setelah persetujuan pengguna) agar dapat dipakai agen lain.
+Worktree terpisah, tetapi semuanya berbagi satu repositori Git. Yang sudah di-commit terlihat oleh agen lain tanpa checkout; yang belum di-commit tidak terlihat. Karena itu laporan status harus di-commit di branch tugas agar dapat dipakai agen lain.
 
 - Tugas aktif: `git branch --list "codex/*" "claude/*" -vv` dan `git worktree list`.
 - Berkas yang disentuh agen lain: `git diff --name-only development...<branch>`.
@@ -94,7 +95,7 @@ Worktree terpisah, tetapi semuanya berbagi satu repositori Git. Yang sudah di-co
 
 1. **Mulai.** Penjaga awal sesi, buat branch tugas dari `development`, lalu pemeriksaan tumpang tindih.
 2. **Kerjakan** hanya di path milik sendiri; terapkan aturan pencegahan regresi di atas.
-3. **Selesai.** Tulis `docs/status/<tanggal>-<agen>-<tugas>.md` dari template dan siapkan usulan Summary dan Description commit. Commit ke branch sendiri setelah pengguna menyetujui.
+3. **Selesai.** Tulis `docs/status/<tanggal>-<agen>-<tugas>.md` dari template dan siapkan usulan Summary dan Description commit. Setelah memeriksa diff dan menjalankan verifikasi yang relevan, commit perubahan tugas ke branch sendiri dan push ke branch yang sama di `origin`.
 4. **Tinjauan silang (read-only).** Branch Codex ditinjau Claude; branch Claude ditinjau Codex. Peninjau membaca `git diff development...<branch>` dan berkas statusnya, lalu menulis `docs/reviews/<branch-dengan-garis-miring-jadi-strip>.md` **di branch miliknya sendiri** (`<agen>/review-<tugas>`), bukan di branch yang ditinjau. Penulis membacanya dengan `git show`, memverifikasi tiap temuan di kode, dan menjawabnya (diterima, ditolak beserta alasan, atau ditunda) di bagian "Jawaban atas tinjauan" pada berkas statusnya.
 5. **Merge.** Di folder integrasi, hanya atas persetujuan eksplisit pengguna dan setelah tinjauan silang selesai: `git switch development`, `git merge --no-ff <branch>`, `npm.cmd run check`, `npm.cmd test`. Integrator menerapkan kebutuhan `sw.js`/`server.mjs` dari berkas status dan menambah satu baris indeks di `PROJECT_STATUS.md` yang merujuk berkas status.
 6. **Setelah merge**, agen lain memperbarui branch tugasnya dari `development` sebelum melanjutkan.

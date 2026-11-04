@@ -34,4 +34,4 @@ Bila ragu antara dua kelas, pilih yang lebih ringan; tanya pengguna hanya jika r
 
 ## 4. Laporan
 
-Tulis `docs/status/<tanggal>-claude-<tugas>.md` dari template (termasuk "Kontrak yang berubah" dan "Kebutuhan saat merge"), lalu laporkan ringkas dalam bahasa Indonesia: perubahan, tes yang dijalankan beserta hasil, temuan tinjauan (diterima/ditolak), risiko tersisa, langkah berikutnya, dan usulan Summary/Description commit. Jangan commit, merge, push, atau deploy tanpa persetujuan.
+Tulis `docs/status/<tanggal>-claude-<tugas>.md` dari template (termasuk "Kontrak yang berubah" dan "Kebutuhan saat merge"), lalu laporkan ringkas dalam bahasa Indonesia: perubahan, tes yang dijalankan beserta hasil, temuan tinjauan (diterima/ditolak), risiko tersisa, langkah berikutnya, dan usulan Summary/Description commit. Ikuti izin Git di `AGENTS.md` untuk fetch dari `origin`, commit di branch tugas `claude/*`, dan push biasa ke branch yang sama. Minta persetujuan eksplisit sebelum merge ke `development` atau deploy.
