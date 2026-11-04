@@ -1,5 +1,5 @@
 import {msaBrand} from './msa-brand.js';
-import {msaFetch,mountMsaShell,clearMsaShell,setMsaCreate,msaRoleLabel} from './msa-session.js';
+import {msaFetch,mountMsaShell,clearMsaShell,setMsaCreate,msaRoleLabel,serviceCardHtml,uiEsc} from './msa-session.js';
 import {mountVisuals} from './msa-visual.js';
 const $=id=>document.getElementById(id);
 $('portal-brand').innerHTML=msaBrand();
@@ -16,7 +16,7 @@ function clear(){
   if(!$('portal-workspace').hidden)history.replaceState(null,'',location.pathname+'#masuk');
   generation++;clearTimeout(expiry);clearMsaShell();
   $('portal-workspace').hidden=true;$('portal-account').textContent='';$('portal-personal').hidden=true;
-  $('portal-schedule').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
+  $('portal-schedule').replaceChildren();$('portal-stats').replaceChildren();$('portal-services').hidden=true;$('portal-new').hidden=true;
   $('portal-title').textContent='Selamat datang kembali';$('portal-eyebrow').textContent='SELAMAT DATANG';$('portal-back').hidden=false;
   $('portal-intro').textContent='Masuk untuk melihat jadwal dan ruang pelayanan Anda.';
   $('portal-local').hidden=false;$('portal-password').value='';route();
@@ -33,24 +33,19 @@ async function show(profile){
   $('portal-personal').hidden=modules.length>0;
   expiry=setTimeout(()=>{clear();note('Sesi berakhir. Masuk kembali.');},Math.max(0,profile.expiresAt-Date.now()));
   if(!modules.some(m=>m.href==='/msa-events.html')){setMsaCreate(false);return;}
-  $('portal-services').hidden=false;$('portal-service-state').textContent='Memuat jadwal pelayanan…';$('portal-schedule').replaceChildren();$('portal-new').hidden=true;
+  $('portal-services').hidden=false;$('portal-service-state').textContent='Memuat jadwal pelayanan…';$('portal-schedule').replaceChildren();$('portal-stats').replaceChildren();$('portal-new').hidden=true;
   try{
     const r=await request('dispatch/api/stage9b2/dashboard');if(current!==generation)return;
     const canCreate=r.organizations.some(o=>o.canCreate);$('portal-new').hidden=!canCreate;setMsaCreate(canCreate);
     $('portal-service-state').textContent='Jadwal mendatang dalam '+r.horizonDays+' hari.';
-    const groups=[['Mendatang',r.upcoming,'Belum ada pelayanan terbit mendatang.'],['Tanggung jawab Anda',r.assigned,'Belum ada pelayanan yang menugaskan Anda.'],['Draf perlu ditinjau',r.drafts,'Tidak ada draf yang perlu Anda tindak lanjuti.']];
+    const groups=[['Mendatang',r.upcoming,'Belum ada pelayanan terbit mendatang.',''],['Tanggung jawab Anda',r.assigned,'Belum ada pelayanan yang menugaskan Anda.','yellow'],['Draf perlu ditinjau',r.drafts,'Tidak ada draf yang perlu Anda tindak lanjuti.','blue']];
+    // Ubin hanya menghitung baris yang sudah dikirim API beranda; tidak ada angka lain.
+    $('portal-stats').innerHTML=groups.map(([title,rows,,tone])=>'<div class="ui-stat'+(tone?' ui-stat--'+tone:'')+'"><p class="ui-stat__value">'+rows.length+'</p><p class="ui-stat__label">'+uiEsc(title)+'</p></div>').join('');
     $('portal-schedule').replaceChildren(...groups.map(([title,rows,empty])=>{
       const section=document.createElement('section'),heading=document.createElement('h3');heading.textContent=title;section.append(heading);
       if(!rows.length){const p=document.createElement('p');p.className='msa-empty';p.textContent=empty;section.append(p);}
-      for(const row of rows.slice(0,2)){
-        const card=document.createElement('article'),date=document.createElement('div'),day=document.createElement('strong'),month=document.createElement('span'),content=document.createElement('div'),status=document.createElement('p'),name=document.createElement('h4'),venue=document.createElement('p'),a=document.createElement('a');
-        const eventDate=new Date(row.startDate+'T12:00:00Z');
-        card.className='portal-event';date.className='portal-date';day.textContent=eventDate.toLocaleDateString('id-ID',{timeZone:'UTC',day:'numeric'});month.textContent=eventDate.toLocaleDateString('id-ID',{timeZone:'UTC',month:'short'});date.append(day,month);
-        content.className='portal-event-content';status.className='msa-event-date';status.textContent=(row.status==='draft'?'Draf':'Terbit')+' · '+row.startTime+' · '+row.timezone;
-        name.textContent=row.name;venue.textContent=row.organizationName+' · '+row.venue;
-        a.href='/msa-events.html#'+new URLSearchParams({organization:row.organizationId,event:row.id});a.textContent='Lihat pelayanan →';content.append(status,name,venue,a);card.append(date,content);section.append(card);
-      }
-      if(rows.length>2){const a=document.createElement('a');a.href='/msa-events.html';a.textContent='Lihat semua '+rows.length+' pelayanan';section.append(a);}
+      section.insertAdjacentHTML('beforeend',rows.slice(0,2).map(row=>serviceCardHtml(row,{className:'portal-event',action:'<a class="ui-btn ui-btn--tertiary" href="/msa-events.html#'+uiEsc(new URLSearchParams({organization:row.organizationId,event:row.id}))+'">Lihat pelayanan<span class="ui-sr-only"> '+uiEsc(row.name)+'</span></a>'})).join(''));
+      if(rows.length>2){const a=document.createElement('a');a.className='ui-btn ui-btn--text';a.href='/msa-events.html';a.textContent='Lihat semua '+rows.length+' pelayanan';section.append(a);}
       return section;
     }));
   }catch(e){if(current===generation){setMsaCreate(false);}if(current===generation)$('portal-service-state').textContent='Jadwal belum dapat dimuat. '+e.message+' Gunakan Periksa ulang izin untuk mencoba kembali.';}

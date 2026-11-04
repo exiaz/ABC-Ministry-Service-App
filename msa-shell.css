@@ -8,8 +8,8 @@ body[data-msa-portal] h1{font-size:clamp(26px,3vw,34px);line-height:1.2;letter-s
 body[data-msa-portal] h2{font-size:22px;line-height:1.3}
 body[data-msa-portal] h3{font-size:17px}
 body[data-msa-portal] :is(input,select,textarea):not(.ui-input){font-size:16px;min-height:44px;border-color:#8290a4}
-body[data-msa-portal] :is(button,a.btn):not(.ui-btn){min-height:44px;font-size:16px;box-shadow:none}
-body[data-msa-portal] button:not(.ui-btn){background:var(--msa-blue);color:white;border:1px solid var(--msa-blue);border-radius:8px}
+body[data-msa-portal] :is(button,a.btn):not(.ui-btn,.ui-tab,.ui-chip,.calendar-week__day){min-height:44px;font-size:16px;box-shadow:none}
+body[data-msa-portal] button:not(.ui-btn,.ui-tab,.ui-chip,.calendar-week__day){background:var(--msa-blue);color:white;border:1px solid var(--msa-blue);border-radius:8px}
 body[data-msa-portal] button.btn:not(.primary):not(.danger){background:white;color:var(--msa-blue);border-color:var(--msa-line)}
 body[data-msa-portal] button.btn.primary{background:var(--msa-blue);color:white}
 body[data-msa-portal] button.btn.danger{background:#fff2f0;color:#9c2828;border-color:#dfb6b6}
@@ -19,12 +19,11 @@ body[data-msa-portal] :is(a:not(.ui-btn),summary){color:var(--msa-blue)}
 body[data-msa-portal] main a:not(.ui-btn){display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}
 body[data-msa-portal] :focus-visible{outline:3px solid #1455bd;outline-offset:3px}
 body[data-msa-portal] :is(main,section,nav,article,header,footer){min-width:0}
-body[data-msa-portal] button:disabled:not(.ui-btn){opacity:.6;cursor:wait}
+body[data-msa-portal] button:disabled:not(.ui-btn,.ui-tab,.ui-chip,.calendar-week__day){opacity:.6;cursor:wait}
 body[data-msa-portal] .msa-eyebrow{font-size:12px;letter-spacing:1px;font-weight:750;color:var(--msa-muted);margin:0 0 8px}
 body[data-msa-portal] .msa-muted{font-size:14px;color:var(--msa-muted)}
 body[data-msa-portal] .msa-section-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:28px 0 12px}
 body[data-msa-portal] .msa-section-heading h2{margin:0}
-body[data-msa-portal] .msa-primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:8px;background:var(--msa-blue);color:white;text-decoration:none;font-weight:650}
 body[data-msa-portal].msa-portal main.intake{max-width:520px;padding:32px 24px}
 .msa-portal .portal-heading h1{margin:0;max-width:440px}
 .msa-portal #portal-feedback:empty{display:none}
@@ -37,21 +36,8 @@ body[data-msa-portal] #portal-modules{grid-template-columns:repeat(auto-fit,minm
 body[data-msa-portal] #portal-modules a{display:flex;flex-direction:column;align-items:start;justify-content:center;gap:6px;padding:20px;border:1px solid var(--msa-line);border-radius:12px;color:var(--msa-ink);text-decoration:none}
 #portal-modules a:hover{border-color:var(--msa-blue);background:#f0f5ff}
 #portal-modules a span{font-size:14px;color:var(--msa-muted)}
-#portal-schedule{display:grid;gap:16px}
-#portal-schedule>section{min-width:0}
-#portal-schedule h3{margin:12px 0}
-#portal-schedule article{padding:16px;margin:12px 0;background:white}
-#portal-schedule h4{font-size:17px;margin:6px 0}
-#portal-schedule article p{font-size:14px;margin:8px 0}
-#portal-schedule article .msa-event-date{font-size:12px;color:var(--msa-blue);font-weight:700}
-#portal-schedule a{font-size:14px;font-weight:650}
-#portal-schedule .msa-empty{border:1px dashed var(--msa-line);padding:16px;border-radius:12px;color:var(--msa-muted);font-size:14px}
 .portal-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 body[data-msa-portal] :is(#event-brand,#core-brand){margin-bottom:20px}
-body[data-msa-portal] #calendar-nav{display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;border-bottom:1px solid var(--msa-line)}
-body[data-msa-portal] #dashboard-content{gap:16px}
-body[data-msa-portal] #dashboard-content .calendar-card{border-left:3px solid #f4c64f}
-body[data-msa-portal] .draft-badge{font-size:13px}
 body[data-msa-portal] summary{min-height:44px;cursor:pointer}
 body[data-msa-portal] #admin-root>.sidebar{display:none}
 body[data-msa-portal] #admin-root>.shell{margin-left:0}
@@ -62,7 +48,6 @@ body[data-msa-portal] #admin-root .admin-tabs button{background:transparent;bord
 body[data-msa-portal] #admin-root .admin-tabs button.active{color:var(--msa-blue);border-color:var(--msa-blue)}
 @media(min-width:900px){
   body[data-msa-portal].msa-shell-active>main,body[data-msa-portal].msa-shell-active main.intake{padding:32px}
-  #portal-schedule{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:480px){body[data-msa-portal].msa-portal main.intake,body[data-msa-portal].msa-shell-active>main{padding:24px 16px}
   body[data-msa-portal] #portal-modules a{padding:16px}
@@ -78,78 +63,10 @@ body[data-msa-portal].msa-shell-active.msa-portal main.intake{max-width:1200px}
 .msa-shell-active.msa-portal #portal-account{margin:12px 0 0}
 .msa-portal #portal-services .msa-section-heading{margin-top:28px}
 .msa-portal #portal-service-state{font-size:14px;color:var(--msa-muted)}
-#portal-schedule{gap:22px;align-items:start}
-#portal-schedule>section{border-top:2px solid var(--msa-ink);padding-top:4px}
-#portal-schedule h3{margin:12px 0;font-size:16px}
-#portal-schedule .portal-event{display:flex;gap:14px;padding:16px;margin:10px 0;background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px}
-#portal-schedule .portal-date{flex:0 0 52px;align-self:start;text-align:center;background:#e7f1f5;border-top:3px solid var(--msa-red);padding:5px 3px;color:var(--msa-ink);border-radius:3px 3px 7px 7px}
-#portal-schedule .portal-date strong,#portal-schedule .portal-date span{display:block;line-height:1.2}
-#portal-schedule .portal-date strong{font-size:22px}
-#portal-schedule .portal-date span{font-size:12px;text-transform:uppercase;font-weight:700}
-#portal-schedule .portal-event-content{min-width:0}
-#portal-schedule .portal-event h4{line-height:1.3;overflow-wrap:anywhere}
-#portal-schedule .portal-event p{color:var(--msa-muted)}
-#portal-schedule .portal-event .msa-event-date{color:var(--msa-blue)}
-#portal-schedule .msa-empty{background:#f0f0e9;border:0;border-radius:6px;line-height:1.5}
-@media(prefers-reduced-motion:no-preference){#portal-schedule .portal-event{transition:background-color .16s ease,border-color .16s ease}#portal-schedule .portal-event:hover{border-color:#8597a2}}
-@media(prefers-reduced-motion:reduce){#portal-schedule .portal-event{transition:none}}
 
-body[data-msa-portal] main a.msa-primary{padding:10px 16px}
 
 @media(max-width:899px){html:has(body[data-msa-portal].msa-shell-active){scroll-padding-bottom:120px}}
 
-/* Service and calendar workspace, using the portal tokens. */
-body[data-msa-portal].msa-events #event-brand{display:none}
-body[data-msa-portal].msa-events #event-heading{font-size:clamp(32px,4vw,44px);letter-spacing:-1.3px;margin:0}
-body[data-msa-portal].msa-events #event-intro{color:var(--msa-muted);margin:8px 0 16px}
-body[data-msa-portal].msa-events .event-account-actions{display:flex;gap:8px;flex-wrap:wrap}
-body[data-msa-portal].msa-events .event-account-actions button{margin:0}
-body[data-msa-portal].msa-events #calendar-nav{margin:16px 0 24px;gap:4px}
-body[data-msa-portal].msa-events #calendar-nav button{margin:0;background:transparent;border-color:transparent;color:var(--msa-muted);font-weight:650;border-radius:6px}
-body[data-msa-portal].msa-events #calendar-nav button[aria-pressed=true]{background:#e7f1f5;color:var(--msa-ink);box-shadow:inset 0 -3px var(--msa-red)}
-body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization,#dashboard-workspace)>h2{margin:0 0 8px}
-body[data-msa-portal].msa-events :is(#calendar-workspace,#event-organization)>p{color:var(--msa-muted)}
-body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters,#event-form,#event-detail,#calendar-detail){background:var(--msa-paper);border:1px solid var(--msa-line);border-radius:10px;box-shadow:none}
-body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters){padding:16px;margin:8px 0 16px}
-body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) label{margin:4px 0 6px;font-size:14px;font-weight:650}
-body[data-msa-portal].msa-events :is(#calendar-filters,#event-filters) .grid{gap:12px 16px}
-body[data-msa-portal].msa-events #calendar-filter-details>summary{font-weight:650;text-decoration:none}
-body[data-msa-portal].msa-events .calendar-date-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
-body[data-msa-portal].msa-events .calendar-date-nav button{margin:0}
-body[data-msa-portal].msa-events #calendar-range{font-weight:700;color:var(--msa-ink);margin:16px 0 4px}
-body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result,#event-empty,#event-read-only,#feedback){color:var(--msa-muted)}
-body[data-msa-portal].msa-events :is(#calendar-result,#dashboard-result){font-size:14px;margin:4px 0 18px}
-body[data-msa-portal].msa-events .calendar-day{border-top:2px solid var(--msa-ink);padding-top:10px;margin:20px 0}
-body[data-msa-portal].msa-events .calendar-day>h3{margin:0 0 10px;font-size:16px}
-body[data-msa-portal].msa-events :is(.calendar-card,#event-list article){background:var(--msa-paper);border:1px solid var(--msa-line);border-left:3px solid var(--msa-red);border-radius:8px;padding:16px;margin:8px 0}
-body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) :is(h3,h4){margin:5px 0;line-height:1.3}
-body[data-msa-portal].msa-events :is(.calendar-card,#event-list article) p{margin:6px 0;font-size:14px;color:var(--msa-muted)}
-body[data-msa-portal].msa-events .draft-badge{display:inline-block;font-size:12px!important;font-weight:750;letter-spacing:.03em;color:var(--msa-blue)!important;background:#e7f1f5;border-radius:4px;padding:3px 8px}
-body[data-msa-portal].msa-events .draft-badge[data-status=cancelled]{color:#8a2530!important;background:#f9e9e6}
-body[data-msa-portal].msa-events .draft-badge[data-status=draft]{color:#694800!important;background:#faedc5}
-body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:20px;margin:12px 0 20px}
-body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) h2{margin:8px 0 16px;overflow-wrap:anywhere}
-body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:6px 16px}
-body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dt{font-size:14px;color:var(--msa-muted)}
-body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin:0;min-width:0}
-body[data-msa-portal].msa-events :is(#event-form,#calendar-export-form) label{font-size:14px;font-weight:650}
-body[data-msa-portal].msa-events #calendar-export-form{padding:16px;margin:8px 0;background:#f1f3ee;border:0}
-body[data-msa-portal].msa-events :is(#pic-help,#calendar-export-help){font-size:14px;color:var(--msa-muted)}
-body[data-msa-portal].msa-events :is(#event-conflict,#calendar-operation-feedback,#recurrence-feedback):not(:empty){border-left:3px solid var(--msa-red);padding:8px 12px;background:#fbf1ec}
-body[data-msa-portal].msa-events #dashboard-content>section{border-top:2px solid var(--msa-ink);padding-top:4px}
-body[data-msa-portal].msa-events #dashboard-content>section>p{background:#f0f0e9;border-radius:6px;padding:14px;color:var(--msa-muted);font-size:14px}
-body[data-msa-portal].msa-events dialog{background:var(--msa-paper);border-color:var(--msa-line);max-height:calc(100dvh - 32px);overflow:auto}
-@media(min-width:900px){
- body[data-msa-portal].msa-events .event-layout{grid-template-columns:minmax(0,3fr) minmax(220px,2fr);align-items:start}
- body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden]))){display:none}
- body[data-msa-portal].msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden])))+#event-list{grid-column:1/-1}
- body[data-msa-portal].msa-events #calendar-list:not(.calendar-days) .calendar-day{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:480px){
- body[data-msa-portal].msa-events :is(#event-form,#event-detail,#calendar-detail){padding:16px}
- body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dl{grid-template-columns:1fr;gap:2px}
- body[data-msa-portal].msa-events :is(#event-detail,#calendar-detail) dd{margin-bottom:10px}
-}
 
 /* Organization workspace; capabilities and context come from the server. */
 body[data-msa-portal].msa-core #core-brand{display:none}
@@ -310,3 +227,22 @@ body.msa-shell-active>main>p:has(>a.btn[href="/"]:only-child){display:none}
   #msa-account .msa-account-line{display:none}
 }
 @media(prefers-reduced-motion:no-preference){#msa-navigation .ui-nav__item,#msa-account .msa-account-chevron{transition:background-color .16s ease,transform .16s ease}}
+
+
+/* U6a: Beranda portal (ubin ringkasan + kartu pelayanan) */
+.msa-portal #portal-services .msa-section-heading{align-items:flex-end}
+.msa-portal #portal-service-state{margin:0 0 var(--space-4);color:var(--ink-muted)}
+.msa-portal .portal-stats{margin:0 0 var(--space-5)}
+.msa-portal .portal-stats:empty{display:none}
+#portal-schedule{display:grid;gap:var(--space-5);align-items:start}
+#portal-schedule>section{min-width:0;display:flex;flex-direction:column;gap:var(--space-3)}
+#portal-schedule h3{margin:0;font:var(--type-title)}
+#portal-schedule .msa-empty{margin:0;padding:var(--space-4);border-radius:var(--radius-lg);background:var(--blue-pale);color:var(--ink);font:var(--type-body)}
+#portal-schedule>section>.ui-btn--text{align-self:flex-start}
+@media(max-width:520px){
+ .msa-portal .portal-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2)}
+ .msa-portal .portal-stats .ui-stat{min-height:88px;padding:var(--space-3)}
+ .msa-portal .portal-stats .ui-stat__value{font-size:28px;line-height:32px}
+ .msa-portal .portal-stats .ui-stat__label{font-size:12px;line-height:16px}
+}
+@media(min-width:900px){#portal-schedule{grid-template-columns:repeat(3,minmax(0,1fr))}}

@@ -196,3 +196,13 @@
 @media (prefers-reduced-motion:reduce){
   .ui-root *,.ui-root *::before,.ui-root *::after,.ui-tokens *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:0s!important}
 }
+
+/* U6a: kartu pelayanan sebagai area klik penuh lewat aksinya, dan reset <article> lama */
+article.ui-service-card{position:relative;margin:0;padding:0;border:0}
+.ui-service-card__top{flex-wrap:wrap}
+.ui-service-card__action{margin-top:var(--space-2)}
+.ui-service-card__action :is(a,button)::after{content:"";position:absolute;inset:0;border-radius:var(--radius-lg)}
+.ui-service-card:has(:focus-visible){outline:3px solid var(--focus-ring);outline-offset:3px}
+.ui-service-card__action :focus-visible{outline:0}
+.ui-service-card__meta{align-items:flex-start}
+.ui-service-card__meta .ui-icon{margin-top:1px}
