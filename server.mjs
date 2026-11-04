@@ -14,7 +14,7 @@ const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthd
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
 // UI overhaul: token, komponen, font dan ikon self-host (tanpa halaman aplikasi).
-for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])allowed.add(file);
+for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-admin.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])allowed.add(file);
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
