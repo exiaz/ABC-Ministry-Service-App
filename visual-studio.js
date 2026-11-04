@@ -78,8 +78,8 @@ function layout(){
   if(slot==='dashboard'){
     doc.body.classList.add('account-signed-in');doc.querySelector('#account-login').hidden=true;doc.querySelector('#account-profile').hidden=false;doc.querySelector('#account-navigation').hidden=false;
     doc.querySelector('#account-name').textContent='Mentor fiktif';
-    const dates=doc.querySelector('#account-dates');dates.innerHTML='<p class="account-week-heading">Minggu penugasan pertama · Oktober 2026</p><ol class="account-week"><li><span>Sen</span><strong>26</strong></li><li><span>Sel</span><strong>27</strong></li><li><span>Rab</span><strong>28</strong></li><li><span>Kam</span><strong>29</strong></li><li class="account-week-selected"><span>Jum</span><strong>30</strong></li><li><span>Sab</span><strong>31</strong></li><li><span>Min</span><strong>1</strong></li></ol>';
-    doc.querySelector('#account-groups').innerHTML='<article class="account-group"><p class="eyebrow">KELOMPOK UTAMA</p><h2>Kelompok fiktif</h2><p class="mentor-subtitle">Mentor fiktif</p><p>Sekolah fiktif · Jumat, 30 Oktober 2026</p></article>';
+    const dates=doc.querySelector('#account-dates');dates.innerHTML='<p class="account-week-heading">Minggu penugasan pertama · Oktober 2026</p><ol class="account-week ui-week"><li class="account-week-selected"><span>Jum</span><strong class="ui-week__dot">30</strong></li></ol>';
+    doc.querySelector('#account-groups').innerHTML='<article class="account-group ui-service-card"><div class="ui-service-card__stub"><span>Jum</span><strong>30</strong><span>Okt</span></div><div class="ui-service-card__body"><div class="ui-service-card__top"><p class="eyebrow ui-service-card__org">KELOMPOK UTAMA</p></div><h2 class="ui-service-card__title">Kelompok fiktif</h2><p class="mentor-subtitle ui-service-card__meta">Mentor fiktif</p><p class="ui-service-card__meta">Sekolah fiktif · Jumat, 30 Oktober 2026</p></div></article>';
   }
   const target=doc.querySelector('[data-visual-slot="'+slot+'"]');if(!target)throw Error('Slot pratinjau tidak ditemukan.');target.replaceChildren(doc.createElement('img'));
   previewSlot=slot;previewDoc=null;frame.onload=()=>{
