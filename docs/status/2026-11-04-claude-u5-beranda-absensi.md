@@ -37,7 +37,8 @@ Beranda Mentor (`mentor-account.html`) dan tampilan absensi (cabang `personal` d
 - Baseline sebelum perubahan: `npm.cmd run check` lulus; `npm.cmd test` 224/224; `--a2-3` dan `--a2-4a` PASS.
 - Setelah perubahan: `npm.cmd run check` lulus; `npm.cmd test` 224/224; `node tests/stage3.mjs --a2-3` PASS (termasuk `msa-session1a-ui` dan pemeriksaan keyboard baru); `--a2-4a` PASS; `git diff --check` bersih.
 - Tangkapan Chrome 360/390/768/1365: dihasilkan tes (`msa-a2-3-{login,activation-required,association-required,authorized,backup-selected,offline}-<lebar>.png`) di `.emulator-data/stage3-tests/run-*/screenshots/`; tes menegaskan tanpa overflow horizontal. Keyboard terbuka: `msa-a2-3-keyboard-{360,390}.png`.
-- Regresi legacy (`secure-mentor.js` dipakai `app.js`): lihat catatan `test:stage6` di bawah.
+- `npm.cmd run test:stage6` (suite penuh): **FAIL, 158/166 lulus, 8 gagal**, semuanya tes integrasi backend: `msa-a2-2.test.mjs:115` (rate limit registrasi, 202 ≠ 429) dan 7 tes `msa-stage9b2.test.mjs` (seri mingguan/dasbor, 409 ≠ 200). Diff U5 tidak menyentuh `backend/` maupun berkas yang diimpor tes itu (hanya berkas browser), jadi kegagalan ini tidak berasal dari perubahan tampilan, tetapi **belum dibuktikan sebagai kegagalan lama**: belum dijalankan ulang di `development`. Pengujian UI Chrome (`mentor-attendance-ui`, `mentor-pairing-ui`, `backup-ui`, `tests/browser.mjs`) belum sampai dijalankan karena suite berhenti di tahap integrasi; regresi jalur legacy untuk `secure-mentor.js` karenanya **belum teruji**.
+- Tinjauan Codex (`/codex:review`, terhadap `main`): 2 temuan, lihat "Jawaban atas tinjauan".
 - Belum diuji: keyboard virtual asli di perangkat fisik (diemulasikan lewat viewport 380px), screen reader, browser selain Chrome, kontras pasangan warna di luar daftar BRIEF (semua memakai pasangan token BRIEF).
 
 ## Risiko dan pertanyaan terbuka
@@ -50,7 +51,9 @@ Beranda Mentor (`mentor-account.html`) dan tampilan absensi (cabang `personal` d
 - Diff: `git diff claude/u4-portal-shell...claude/u5-mentor-attendance` (terhadap development ikut memuat U4). Disarankan `/codex:review`.
 
 ## Jawaban atas tinjauan
-Belum ada tinjauan.
+Sumber: keluaran `/codex:review` (sesi 2026-11-04, tanpa berkas `docs/reviews/`).
+- R1 [P2] modul kalender untuk akun `events:calendar:read` (`backend/msa-portal-session.mjs:36`): **di luar lingkup U5**. Berkas ini tidak ada di diff branch (Codex membandingkan dengan `main`). Kode memang hanya memeriksa `events.catalog()`; ini otorisasi/backend milik Codex, diserahkan lewat pengguna (saran `/codex:adversarial-review`). Sudah diverifikasi di kode: ya.
+- R2 [P2] "Mulai absensi" tidak memilih kelompok kartu (`mentor-account.js:93`): **valid**, belum diperbaiki (menunggu persetujuan). Usulan: kartu membawa `data-action=select-group` + `data-id` + `data-visit`; tombol nonaktif dengan alasan saat penyimpanan/retry/konflik. Sudah diverifikasi di kode: ya.
 
 ## Usulan commit
 Summary: UI overhaul U5: beranda Mentor dan absensi (render saja)
