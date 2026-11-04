@@ -31,7 +31,8 @@ Laporkan secara ringkas dalam bahasa Indonesia (isi lengkapnya ditulis ke berkas
 
 - Frontend: HTML, CSS, dan ES modules vanilla; tanpa framework, bundler, CDN, atau build step. Tanpa dependensi npm baru kecuali disetujui pengguna.
 - Server lokal: Node.js (`server.mjs`, `mentor-server.mjs`, `admin-server.mjs`, `local-*.mjs`) dengan `backend/`, Firebase Admin, `firestore.rules`, dan emulator lokal.
-- Halaman aktif memakai `msa-*.html/js` serta `msa-shell.css`/`msa-visual.css`; halaman legacy (`index.html`, `admin.html`, `mentor.html`, `a1.html`, `styles.css`) di luar lingkup kecuali disebut eksplisit.
+- Halaman aktif: `msa-portal.html`, `msa-core.html`, `msa-events.html`, `register.html`, `identity-review.html`, `account-recovery.html`, `migration-readiness.html`, `visual-studio.html`, `local-account-setup.html`, `mentor-account.html`, serta `admin.html` (login Admin) dan `a1.html`; gaya di `ui/`, `msa-shell.css`, `msa-visual.css`, dan `styles.css` (masih dipakai `admin.html`, `a1.html`, `mentor-account.html`).
+- UI Mentor aktif ada di `http://127.0.0.1:4176/mentor-account.html`. Rute `/` pada 4176 dan server demo 4173 masih menyajikan PWA "ABC Attendance" lama (`index.html`/`mentor.html` + `app.js`, `sw.js`); jangan jadikan acuan UI. Modul yang dimuat `mentor-account.js` (mis. `secure-mentor.js`, `pairing-client.js`, `data.js`, `scheduling.js`) tetap aktif walau berasal dari PWA lama.
 - Jangan berasumsi stack di luar ini. Baca kode sebelum menyarankan pola baru.
 
 ## Prinsip desain dan UX
