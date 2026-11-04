@@ -29,7 +29,7 @@
 .ui-hero__body{position:relative;padding:var(--space-5);width:100%;background:linear-gradient(to top,rgba(255,255,255,.92) 65%,rgba(255,255,255,0))}
 
 /* ---------- Tombol ---------- */
-.ui-btn{margin:0;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control);min-width:var(--control);padding:0 var(--space-5);border:2px solid transparent;border-radius:var(--radius-pill);font:var(--type-button);text-decoration:none;cursor:pointer;background:var(--blue-pale);color:var(--on-accent);transition:background-color .15s,border-color .15s}
+.ui-btn{margin:0;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control);min-width:var(--control);padding:0 var(--space-5);border:2px solid transparent;border-radius:var(--radius-pill);font:var(--type-button);text-decoration:none;cursor:pointer;background:var(--blue-pale);color:var(--on-accent);transition:background-color .16s cubic-bezier(.23,1,.32,1),border-color .16s cubic-bezier(.23,1,.32,1),transform .16s cubic-bezier(.23,1,.32,1)}
 .ui-btn--lg{min-height:var(--control-primary)}
 .ui-btn--block{display:flex;width:100%}
 .ui-btn--primary{background:var(--primary);color:var(--on-primary)}
@@ -97,6 +97,9 @@
 .ui-check{display:inline-grid;place-items:center;flex:none;width:var(--check-size);height:var(--check-size);padding:0;border:1.5px solid var(--control-border);border-radius:var(--radius-round);background:var(--surface-100);color:transparent;cursor:pointer}
 .ui-check[aria-pressed="true"]{background:var(--accent-yellow);border:2px solid var(--ink);color:var(--ink)}
 .ui-check .ui-icon{stroke-width:3}
+.ui-check,.ui-tab,.ui-chip{transition:background-color .16s cubic-bezier(.23,1,.32,1),border-color .16s cubic-bezier(.23,1,.32,1),transform .16s cubic-bezier(.23,1,.32,1)}
+/* Umpan balik tekan: bergeser 1px; mati bersama transisi di bawah prefers-reduced-motion */
+.ui-btn:active:not([disabled],[aria-disabled="true"]),.ui-check:active,.ui-tab:active,.ui-chip:active{transform:translateY(1px)}
 
 /* ---------- Baris tautan ---------- */
 .ui-link-row{display:flex;align-items:center;gap:var(--space-3);min-height:var(--student-row-min);padding:var(--space-2) var(--space-4) var(--space-2) var(--space-3);background:var(--surface-100);border-radius:var(--radius-lg);color:var(--ink);text-decoration:none}
@@ -163,9 +166,8 @@
 .ui-state__title{font:var(--type-title);margin:0}
 .ui-state__text{font:var(--type-body);color:var(--ink-muted);margin:0;max-width:36ch}
 .ui-spinner{width:32px;height:32px;border:4px solid var(--blue-pale);border-top-color:var(--accent-3-text);border-radius:var(--radius-round);animation:ui-spin .9s linear infinite}
-.ui-skeleton{display:block;min-height:var(--student-row-min);border-radius:var(--radius-lg);background:linear-gradient(90deg,var(--blue-pale) 25%,var(--surface-100) 50%,var(--blue-pale) 75%) 0 0/200% 100%;animation:ui-shimmer 1.4s linear infinite}
+.ui-skeleton{display:block;min-height:var(--student-row-min);border-radius:var(--radius-lg);background:var(--blue-pale)}
 @keyframes ui-spin{to{transform:rotate(360deg)}}
-@keyframes ui-shimmer{to{background-position:-200% 0}}
 
 /* ---------- Grafik (galeri saja; nilai selalu tertulis) ---------- */
 .ui-chart{background:var(--surface-200);border-radius:var(--radius-xl);padding:var(--space-5)}
