@@ -47,7 +47,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
       await page.route(pattern,route=>route.fulfill({status:503,json:{error:'Koneksi uji tidak tersedia.'}}));
       await page.goto(origin+'/');await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.includes('Jadwal belum dapat dimuat'));
       assert.equal(await page.locator('#portal-schedule article').count(),0);assert.match(await page.locator('#portal-service-state').textContent(),/Periksa ulang izin/);
-      await page.unroute(pattern);await page.locator('#portal-refresh').click();await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));
+      await page.unroute(pattern);await page.locator('#msa-account > summary').click();await page.locator('#portal-refresh').click();await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));
     };
     const serviceScreens=async role=>{
       await page.goto(origin+'/msa-events.html#kalender');await page.waitForFunction(()=>document.querySelector('#calendar-result').textContent.includes('pelayanan sesuai izin'));
@@ -152,7 +152,7 @@ test('Unified MSA portal: all authorized routes via clicks, history, reload and 
     }
     await changeOwner(rotatedPassword,password);await page.goto(origin+'/');assert.equal((await api('/api/portal/session')).status,401);
     assert.equal((await api('/api/portal/login',{username:PILOT_USERNAME,password})).status,401);await login(PILOT_USERNAME,rotatedPassword);
-    await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
+    await page.goto(origin+'/');await page.waitForSelector('#portal-workspace:not([hidden])');await page.locator('#msa-account > summary').click();await page.locator('#portal-logout').click();await page.waitForSelector('#portal-login:not([hidden])');assert.equal((await api('/api/stage8/organizations')).status,401);
     await login(PIC_USERNAME,picPassword);assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/migration-readiness.html"]').count(),0);assert.equal(await page.locator('#msa-navigation a[href="/visual-studio.html"]').count(),0);assert.equal((await page.evaluate(async()=>{const {msaFetch}=await import('/msa-session.js');return (await msaFetch('/api/visual/welcome')).status;})),403);await page.waitForFunction(()=>document.querySelector('#portal-service-state').textContent.startsWith('Jadwal mendatang'));await capture('pic');await emptyDashboard('pic');
     await coreScreens('admin');await serviceScreens('admin');assert.equal(await page.locator('#portal-eyebrow').textContent(),'Admin');assert.equal(await page.locator('#msa-navigation a[href="/a1.html"]').count(),0);
     await page.setViewportSize({width:1365,height:900});await auditNavigation((await api('/api/portal/session')).body);
