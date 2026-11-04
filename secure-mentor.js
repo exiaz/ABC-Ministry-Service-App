@@ -146,5 +146,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
     if(target.id==='calendar-year'){const year=Number(target.value);if(Number.isInteger(year)&&year>=1&&year<=9999){month=String(year).padStart(4,'0')+month.slice(4);notify();}}
   }
   const backupGroups=()=>contexts.filter(c=>c.accessKind==='backup').map(({groupName,mentorName,schoolName,serviceDate})=>({groupName,mentorName,schoolName,serviceDate}));
-  return {view,action,input,refresh,reset,backupGroups};
+  // Read-only, for the home card of group g: can select-group open it, is another group selected, is switching blocked by a save/conflict.
+  const selection=g=>({other:!!selected&&scopeKey(selected)!==scopeKey(g),canOpen:!contexts.length||(g.schoolId===schoolId&&g.serviceDate===selectedDate&&contexts.some(c=>scopeKey(c)===scopeKey(g))),locked:attendance.state.phase==='saving'||!!attendance.state.pending||attendance.state.phase==='conflict'});
+  return {view,action,input,refresh,reset,backupGroups,selection};
 }

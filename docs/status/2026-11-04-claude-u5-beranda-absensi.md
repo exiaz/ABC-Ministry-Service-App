@@ -12,6 +12,7 @@ Beranda Mentor (`mentor-account.html`) dan tampilan absensi (cabang `personal` d
 - `secure-mentor.js` (hanya `personal===true`): `personalRoster` (penghitung "x/y hadir" + progres, pencarian berlabel, tab segmen dengan jumlah, baris siswa ≥64 dengan centang 48 dan menu ⋯, CTA lengket); state `tab` + aksi `roster-tab` (filter tampilan saja, direset bersama `query`); getter baca-saja `backupGroups()`.
 - `mentor-account.css`: aturan nav lama (fixed/sidebar 200px) dibuang; blok U5 dicakup `body.mentor-account`. Keyboard terbuka: nav disembunyikan dan CTA tidak lengket saat `#secure-student-search` fokus.
 - `visual-studio.js`: data pratinjau dasbor Mentor disesuaikan dengan markup baru.
+- `tests/mentor-selection.test.mjs` (baru): unit `selection(g)`.
 - `tests/emulator/msa-a2-3-ui.mjs`: jumlah `#account-dates li` 7 → 1 (hanya hari pelayanan aktif); tambah pemeriksaan keyboard terbuka (viewport 360/390 × 380) + tangkapan `msa-a2-3-keyboard-<lebar>.png`.
 
 ## Kontrak yang berubah
@@ -53,7 +54,8 @@ Beranda Mentor (`mentor-account.html`) dan tampilan absensi (cabang `personal` d
 ## Jawaban atas tinjauan
 Sumber: keluaran `/codex:review` (sesi 2026-11-04, tanpa berkas `docs/reviews/`).
 - R1 [P2] modul kalender untuk akun `events:calendar:read` (`backend/msa-portal-session.mjs:36`): **di luar lingkup U5**. Berkas ini tidak ada di diff branch (Codex membandingkan dengan `main`). Kode memang hanya memeriksa `events.catalog()`; ini otorisasi/backend milik Codex, diserahkan lewat pengguna (saran `/codex:adversarial-review`). Sudah diverifikasi di kode: ya.
-- R2 [P2] "Mulai absensi" tidak memilih kelompok kartu (`mentor-account.js:93`): **valid**, belum diperbaiki (menunggu persetujuan). Usulan: kartu membawa `data-action=select-group` + `data-id` + `data-visit`; tombol nonaktif dengan alasan saat penyimpanan/retry/konflik. Sudah diverifikasi di kode: ya.
+- R2 [P2] "Mulai absensi" tidak memilih kelompok kartu (`mentor-account.js:93`): **diterima dan diperbaiki**. `secure.selection(g)` (getter baca-saja) memberi `{other, canOpen, locked}`. Bila kelompok lain sedang dipilih, tombol kartu membawa `data-action=select-group` + `data-id` + `data-visit` (jalur `select-group` yang sudah ada). Tombol nonaktif beserta alasan bila perangkat belum diaktifkan untuk kelompok kartu itu (`canOpen` salah, mis. dua kelompok utama dengan satu penugasan aktif) atau saat penyimpanan/retry/konflik menahan perpindahan. Tes: `tests/mentor-selection.test.mjs` (baru) dan langkah baru di `msa-a2-3-ui.mjs` (kartu utama membuka roster utama setelah backup dipilih). Sudah diverifikasi di kode: ya.
+- Catatan tinjauan Claude sendiri (`/ponytail:ponytail-review`): temuan "kartu non-aktif membuka roster yang salah" (kelompok utama kedua) sudah ditutup lewat `canOpen`; temuan "tes keadaan terkunci" belum ada tes UI-nya (hanya `locked` idle diuji di unit).
 
 ## Usulan commit
 Summary: UI overhaul U5: beranda Mentor dan absensi (render saja)

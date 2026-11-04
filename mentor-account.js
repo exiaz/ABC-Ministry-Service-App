@@ -89,20 +89,22 @@ function groupCard(g,{backup=false,cta=''}={}){
   const part=dayParts(g.serviceDate),today=g.serviceDate===jakartaToday(),tag=backup?'h3':'h2';
   return `<article class="account-group ui-service-card${backup?' mentor-backup-card':''}"><div class="ui-service-card__stub"><span>${esc(part.weekday)}</span><strong>${esc(part.day)}</strong><span>${esc(part.month)}</span></div><div class="ui-service-card__body"><div class="ui-service-card__top"><p class="eyebrow ui-service-card__org">${backup?'KELOMPOK BACKUP':'KELOMPOK UTAMA'}</p>${today?'<span class="ui-badge ui-badge--draft">Hari ini</span>':''}</div><${tag} class="ui-service-card__title">${esc(g.groupName)}</${tag}><p class="mentor-subtitle ui-service-card__meta">${esc(g.mentorName)}</p><p class="ui-service-card__meta">${icon('pin')}${esc(g.schoolName)} · ${esc(part.long)}</p>${cta}</div></article>`;
 }
-function startCta(state,offline){
-  const link='<a class="ui-btn ui-btn--primary ui-btn--lg ui-btn--block" href="#account-attendance">Mulai absensi</a>';
+function startCta(state,offline,g){
+  const {other,canOpen,locked}=secure.selection(g);
+  const link=`<a class="ui-btn ui-btn--primary ui-btn--lg ui-btn--block" href="#account-attendance"${other?` data-action="select-group" data-id="${esc(g.groupId)}" data-visit="${esc(g.serviceSessionId)}"`:''}>Mulai absensi</a>`;
   const off=reason=>`<button class="ui-btn ui-btn--primary ui-btn--lg ui-btn--block" type="button" disabled>Mulai absensi</button><p class="ui-btn__reason">${esc(reason)}</p>`;
   if(offline)return off('Hubungkan internet dulu. Absensi tidak tersedia saat offline.');
   if(state.phase!=='active')return off('Aktifkan perangkat di bagian Perangkat dulu.');
   if(devicesOpen)return off('Tutup halaman Perangkat saya untuk membuka absensi.');
+  if(!canOpen)return off('Perangkat ini belum diaktifkan untuk kelompok ini.');
+  if(other&&locked)return off('Selesaikan atau muat ulang absensi kelompok yang sedang dipilih dulu.');
   return link;
 }
 function renderHome(state,offline){
   const chip=$('account-device-chip'),active=state.phase==='active',checking=['checking','pairing','associating'].includes(state.phase);
   const [name,text]=offline?['off','Offline · absensi tidak tersedia']:active?['phone','Perangkat terverifikasi']:checking?['wait','Memeriksa perangkat…']:state.phase==='association-required'?['phone','Perangkat perlu dikonfirmasi']:['phone','Perangkat belum aktif'];
   chip.innerHTML=icon(name)+'<span>'+esc(text)+'</span>';chip.dataset.state=offline?'offline':state.phase;chip.hidden=false;
-  const cta=startCta(state,offline);
-  $('account-groups').innerHTML=profile.groups.map(g=>groupCard(g,{cta})).join('')||'<p>Belum ada penugasan yang sesuai. Hubungi Admin sebelum mengaktifkan perangkat.</p>';
+  $('account-groups').innerHTML=profile.groups.map(g=>groupCard(g,{cta:startCta(state,offline,g)})).join('')||'<p>Belum ada penugasan yang sesuai. Hubungi Admin sebelum mengaktifkan perangkat.</p>';
   const backups=active&&!offline?secure.backupGroups():[];
   $('account-backup').hidden=!backups.length;
   $('account-backup').innerHTML=backups.map(g=>groupCard(g,{backup:true,cta:'<p class="ui-service-card__meta">Pilih di bagian Absensi.</p>'})).join('');
