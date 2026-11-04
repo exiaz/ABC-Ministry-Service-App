@@ -1,5 +1,9 @@
 # ABC Attendance — status revisi
 
+## 4 November 2026 — UI-OVERHAUL U4 + U5: kerangka portal; beranda Mentor dan absensi
+
+**IMPLEMENTED (lapisan tampilan saja); diuji pada emulator dan Chrome.** U4: sidebar/nav bawah + FAB, menu akun, banner pilot. U5: beranda Mentor (sapaan, strip hari pelayanan, kartu pelayanan + Mulai absensi, chip perangkat, kartu cadangan) dan absensi (x/y hadir, pencarian, tab segmen, baris siswa ≥64 dengan centang 48, CTA lengket, banner offline). Rincian, kontrak yang berubah dan hasil tes: `docs/status/2026-11-03-claude-u4-kerangka-portal.md` dan `docs/status/2026-11-04-claude-u5-beranda-absensi.md`. `sw.js` cache naik ke `abc-school-v15`. Kegagalan lama di `development` (bukan dari U4/U5): 7 tes `msa-stage9b2.test.mjs`, `device-management-ui`, `msa-stage9b2-ui`. Produksi: NO-GO.
+
 ## 3 November 2026 — UI-OVERHAUL U3: layar Welcome, Masuk, Masuk Mentor, Daftar, permintaan pemulihan
 
 **IMPLEMENTED (lapisan tampilan saja); diuji pada pilot emulator dan Chrome.** Layar memakai komponen `ui-*` (U2) lewat `ui/msa-auth.css` (baru): ponsel = foto slot Visual Studio full-bleed di atas dan sheet putih radius-xl; desktop = foto latar penuh dan kartu ±760px (form kiri, panel Petunjuk Mentor kanan). Logika autentikasi, endpoint, rute hash, id dan name tidak diubah. Penggantian string server (`<body class="mentor-account">`, `id="account-login" class="panel"`, `<!--MENTOR_SESSION_OPTION-->`, `</form>` pertama) tetap cocok. Slot foto `welcome` tetap satu elemen: pada layar masuk, `#portal-welcome` dirender (tinggi 0) hanya untuk fotonya, sebab slot ganda membuat `msa-visual.test.mjs` gagal.
