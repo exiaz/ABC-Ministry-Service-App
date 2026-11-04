@@ -10,8 +10,9 @@ const require=createRequire(import.meta.url);let chromium;try{({chromium}=requir
 const server=createPrototypeServer();server.listen(0,'127.0.0.1');await once(server,'listening');const port=server.address().port;
 const fixture=seed();for(const schoolId of ['s1','s2','s3'])saveService(fixture,{schoolId,date:schoolId==='s1'?'2026-10-02':schoolId==='s2'?'2026-10-16':'2026-10-30',groupIds:fixture.groups.filter(g=>g.schoolId===schoolId&&!g.retired).map(g=>g.id)});
 let browser;
+const screenshots='.emulator-data/legacy-browser/screenshots';
 try{
-  await mkdir('screenshots',{recursive:true});
+  await mkdir(screenshots,{recursive:true});
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   const context=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID',timezoneId:'Asia/Jakarta'});
   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -34,7 +35,7 @@ try{
   assert.equal(await page.locator('#service-calendar').count(),1);
   assert.equal(await action('calendar-date','2026-10-22').isEnabled(),true);
   assert.equal(await action('calendar-date','2026-10-02').isEnabled(),true);
-  await page.screenshot({path:'screenshots/calendar-mobile.png',fullPage:true});
+  await page.screenshot({path:`${screenshots}/calendar-mobile.png`,fullPage:true});
   await action('calendar-next').click();assert.equal(await page.locator('#calendar-month').inputValue(),'11');
   await action('calendar-prev').click();assert.equal(await page.locator('#calendar-month').inputValue(),'10');
   await page.locator('#calendar-year').fill('2027');await page.locator('#calendar-year').press('Tab');
@@ -45,7 +46,7 @@ try{
   await selectDate('2026-10-02');await page.locator('#service-session').selectOption(fixture.serviceSessions.find(v=>v.schoolId==='s1'&&v.date==='2026-10-02').id);await action('continue-date').click();
   assert.equal(await page.locator('.group-card').count(),8);
   assert.match(await action('select-group','g13').innerText(),/Hagai\s+Kak Louis/);
-  await page.screenshot({path:'screenshots/groups-calendar-mobile.png',fullPage:true});
+  await page.screenshot({path:`${screenshots}/groups-calendar-mobile.png`,fullPage:true});
   await action('select-group','g1').click();assert.equal(await page.locator('.student-row').count(),12);
   await page.locator('[data-action=present]').first().click();
   await page.locator('[data-status-id]').nth(1).selectOption('excused');
@@ -68,7 +69,7 @@ try{
   await action('back-groups').click();await action('back-dates').click();
   await selectDate('2026-10-23');await action('continue-date').click();await action('select-group','g1').click();
   assert.equal(await action('finalize').isDisabled(),true);assert.equal(await page.locator('.student-row').count(),12);
-  await page.screenshot({path:'screenshots/future-attendance-mobile.png',fullPage:true});
+  await page.screenshot({path:`${screenshots}/future-attendance-mobile.png`,fullPage:true});
   for(const [school,count] of [['s2',4],['s3',4]]){
     await action('back-groups').click();await action('back-dates').click();await action('back-schools').click();
     await action('select-school',school).click();await selectDate(school==='s2'?'2026-10-16':'2026-10-30');await page.locator('#service-session').selectOption(fixture.serviceSessions.find(v=>v.schoolId===school&&v.date===(school==='s2'?'2026-10-16':'2026-10-30')&&v.groupIds.length===4).id);await action('continue-date').click();
@@ -77,7 +78,7 @@ try{
     for(const card of await page.locator('.group-card').all()){
       assert.ok(await card.locator('h3').innerText());assert.match(await card.locator('.mentor-subtitle').innerText(),/^Kak /);
     }
-    await page.screenshot({path:`screenshots/groups-${school}-mobile.png`,fullPage:true});
+    await page.screenshot({path:`${screenshots}/groups-${school}-mobile.png`,fullPage:true});
     await action('select-group',school==='s2'?'g4':'g7').click();assert.equal(await page.locator('.student-row').count(),12);
   }
   // Admin override and permanent assignment through the existing form.
@@ -96,7 +97,7 @@ try{
   stored=await db();assert.equal(stored.serviceSessions.find(v=>v.id===oct2.id).date,'2026-10-04');assert.deepEqual(stored.sessions.find(s=>s.id===result.id).records.map(r=>[r.studentId,r.status]),result.records.map(r=>[r.studentId,r.status]));
   await page.setViewportSize({width:1365,height:900});await action('mentor').first().click();
   await action('back-groups').click();await action('back-dates').click();await action('calendar-toggle').click();
-  await page.screenshot({path:'screenshots/calendar-desktop.png',fullPage:true});
+  await page.screenshot({path:`${screenshots}/calendar-desktop.png`,fullPage:true});
   for(const width of [360,390,1365]){
     await page.setViewportSize({width,height:900});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`Overflow at ${width}`);

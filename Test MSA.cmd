@@ -1,8 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Uji ABC Attendance
-echo Menguji Stage 3-6 dengan data fiktif dan emulator terpisah.
+title Uji ABC Ministry Service App
+echo Menjalankan regresi MSA dengan data fiktif dan emulator terpisah.
 where node >nul 2>nul
 if errorlevel 1 (
   echo FAIL - Node.js belum ditemukan. Siapkan Node.js 22+ sesuai README.

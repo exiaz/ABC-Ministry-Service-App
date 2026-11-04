@@ -59,8 +59,11 @@ async function main(){
     if(!fromBrowser)await run(stage9b2Only?'Stage 9B.2':stage9b1Only?'Stage 9B.1':stage9aOnly?'Stage 9A':stage8Only?'Integrasi Stage 8':a24cOnly?'Integrasi AUTH A2.4C':a24bOnly?'Integrasi AUTH A2.4B':a24Only?'Integrasi AUTH A2.4A':a23Only?'Integrasi AUTH A2.3':a22Only?'Integrasi AUTH A2.2':a1Only?'Integrasi AUTH A1':a2Only?'Integrasi AUTH A1/A2.1':'Auth/RBAC, pairing, absensi, konkurensi dan launcher',['--test','--test-concurrency=1',...integration],env);
     // Screenshots go to this run's ignored directory, never historical evidence.
     if(!visualOnly)await run(stage9b2Only?'Stage 9B.2':stage9b1Only?'Stage 9B.1':stage9aOnly?'Stage 9A':stage8Only?'Chrome Stage 8':a24cOnly?'Chrome AUTH A2.4C':a24bOnly?'Chrome AUTH A2.4B':a24Only?'Chrome AUTH A2.4A':a23Only?'Chrome AUTH A2.3':a22Only?'Chrome AUTH A2.2':a1Only?'Chrome AUTH A1':a2Only?'Chrome AUTH A1/A2.1':'Regresi Chrome Superadmin/PIC/Mentor',['--test','--test-concurrency=1',...browser.map(file=>path.join(ROOT,file))],env,state);
-    if(!visualOnly&&!a1Only&&!a2Only&&!a22Only&&!a23Only&&!a24Only&&!a24bOnly&&!a24cOnly&&!stage8Only&&!stage9aOnly&&!stage9b1Only&&!stage9b2Only){
-      await run('Kalender demo, laporan dan offline (data fiktif)',[''+path.join(ROOT,'tests/browser.mjs')],env,state);
+    const full=!visualOnly&&!a1Only&&!a2Only&&!a22Only&&!a23Only&&!a24Only&&!a24bOnly&&!a24cOnly&&!stage8Only&&!stage9aOnly&&!stage9b1Only&&!stage9b2Only;
+    if(full||a23Only){
+      await run('Chrome portal MSA: login, navigasi dan kedaluwarsa sesi',['--test',path.join(ROOT,'tests/msa-portal-focus-browser.mjs')],env,state);
+    }
+    if(full){
       await run('Cold recovery dan startup/shutdown milik peluncur',['--test','--test-concurrency=1','tests/emulator/local-demo-recovery.mjs','tests/emulator/stage3-startup.mjs'],env);
     }
   }finally{
@@ -68,6 +71,6 @@ async function main(){
     await waitFor(async()=>!(await Promise.all(ports.map(portOccupied))).some(Boolean),{timeout:10000});
     console.log('Emulator tes ditutup. Artefak fiktif terisolasi: '+state);
   }
-  console.log('\nPASS · '+(visualOnly?'Visual Studio emulator':stage9b2Only?'Stage 9B.2':stage9b1Only?'Stage 9B.1':stage9aOnly?'Stage 9A':stage8Only?'Stage 8':a24cOnly?'AUTH A2.4C':a24bOnly?'AUTH A2.4B':a24Only?'AUTH A2.4A':a23Only?'AUTH A2.3':a22Only?'AUTH A2.2':a2Only?'AUTH A2.1 + A1':a1Only?'AUTH A1':fromBrowser?'Chrome, kalender demo/offline dan cold lifecycle':'Stage 3–6 + AUTH A1/A2.1/A2.2/A2.3/A2.4A/A2.4B/A2.4C + Stage 8/9A/9B.1/9B.2')+'. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
+  console.log('\nPASS · '+(visualOnly?'Visual Studio emulator':stage9b2Only?'Stage 9B.2':stage9b1Only?'Stage 9B.1':stage9aOnly?'Stage 9A':stage8Only?'Stage 8':a24cOnly?'AUTH A2.4C':a24bOnly?'AUTH A2.4B':a24Only?'AUTH A2.4A':a23Only?'AUTH A2.3 dan Chrome portal MSA':a22Only?'AUTH A2.2':a2Only?'AUTH A2.1 + A1':a1Only?'AUTH A1':fromBrowser?'Chrome MSA dan cold lifecycle':'Stage 3–6 + AUTH A1/A2.1/A2.2/A2.3/A2.4A/A2.4B/A2.4C + Stage 8/9A/9B.1/9B.2')+'. Data operasional dan snapshot launcher tidak dipakai sebagai fixture.');
 }
 main().catch(error=>{console.error('\nFAIL · '+(error.demoSafe?error.message:error.message?.startsWith('Pengujian gagal:')?error.message:'Prasyarat, layanan atau penghentian tes belum terkonfirmasi. Periksa keluaran di atas dan README.'));process.exitCode=1;});

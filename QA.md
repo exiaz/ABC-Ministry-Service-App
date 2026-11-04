@@ -1,4 +1,4 @@
-# Pemeriksaan prototipe
+# Regresi ABC Ministry Service App
 
 ## AUTH A2.3 — verifikasi terisolasi · 24 Oktober 2026
 
@@ -32,7 +32,7 @@ Stage 7 tidak mengizinkan AUTH A2.2. Fondasi yang lulus hanya mendukung fase ber
 
 ## Stage 6 — Backup sementara · 24 Oktober 2026
 
-Jalankan `npm.cmd run test:stage6` atau **Test ABC Attendance.cmd**. Emulator Auth/Firestore, port, namespace dan screenshot terpisah dari data operasional. Gunakan hanya siswa fiktif. Hasil aktual dan lokasi log ada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+Jalankan `npm.cmd run test:stage6` atau **Test MSA.cmd**. Emulator Auth/Firestore, port, namespace dan screenshot terpisah dari data operasional. Gunakan hanya siswa fiktif. Hasil aktual dan lokasi log ada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 Hasil akhir **PASS**: sintaks/import 130 modul, unit 164/164, integrasi 91/91, Chrome 22/22, demo/laporan/offline PASS dan cold lifecycle 2/2. Integrasi lulus pada putaran lengkap; setelah perbaikan assertion/helper tes browser, `npm.cmd run test:stage6 -- --from-browser` menuntaskan Chrome serta pemeriksaan berikutnya dengan exit 0. Perintah tanpa opsi tetap menjalankan seluruh rangkaian. Rincian kegagalan awal/perbaikannya dan log pada PROJECT_STATUS.md.
 
@@ -51,7 +51,7 @@ Pemeriksaan operator: aktivasi perangkat, buat backup dua kelompok pada sesi khu
 
 ## Stage 5 — Kalender semua hari · 23 Oktober 2026
 
-Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage5`. Runner memakai emulator, namespace, port dan TEMP terpisah; tidak mengimpor snapshot operasional. Kalender demo/offline memakai server port sementara dan screenshot pada folder run yang diabaikan Git. Hasil akhir berada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+Jalankan **Test MSA.cmd** atau `npm.cmd run test:stage5`. Runner memakai emulator, namespace, port dan TEMP terpisah; tidak mengimpor snapshot operasional. Kalender demo/offline memakai server port sementara dan screenshot pada folder run yang diabaikan Git. Hasil akhir berada di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 Putaran final `npm.cmd run test:stage5`: **PASS/exit 0**, 125 modul sintaks/import, 161 unit, 83 integrasi emulator, 21 pemeriksaan Chrome (termasuk parent), kalender demo/offline PASS dan 2 cold lifecycle. QA Admin/XLSX serta form siswa terpisah juga PASS. Setelah penyesuaian visual, suite PIC diulang 1/1 PASS pada 360/390/1365 piksel. Log utama `.emulator-data/stage5-validation-final.log`; screenshot awal `.emulator-data/stage3-tests/run-gkmC3i/`, screenshot panel akhir `run-H8al71/` pada induk folder yang sama.
 
@@ -71,7 +71,7 @@ Android fisik, Safari/Firefox dan rekap/ekspor Admin server belum diverifikasi/t
 
 ## Stage 4 — Aktivasi Mentor dan kode 48 jam · 23 Oktober 2026
 
-Jalankan **Test ABC Attendance.cmd** atau `npm.cmd run test:stage4`. Perintah ini memakai runner Stage 3 yang sama dan menjalankan seluruh regresi Stage 1–4; PASS/exit 0 hanya jika semua tahap lulus. Prasyarat dan isolasi emulator mengikuti Stage 3. Hasil eksekusi terkini dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+Jalankan **Test MSA.cmd** atau `npm.cmd run test:stage4`. Perintah ini memakai runner Stage 3 yang sama dan menjalankan seluruh regresi Stage 1–4; PASS/exit 0 hanya jika semua tahap lulus. Prasyarat dan isolasi emulator mengikuti Stage 3. Hasil eksekusi terkini dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 Putaran final: **PASS/exit 0**; sintaks/import 120 modul, unit 158/158, integrasi emulator 77/77, Chrome 20/20 (termasuk parent) dan cold lifecycle 2/2. Emulator uji berhenti sukses; log dan screenshot berada di `.emulator-data/stage3-tests/run-E9QfR9/`, ringkasan log `.emulator-data/stage4-validation.log`.
 
@@ -92,7 +92,7 @@ Bagian Stage 3 dan berikutnya adalah bukti historis; angka terkini berada pada s
 
 ## Stage 3 — Windows, login dan penyimpanan lokal · 23 Oktober 2026
 
-Jalankan `npm.cmd run test:stage3` atau **Test ABC Attendance.cmd**. Prasyarat: Node.js 22+, Java JDK 21+, dependensi/cache emulator serta Chrome/Playwright yang telah disiapkan operator. Runner menggunakan emulator baru, lima port loopback sementara dan data fiktif; tidak mengimpor snapshot operasional. Exit **0/PASS** berarti seluruh tahap lulus; **1/FAIL** berarti ada prasyarat/pemeriksaan yang gagal. Runner lengkap telah lulus (69 tes emulator, 19 tes browser dan 2 cold lifecycle); regresi unit akhir 154/154 dan sintaks/import 117 modul lulus. Hasil rinci serta batas terbaru dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+Jalankan `npm.cmd run test:stage3` atau **Test MSA.cmd**. Prasyarat: Node.js 22+, Java JDK 21+, dependensi/cache emulator serta Chrome/Playwright yang telah disiapkan operator. Runner menggunakan emulator baru, lima port loopback sementara dan data fiktif; tidak mengimpor snapshot operasional. Exit **0/PASS** berarti seluruh tahap lulus; **1/FAIL** berarti ada prasyarat/pemeriksaan yang gagal. Runner lengkap telah lulus (69 tes emulator, 19 tes browser dan 2 cold lifecycle); regresi unit akhir 154/154 dan sintaks/import 117 modul lulus. Hasil rinci serta batas terbaru dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 | Cakupan | Pemeriksaan |
 |---|---|
