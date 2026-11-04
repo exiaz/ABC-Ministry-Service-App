@@ -24,7 +24,7 @@ test('Secure calendar admits only configured non-Friday sessions and distinguish
 test('48-hour bulk codes show once on mobile, survive metadata reload, revoke with confirmation and distinguish revoked redemption',{timeout:60000},async t=>{
   const reserve=net.createServer();reserve.listen(0,'127.0.0.1');await once(reserve,'listening');const port=reserve.address().port;await new Promise(resolve=>reserve.close(resolve));
   const mentorOrigin='http://127.0.0.1:'+port,f=await deviceManagementFixture(t,{mentorOrigin}),front=createPrototypeServer({mentorMode:true,apiOrigin:f.mentorBase});front.listen(port,'127.0.0.1');await once(front,'listening');
-  await f.root.collection('serviceSessions').doc(hagai.serviceSessionId).update({date:'2026-10-30'});
+  await f.root.collection('serviceSessions').doc(hagai.serviceSessionId).update({date:new Date(f.now()+2*86400000).toISOString().slice(0,10)});
   const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   t.after(async()=>{await browser.close();await new Promise(resolve=>{front.close(resolve);front.closeAllConnections();});});
   const adminContext=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID'}),mentorContext=await browser.newContext({viewport:{width:390,height:844},locale:'id-ID'}),page=await adminContext.newPage(),mentor=await mentorContext.newPage(),logs=[],errors=[];
