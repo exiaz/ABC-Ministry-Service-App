@@ -117,7 +117,7 @@ export function createSecureMentor({client,render,icon,steps,art,openModal,close
     if(client.state.assignment){if(name==='mentor'){void refresh();return;}if(name==='select-group'&&(!serviceSessionId||contexts.length<2))return;if(['select-school','continue-date','back-schools','back-dates','back-groups'].includes(name)||name.startsWith('calendar-'))return;}
     switch(name){
       case 'secure-present':if(students.some(s=>s.id===id))void attendance.mutate('save',{records:[{studentId:id,status:'present'}]});return;
-      case 'roster-tab':if(!selected||!['all',...Object.keys(statuses)].includes(id)||id===tab)return;tab=id;break;
+      case 'roster-tab':if(!selected||!['all',...Object.keys(statuses)].includes(id)||id===tab)return;tab=id;/* no notify(): a full render would drop the focused tab */for(const b of document.querySelectorAll('[data-action=roster-tab]'))b.setAttribute('aria-pressed',String(b.dataset.id===tab));document.querySelector('#secure-roster-rows').innerHTML=rowsView();return;
       case 'secure-review':review();return;
       case 'secure-correct':review(true);return;
       case 'attendance-retry':void attendance.retry();return;
