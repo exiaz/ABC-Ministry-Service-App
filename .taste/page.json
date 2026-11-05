@@ -1,0 +1,496 @@
+{
+  "version": 1,
+  "page": {
+    "title": "Beranda mentor",
+    "route": "/",
+    "description": "Beranda mentor ABC Ministry Service App: sesi hari ini dengan satu tombol Catat kehadiran, tren kehadiran kelompok, dan jadwal sesi berikutnya. Layar masuk dan layar absensi adalah tampilan terpisah di aplikasi yang sama."
+  },
+  "architecture": {
+    "contract": "Layar ini menjawab: sesi mana yang harus saya catat sekarang, dan bagaimana kehadiran kelompok saya dibanding minggu-minggu lalu? Temuan utamanya: 1 dari 12 siswa Kelompok Tunas 3 belum dicatat untuk sesi Minggu 8 Nov 2026, tepat di sebelah tombol Catat kehadiran. Wajah produk: ground krem ABC dan strip rekap kehadiran sebagai elemen khas, dengan warna biru data pada sesi hari ini.",
+    "mode": "operate_monitor",
+    "novelty": "low",
+    "grid": "Desktop 1440: kolom terpusat 1088px, 12 kolom x 76px + 11 celah x 16px = 912 + 176 = 1088. Baris 1: blok sesi 8 kolom (8 x 76 + 7 x 16 = 720px) + celah 16px + blok jadwal 4 kolom (4 x 76 + 3 x 16 = 352px); 720 + 16 + 352 = 1088. Ponsel 390: satu kolom, margin 16px, lebar isi 358px.",
+    "signatureRule": "Tanpa warna merek di chrome selain satu aksi utama merah per layar; warna data biru #1D5F99 hanya pada elemen data utama (sesi hari ini, periode berjalan, segmen Hadir dalam strip rekap); kartu putih datar bergaris 1px; angka dalam Baloo 2 hanya untuk hitungan kehadiran.",
+    "rhythm": "Sparse. Baris siswa 64px, kontrol 48px, tombol utama 56px, padding kartu 24px, celah 16px, teks isi 16px, label 12-13px."
+  },
+  "navigation": [
+    {
+      "label": "Beranda",
+      "target": "#/beranda"
+    },
+    {
+      "label": "Absensi",
+      "target": "#/absensi"
+    },
+    {
+      "label": "Kalender",
+      "target": "#/kalender"
+    },
+    {
+      "label": "Masuk",
+      "target": "#/masuk"
+    }
+  ],
+  "navigationDesign": {
+    "layoutCase": "app-shell",
+    "layout": "Desktop dan tablet: bar atas 56px di atas kolom terpusat 1088px, logo ABC Movement di tepi kiri kolom, tiga tautan teks (Beranda, Absensi, Kalender), akun mentor di kanan. Ponsel: bar atas ringan dengan logo dan judul layar, navigasi bawah 72px berisi Beranda, Absensi, Kalender dengan ikon outline dan label, ruang 96px di bawah konten.",
+    "behavior": [
+      "Item aktif ditandai ikon, teks tebal, dan garis bawah 2px, tidak hanya warna",
+      "Setiap tujuan adalah tampilan hash route sendiri dengan judul h1 sendiri",
+      "Kalender adalah tampilan nyata dengan bingkai, judul, dan satu kalimat; isinya mengikuti modul yang sudah ada",
+      "Masuk hanya tampil bagi pengguna yang belum masuk; tombol akun membuka menu dengan Keluar",
+      "Escape menutup menu akun dan fokus kembali ke tombol akun"
+    ],
+    "transformation": {
+      "compact": "Bar atas 56px dengan logo dan judul layar; navigasi bawah 72px dengan tiga tujuan; target sentuh 48px atau lebih; area aman bawah dihormati.",
+      "medium": "Bar atas dengan tautan teks, tanpa navigasi bawah; kolom terpusat selebar penuh dengan margin 24px.",
+      "expanded": "Bar atas dengan tautan teks di atas kolom 1088px; logo sejajar tepi kiri kolom, akun sejajar tepi kanan."
+    }
+  },
+  "sections": [
+    {
+      "id": "shell",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Memberi nama produk dan lingkup (ABC Movement, Kelompok Tunas 3) serta navigasi utama.",
+      "userQuestion": "Di aplikasi mana saya, dan ke mana saya bisa pindah?",
+      "stage": "orient",
+      "dependencies": [],
+      "evidence": [],
+      "copy": {
+        "heading": "ABC Ministry Service App",
+        "body": [
+          "Kelompok Tunas 3",
+          "Rina Maharani, Mentor"
+        ],
+        "callsToAction": [
+          {
+            "label": "Beranda",
+            "target": "#/beranda"
+          },
+          {
+            "label": "Absensi",
+            "target": "#/absensi"
+          },
+          {
+            "label": "Kalender",
+            "target": "#/kalender"
+          }
+        ]
+      },
+      "layout": "Bar atas 56px, ground krem, garis 1px di bawah bar saat konten tergulir di bawahnya. Logo ABC Movement yang ada di tepi kiri kolom, pengalih lingkup 'Kelompok Tunas 3' di sebelahnya, tiga tautan 16px 700, avatar inisial 44px di kanan. Ponsel: bar atas plus navigasi bawah 72px. State: item aktif, fokus cincin biru, hover teks lebih gelap.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Item navigasi bergeser 1px dan garis bawah aktif berpindah saat tujuan berganti; menu akun muncul dari tombolnya.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perpindahan item dan menu langsung ke keadaan akhir tanpa transisi."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "assets/abc-movement-logo.png"
+      ],
+      "transformation": {
+        "compact": "Logo, judul layar, tombol akun di atas; tiga tujuan di navigasi bawah.",
+        "medium": "Tautan teks di bar atas, tanpa navigasi bawah.",
+        "expanded": "Tautan teks di bar atas, sejajar kolom 1088px."
+      }
+    },
+    {
+      "id": "beranda-sesi",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Menunjukkan sesi hari ini dan temuan utamanya di sebelah aksi utama.",
+      "userQuestion": "Sesi mana yang harus saya catat sekarang dan berapa yang belum dicatat?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "Sample data: Minggu, 8 Nov 2026, 09:00, Kelompok Tunas 3, 12 siswa, 11 tercatat, 1 belum dicatat"
+      ],
+      "copy": {
+        "heading": "Sesi hari ini",
+        "body": [
+          "Sample data. Minggu, 8 Nov 2026, 09.00 WIB, Kelompok Tunas 3.",
+          "1 dari 12 siswa belum dicatat.",
+          "Hadir 8, Izin 2, Alpa 1, Belum dicatat 1."
+        ],
+        "callsToAction": [
+          {
+            "label": "Catat kehadiran",
+            "target": "#/absensi"
+          }
+        ]
+      },
+      "layout": "Kartu putih 8 kolom (720px) di 1440, tinggi sekitar 240px. Judul h1 'Beranda mentor' 36px Baloo 2 di atas baris, lalu satu kalimat temuan 16px. Dalam kartu: nama sesi 20px, waktu, lalu strip rekap tipis dengan empat hitungan (Hadir 8, Izin 2, Alpa 1, Belum dicatat 1) dalam Baloo 2 tabular, setiap segmen berpasangan ikon dan teks. Tombol utama merah 56px 'Catat kehadiran' di baris yang sama dengan temuan. State: nol ditulis 0; loading memakai batang abu-abu seukuran hitungan; kosong 'Belum ada sesi hari ini' dengan tautan ke Kalender; gagal 'Sesi tidak bisa dimuat. Coba lagi.' dengan tombol Coba lagi di dalam kartu.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Tombol utama bergeser 1px saat ditekan; segmen strip memanjang saat hitungan berubah.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Segmen dan tombol langsung ke keadaan akhir."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Kartu penuh lebar 358px; strip rekap dalam grid 2x2; tombol utama 56px lebar penuh di bawah temuan.",
+        "medium": "Kartu lebar penuh, strip rekap satu baris empat kolom.",
+        "expanded": "Kartu 8 kolom di kiri, jadwal di kanan."
+      }
+    },
+    {
+      "id": "beranda-tren",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Menjawab apakah kehadiran kelompok naik atau turun dibanding minggu lalu.",
+      "userQuestion": "Bagaimana kehadiran Kelompok Tunas 3 dalam empat minggu terakhir?",
+      "stage": "evaluate",
+      "dependencies": [
+        "beranda-sesi"
+      ],
+      "evidence": [
+        "Sample data: 18 Okt 11 hadir, 25 Okt 9 hadir, 1 Nov 10 hadir, 8 Nov 8 hadir dari 12 siswa"
+      ],
+      "copy": {
+        "heading": "Kehadiran 4 minggu",
+        "body": [
+          "Sample data. Hadir per Minggu dari 12 siswa: 18 Okt 11, 25 Okt 9, 1 Nov 10, 8 Nov 8 (berjalan, 1 belum dicatat).",
+          "Turun 2 dari Minggu 1 Nov (10 menjadi 8)."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat absensi",
+            "target": "#/absensi"
+          }
+        ]
+      },
+      "layout": "Kartu 8 kolom (720px) di bawah sesi hari ini, tinggi sekitar 220px. Kolom vertikal siku (sudut persegi) satu per Minggu dengan skala y 0 sampai 12 berlabel, tiga garis kisi tipis, nilai di atas kolom; kolom 8 Nov berwarna biru data #1D5F99, tiga lainnya tinta. Tanpa legenda karena satu seri. Anotasi pendek 'berjalan' pada kolom terakhir. State: nol Minggu digambar sebagai kolom kosong dengan garis nol; loading batang abu-abu seukuran plot; gagal satu kalimat plus Coba lagi.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Tinggi kolom berubah halus bila data periode diperbarui; tidak ada animasi masuk.",
+        "durationMs": 200,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Kolom langsung pada tinggi akhir."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Lebar penuh 358px, tinggi 180px, empat label x, nilai di atas kolom.",
+        "medium": "Lebar penuh dalam kolom, tinggi 200px.",
+        "expanded": "8 kolom di kiri, sejajar dasar dengan blok jadwal di kanan."
+      }
+    },
+    {
+      "id": "beranda-jadwal",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Menunjukkan sesi berikutnya agar mentor tahu apa yang menyusul.",
+      "userQuestion": "Sesi apa lagi yang akan datang?",
+      "stage": "continue",
+      "dependencies": [
+        "beranda-sesi"
+      ],
+      "evidence": [
+        "Sample data: 15 Nov, 22 Nov, 29 Nov, 6 Des 2026, setiap Minggu 09.00"
+      ],
+      "copy": {
+        "heading": "Sesi berikutnya",
+        "body": [
+          "Sample data. Minggu, 15 Nov 2026, 09.00 WIB, Kelompok Tunas 3.",
+          "Minggu, 22 Nov 2026, 09.00 WIB, Kelompok Tunas 3.",
+          "Minggu, 29 Nov 2026, 09.00 WIB, Kelompok Tunas 3.",
+          "Minggu, 6 Des 2026, 09.00 WIB, Kelompok Tunas 3."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat kalender",
+            "target": "#/kalender"
+          }
+        ]
+      },
+      "layout": "Kartu 4 kolom (352px) di kanan, tinggi sama dengan dua blok kiri sehingga dasar sejajar. Daftar empat baris 64px dengan tanggal dalam Baloo 2, hari dan jam di baris kedua 13px abu-abu, aturan 1px antarbaris, 'Lihat kalender' di kaki. State: kosong 'Belum ada sesi terjadwal' dengan bingkai putus-putus; loading empat batang; gagal satu kalimat plus Coba lagi.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "hover",
+        "behavior": "Baris berubah ke latar raised saat hover atau fokus; tidak ada gerak lain.",
+        "durationMs": 120,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perubahan latar langsung tanpa transisi."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar lebar penuh di bawah tren, baris dua garis, target 64px.",
+        "medium": "Berdampingan dengan tren bila lebar cukup, bila tidak ditumpuk.",
+        "expanded": "Kolom kanan 4 kolom sejajar dasar dengan dua blok kiri."
+      }
+    },
+    {
+      "id": "absensi-rekap",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Elemen khas produk: strip rekap yang menghitung kehadiran langsung saat mentor mengetuk.",
+      "userQuestion": "Berapa yang sudah hadir, izin, alpa, dan belum dicatat di sesi ini?",
+      "stage": "orient",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "Sample data: 12 siswa, Hadir 8, Izin 2, Alpa 1, Belum dicatat 1; 8 + 2 + 1 + 1 = 12"
+      ],
+      "copy": {
+        "heading": "Absensi Tunas 3",
+        "body": [
+          "Sample data. Minggu, 8 Nov 2026, 09.00 WIB.",
+          "Hadir 8, Izin 2, Alpa 1, Belum dicatat 1 dari 12 siswa."
+        ],
+        "callsToAction": [
+          {
+            "label": "Simpan absensi",
+            "target": "#/absensi"
+          }
+        ]
+      },
+      "layout": "Judul h1 'Absensi' 36px, satu baris temuan '1 siswa belum dicatat'. Kartu penuh lebar 1088px (ponsel 358px) berisi bilah segmen 12px yang proporsional dengan empat hitungan di bawahnya dalam Baloo 2 tabular, masing-masing dengan ikon outline 16px dan teks. Segmen Hadir memakai biru data, Izin kuning-cokelat, Alpa merah, Belum dicatat abu-abu. Tombol utama merah 56px 'Simpan absensi' di kanan judul (ponsel: lengket di atas navigasi bawah). State: sesi kosong ditulis 0 pada semua hitungan; loading batang abu-abu; simpan berhasil 'Absensi tersimpan' dengan ikon centang; gagal 'Absensi belum tersimpan. Coba lagi.' tepat di bawah tombol.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Segmen memanjang atau memendek saat satu siswa dicatat; hitungan berganti tanpa hitung naik.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Segmen dan hitungan langsung pada keadaan akhir."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Kartu penuh 358px, hitungan dalam grid 2x2, tombol simpan lengket 56px di atas navigasi bawah.",
+        "medium": "Hitungan satu baris empat kolom.",
+        "expanded": "Kartu 1088px, hitungan satu baris, tombol simpan di kanan judul."
+      }
+    },
+    {
+      "id": "absensi-daftar",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Daftar siswa yang bisa dipindai dan dicatat satu jempol.",
+      "userQuestion": "Siapa yang belum dicatat dan bagaimana mencatatnya?",
+      "stage": "act",
+      "dependencies": [
+        "absensi-rekap"
+      ],
+      "evidence": [
+        "Sample data: 12 siswa fiktif, 1 belum dicatat (Dimas Wibowo)"
+      ],
+      "copy": {
+        "heading": "Daftar siswa",
+        "body": [
+          "Sample data. Alya Pratama Hadir, Bima Santoso Hadir, Citra Lestari Hadir, Dimas Wibowo Belum dicatat, Elsa Kurnia Izin, Fajar Nugroho Hadir, Gita Anjani Hadir, Hana Permata Izin, Iqbal Ramadhan Hadir, Jeni Susanto Alpa, Kevin Halim Hadir, Laras Wulandari Hadir.",
+          "Filter: Semua 12, Hadir 8, Izin 2, Alpa 1, Belum dicatat 1."
+        ],
+        "callsToAction": [
+          {
+            "label": "Hadir",
+            "target": "#/absensi"
+          },
+          {
+            "label": "Izin",
+            "target": "#/absensi"
+          },
+          {
+            "label": "Alpa",
+            "target": "#/absensi"
+          }
+        ]
+      },
+      "layout": "Kartu penuh lebar. Baris filter status 48px (Semua, Hadir, Izin, Alpa, Belum dicatat) dengan jumlah tabular, tab bergaris bawah 2px di atas garis 1px. Daftar 12 baris minimal 64px: inisial 44px di lingkaran pucat, nama 16px, pil status ikon plus teks, dan tiga kontrol status 48px (Hadir, Izin, Alpa) pada tiap baris. Aturan 1px antarbaris, tanpa zebra. State: filter tanpa hasil 'Tidak ada siswa dengan status ini' dalam bingkai putus-putus; baris hover latar raised; terpilih kontrol dengan ikon centang plus teks; fokus cincin biru 3px; nonaktif saat menyimpan; loading 12 baris abu-abu dengan pitch tetap; gagal satu kalimat plus Coba lagi.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Pil status berganti dan hitungan filter diperbarui saat kontrol diketuk; saat filter berganti, baris hasil muncul dengan identitas tetap dan fokus tetap pada tab filter.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Daftar dan pil langsung berganti tanpa transisi."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Filter sebagai baris tab yang bergulir ke samping di dalam barisnya; setiap siswa dua baris: nama dan pil di baris 1, tiga kontrol 48px di baris 2; nama panjang dipangkas dengan elipsis, bukan kontrol.",
+        "medium": "Baris tunggal dengan nama, pil, dan tiga kontrol; filter satu baris.",
+        "expanded": "Baris tunggal penuh 1088px dengan kolom nama, status, dan kontrol rata kanan."
+      }
+    },
+    {
+      "id": "masuk-form",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Layar masuk dengan satu aksi utama.",
+      "userQuestion": "Bagaimana saya masuk sebagai mentor?",
+      "stage": "act",
+      "dependencies": [],
+      "evidence": [],
+      "copy": {
+        "heading": "Masuk",
+        "body": [
+          "Masuk dengan nama pengguna dan kata sandi akun mentor.",
+          "Nama pengguna dan kata sandi tidak cocok. Periksa lalu coba lagi."
+        ],
+        "callsToAction": [
+          {
+            "label": "Masuk",
+            "target": "#/beranda"
+          }
+        ]
+      },
+      "layout": "Kartu putih 480px terpusat (ponsel 358px) di bawah logo ABC Movement yang ada, judul h1 'Masuk' 36px. Dua bidang 48px dengan label 13px selalu terlihat di atas (Nama pengguna, Kata sandi) dan tombol tampilkan kata sandi; tombol utama merah 56px 'Masuk' lebar penuh. State: loading tombol 'Memeriksa...' dinonaktifkan dan terbaca; kesalahan pesan di bawah bidang dengan ikon dan teks, garis input merah; kosong tampil label saja; fokus cincin biru 3px; nonaktif #E6DDD2 dengan teks #5C5350. Tidak ada janji izin perangkat atau absensi dari login.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Tombol bergeser 1px saat ditekan; pesan kesalahan memudar singkat tanpa menggeser bidang.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Pesan muncul langsung tanpa fade."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "assets/abc-movement-logo.png"
+      ],
+      "transformation": {
+        "compact": "Kartu lebar penuh 358px, bidang 48px, tombol 56px lebar penuh, tidak tertutup keyboard.",
+        "medium": "Kartu 480px terpusat.",
+        "expanded": "Kartu 480px terpusat di bawah logo, ground krem."
+      }
+    },
+    {
+      "id": "masuk-tautkan",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Bentuk tautan perangkat yang sudah ada, dengan satu aksi dan pesan jelas.",
+      "userQuestion": "Bagaimana saya menautkan perangkat ini dengan kode dari admin?",
+      "stage": "act",
+      "dependencies": [
+        "masuk-form"
+      ],
+      "evidence": [],
+      "copy": {
+        "heading": "Tautkan perangkat",
+        "body": [
+          "Masukkan kode tautan dari admin untuk perangkat ini.",
+          "Kode tidak dikenali atau sudah kedaluwarsa. Minta kode baru ke admin."
+        ],
+        "callsToAction": [
+          {
+            "label": "Tautkan perangkat",
+            "target": "#/masuk"
+          }
+        ]
+      },
+      "layout": "Kartu sekunder di bawah kartu masuk, lebar sama. Satu bidang kode 48px dengan label di atas, tombol sekunder putih 48px bergaris 1px #857A76 'Tautkan perangkat' karena aksi utama layar tetap Masuk. State: loading, kesalahan, dan nonaktif sama dengan kartu masuk; kosong hanya bidang. Tidak menyiratkan izin yang tidak didukung API.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Tombol bergeser 1px saat ditekan; pesan kesalahan memudar singkat.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Pesan muncul langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Lebar penuh 358px di bawah kartu masuk.",
+        "medium": "Kartu 480px terpusat.",
+        "expanded": "Kartu 480px terpusat di bawah kartu masuk."
+      }
+    },
+    {
+      "id": "kalender-bingkai",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tujuan navigasi nyata dengan bingkai dan satu kalimat; isi memakai modul kalender yang ada.",
+      "userQuestion": "Kapan sesi kelompok saya?",
+      "stage": "continue",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [],
+      "copy": {
+        "heading": "Kalender",
+        "body": [
+          "Jadwal sesi Kelompok Tunas 3."
+        ],
+        "callsToAction": [
+          {
+            "label": "Kembali ke beranda",
+            "target": "#/beranda"
+          }
+        ]
+      },
+      "layout": "h1 'Kalender' 36px, satu kalimat 16px, lalu kartu putih dengan isi kalender yang sudah ada tanpa mengubah logika. State kosong 'Belum ada sesi terjadwal' dalam bingkai putus-putus.",
+      "motion": {
+        "purpose": "none",
+        "trigger": "none",
+        "behavior": "Wilayah baca statis.",
+        "durationMs": 0,
+        "easing": "linear",
+        "reducedMotion": "Tidak ada gerak."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Kartu lebar penuh dengan margin 16px.",
+        "medium": "Kartu lebar penuh dalam kolom.",
+        "expanded": "Kartu 1088px terpusat."
+      }
+    }
+  ],
+  "responsive": [
+    "390px: satu kolom, margin 16px, navigasi bawah 72px, tombol utama 56px, target sentuh minimal 48px, tanpa gulir mendatar",
+    "768px: bar atas dengan tautan teks, kartu lebar penuh dalam kolom dengan margin 24px, tren dan jadwal ditumpuk bila salah satunya di bawah 340px",
+    "1280px dan 1440px: kolom terpusat 1088px, sesi hari ini dan tren di kiri 8 kolom, jadwal di kanan 4 kolom dengan dasar sejajar",
+    "Setiap blok yang disebut brief menampilkan judul dan baris pertamanya di layar 1440x900",
+    "360px diuji sebagai lantai: tidak ada overflow, nama panjang dipangkas dengan elipsis tanpa memotong kontrol"
+  ],
+  "interactions": [
+    "Filter status absensi: pilih Semua, Hadir, Izin, Alpa, atau Belum dicatat; daftar dan jumlah tab dihitung ulang dari baris di tampilan saat itu; fokus keyboard tetap pada tab setelah dipilih",
+    "Kontrol status per siswa: Hadir, Izin, Alpa menyetel status baris, pil dan strip rekap ikut berubah, tanpa menyiratkan izin yang tidak didukung API",
+    "Simpan absensi: loading menonaktifkan tombol dan membaca 'Menyimpan...', berhasil menampilkan 'Absensi tersimpan' dengan ikon, gagal menampilkan pesan di bawah tombol dengan Coba lagi",
+    "Navigasi: item aktif berganti, judul h1 mengikuti tampilan, Escape menutup menu akun dan fokus kembali ke pemicu",
+    "Masuk dan tautkan perangkat: validasi dan pesan galat memakai logika yang sudah ada; hanya tampilan yang berubah",
+    "Setiap baris dan kontrol punya keadaan hover, terpilih, fokus (cincin biru 3px), dan nonaktif yang jelas",
+    "prefers-reduced-motion: semua transisi mati dan keadaan akhir langsung terbaca, operasi setara",
+    "Data contoh berlabel 'Sample data' sekali per tampilan sebagai satu pemberitahuan tenang; tidak mengklaim sinkronisasi langsung"
+  ],
+  "acceptanceCriteria": [
+    "Set data contoh: 1 kelompok (Kelompok Tunas 3), 1 mentor (Rina Maharani), 12 siswa fiktif, 4 sesi mendatang (15, 22, 29 Nov, 6 Des 2026), 4 Minggu riwayat; Hadir 8 + Izin 2 + Alpa 1 + Belum dicatat 1 = 12; 18 Okt 11, 25 Okt 9, 1 Nov 10, 8 Nov 8 hadir; penurunan 10 ke 8 = 2; semua hitungan dihitung dari baris, bukan diketik terpisah",
+    "Warna: tombol utama merah hanya satu per layar; biru data hanya pada elemen data utama; tidak ada gradien, bayangan saat diam, KPI hias, atau sparkline",
+    "Status selalu ikon plus teks; kontras teks minimal 4.5:1 pada permukaannya",
+    "Semua target sentuh minimal 48px, baris siswa minimal 64px, tombol utama 56px",
+    "Tidak ada overflow horizontal pada 360, 390, 768, 1280, dan 1440px",
+    "Keadaan kosong, nol, loading, dan galat ada untuk setiap blok dalam bahasa Indonesia dan di dalam blok yang sama",
+    "id, name, data-*, ARIA, rute hash, dan kontrak request/response dipertahankan; teks yang dipakai tes hanya berubah bersama tesnya",
+    "Seluruh teks pengguna berbahasa Indonesia tanpa em dash, tanpa lorem, tanpa data anak sungguhan",
+    "Huruf Nunito Sans dan Baloo 2 benar-benar dimuat dari berkas lokal; document.fonts.check lolos dan tabular-nums mengubah lebar digit pada angka",
+    "Logika backend, autentikasi, otorisasi, dan absensi tidak berubah; kebutuhan di area Codex dicatat di berkas status"
+  ]
+}

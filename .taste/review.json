@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "verdict": "repair",
+  "summary": "The captured screen is a school-picking home with a decorative hero banner, an emoji greeting, a cool blue-grey ground and tinted icon tiles. It does not show the C10 cream, red and Baloo 2 system recorded in brand.json. It also has none of the blocks page.json plans: today's session with its Catat kehadiran action, the attendance recap strip, the 4-week trend and the upcoming sessions. Visual judgment only. Capture shows both viewports complete (390 px height equals the document height), but interaction behaviour, fonts actually loaded and other routes are not visible in the screenshots. TasteCode DOM audit found 1 blocking accessibility group.",
+  "findings": [
+    {
+      "id": "question_not_answered_biggest_block",
+      "severity": "blocking",
+      "area": "1440 and 390, first screen",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "The biggest block is the blue 'Langkah kecil. Dampak yang berarti.' banner with an illustration (about 260px tall at 1440). The planned question, which session to record now and how many students are still unrecorded, is not on screen. No session card, no 'Hadir 8, Izin 2, Alpa 1, Belum dicatat 1' strip, no trend, no upcoming sessions.",
+      "repair": "Remove the banner and put the planned blocks first: a 'Sesi hari ini' card with the finding '1 dari 12 siswa belum dicatat', the recap strip, and one red 56px 'Catat kehadiran' button. Then add 'Kehadiran 4 minggu' and 'Sesi berikutnya' as planned in page.json."
+    },
+    {
+      "id": "main_job_has_no_primary_control",
+      "severity": "blocking",
+      "area": "1440 and 390",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "No filled primary button is visible. The most frequent job (record attendance) can only be reached by choosing a school card through a 4-step stepper. The only buttons are the small links 'Tentang prototipe' and 'Lihat panduan'.",
+      "repair": "Add one red #C81E1E pill primary 'Catat kehadiran' (56px) in the session card on the first screen. Keep the school and date flow as the secondary path."
+    },
+    {
+      "id": "brand_system_not_applied",
+      "severity": "major",
+      "area": "1440 and 390, whole screen",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "Ground is a cool blue-grey (#f4f6fa-like), not cream #FFF8D6. Cards use about 16px radius, not 28 or 36. Headings do not look like Baloo 2. The accent is blue (active nav pill, stepper, links, hero panel) instead of red for the one action. This looks like the legacy surface, not ui/msa-tokens.css.",
+      "repair": "Wrap this view in .ui-root and load ui/msa-tokens.css, msa-components.css and its page CSS, so ground, radii, fonts and the red primary come from the approved tokens. Retire the legacy blue chrome on this page."
+    },
+    {
+      "id": "emoji_in_greeting",
+      "severity": "major",
+      "area": "1440 and 390, title",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "'Halo, Kak Mentor!' carries a sun emoji. The same greeting is repeated in the sidebar user row.",
+      "repair": "Remove the emoji. Use a noun title such as 'Beranda mentor' as the one h1, with the finding as the single subline."
+    },
+    {
+      "id": "hero_banner_and_illustration",
+      "severity": "major",
+      "area": "1440 and 390, below the title",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "A tinted hero panel with a decorative clipboard illustration, a slogan and a pill 'Satu ketuk untuk mencatat hadir'. On the phone it pushes the first school card to about y=620 of 844, below the top 60%.",
+      "repair": "Delete the banner and the illustration. On the phone the session card and its primary button should start in the top 60% of the screen."
+    },
+    {
+      "id": "icons_in_tinted_squares_per_card",
+      "severity": "major",
+      "area": "1440 and 390, school cards",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "Each school card carries a house icon in a rounded tinted square, in three hues (blue, red, yellow). The hues are decoration, not data or status, and the same icon repeats on every card.",
+      "repair": "Remove the tinted tiles. Use one plain grey 16px icon at most, or none. Colour only on status and the primary action."
+    },
+    {
+      "id": "multiple_tracked_uppercase_labels",
+      "severity": "minor",
+      "area": "1440 and 390",
+      "evidenceType": "visual_inspection",
+      "confidence": "high",
+      "evidence": "Four tracked uppercase labels: 'RUANG PELAYANAN', 'ABC MOVEMENT · GOES TO SCHOOL', 'PROTOTIPE' and the tracked section label in the header. Brand voice allows sentence-case grey labels, and at most one tracked label per screen.",
+      "repair": "Set all but one in sentence case at 12-13px in --ink-muted. Drop the 'Goes to school' eyebrow with the banner."
+    },
+    {
+      "id": "small_targets_under_44",
+      "severity": "major",
+      "area": "1440",
+      "evidenceType": "automated",
+      "confidence": "high",
+      "evidence": "DOM audit: 'Tentang prototipe' is 147.8x40 and 'Lihat panduan' is 127.9x40, both under the 44px floor (brief requires 48px).",
+      "repair": "Give both controls min-height 48px, keeping the visible link style inside the larger hit area."
+    },
+    {
+      "id": "small_text_under_floor",
+      "severity": "minor",
+      "area": "1440 and 390",
+      "evidenceType": "visual_inspection",
+      "confidence": "medium",
+      "evidence": "Meta text looks about 11px: '8 kelompok · 32 siswa', 'Setiap kehadiran berarti.', the copyright line and the sidebar note 'Seluruh data siswa fiktif'. At this size and grey they are hard to read.",
+      "repair": "Raise meta text to 13px in --ink-muted (#5C5350) and check 4.5:1 on its surface."
+    },
+    {
+      "id": "footer_and_chrome_clutter",
+      "severity": "minor",
+      "area": "1440 and 390, bottom",
+      "evidenceType": "visual_inspection",
+      "confidence": "medium",
+      "evidence": "A footer row with a heart icon, 'Setiap kehadiran berarti.' and a copyright line, a 'Pertama kali menggunakan?' help card, and a sidebar card 'Ruang coba, bebas eksplorasi' whose title wraps awkwardly under its icon. None answers the screen's question.",
+      "repair": "Remove the footer. Fold the data-fiktif notice into the single dismissible pilot banner. Drop the help card or move it behind 'Lihat panduan'."
+    },
+    {
+      "id": "phone_bottom_nav_overlaps_content",
+      "severity": "major",
+      "area": "390",
+      "evidenceType": "visual_inspection",
+      "confidence": "medium",
+      "evidence": "The bottom navigation (Absensi, Admin, Tentang demo) sits over the 'SDN Airlangga III' card at about y=780-845, and a dark navy rounded shape below it at y=855 overlaps the next card with no label. Part of this may be the full-page capture placing a fixed bar at viewport height, so confidence is medium.",
+      "repair": "Confirm in a 390x844 viewport capture that the bar stays at the bottom with 96px of clearance. Replace the dark navy FAB with the planned yellow 56px FAB with a label, or remove it."
+    },
+    {
+      "id": "nav_active_state_is_tinted_chrome",
+      "severity": "minor",
+      "area": "1440 sidebar",
+      "evidenceType": "visual_inspection",
+      "confidence": "medium",
+      "evidence": "The active item 'Absensi mentor' uses a pale blue fill with a blue left edge, and the stepper uses a filled blue circle. This is accent colour on chrome, and the brand assigns yellow pill plus bold label for active items.",
+      "repair": "Use the C10 yellow capsule with bold ink label for the active item and ink-only stepper marks, keeping colour for data and status."
+    },
+    {
+      "id": "interactive_target_size",
+      "severity": "blocking",
+      "area": "Interaction targets",
+      "evidenceType": "automated",
+      "confidence": "high",
+      "evidence": "2 visible interactive targets below 44x44 CSS px. 1440px div:nth-of-type(1) > button (Tentang prototipe): 147.796875x40; 1440px div:nth-of-type(3) > button (Lihat panduan): 127.9375x40",
+      "repair": "Make every visible interactive target at every reviewed viewport at least 44x44 CSS px."
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "assets/abc-movement-logo.png",
+      "kind": "image",
+      "status": "existing",
+      "purpose": "Logo ABC Movement yang sudah ada, dipakai apa adanya di bar atas dan di atas kartu masuk. Tidak ada logo baru dan tidak ada gambar lain yang dibutuhkan.",
+      "requirements": [
+        "Pakai berkas yang ada tanpa mengubah warna atau proporsi",
+        "Berkas PNG RGBA 2392x1018 piksel, terverifikasi di proyek",
+        "Tampilkan dengan tinggi sekitar 32px di bar atas dan sekitar 48px di layar masuk, dengan teks alt 'ABC Movement'",
+        "Jangan digambar ulang sebagai SVG"
+      ],
+      "role": "logo",
+      "sectionIds": [
+        "shell",
+        "masuk-form"
+      ],
+      "aspectRatio": "1196:509",
+      "composition": "Logo horizontal ABC Movement, diratakan ke kiri sejajar tepi kolom 1088px di bar atas; terpusat di atas kartu masuk 480px. Ruang kosong selebar tinggi logo di sekelilingnya, tanpa teks di atas gambar.",
+      "source": {
+        "kind": "project",
+        "reference": "assets/abc-movement-logo.png"
+      },
+      "destination": "assets/abc-movement-logo.png"
+    },
+    {
+      "id": "font-baloo-2",
+      "kind": "font",
+      "status": "existing",
+      "purpose": "Baloo 2 untuk judul layar dan angka besar hitungan kehadiran. Berkas lokal sudah ada, bukan CDN.",
+      "requirements": [
+        "Berkas woff2 lokal, magic bytes 774F4632 (wOF2) terverifikasi",
+        "Bobot yang dipakai 700 dan 800, dimuat lewat @font-face di ui/msa-tokens.css",
+        "Lisensi OFL tersimpan di assets/fonts/OFL-Baloo2.txt",
+        "Build memeriksa document.fonts.ready dan document.fonts.check untuk bobot yang dipakai",
+        "Tidak ada fallback sistem yang dihitung sebagai keluarga yang diperoleh"
+      ],
+      "role": "font",
+      "sectionIds": [
+        "beranda-sesi",
+        "beranda-tren",
+        "beranda-jadwal",
+        "absensi-rekap",
+        "masuk-form",
+        "kalender-bingkai"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Tidak berlaku, berkas huruf. Dipakai untuk h1 36px, h2 20px, dan hitungan kehadiran 40px.",
+      "source": {
+        "kind": "project",
+        "reference": "assets/fonts/baloo2-latin.woff2",
+        "license": "SIL Open Font License 1.1 (assets/fonts/OFL-Baloo2.txt)"
+      },
+      "destination": "assets/fonts/baloo2-latin.woff2"
+    },
+    {
+      "id": "font-nunito-sans",
+      "kind": "font",
+      "status": "existing",
+      "purpose": "Nunito Sans untuk seluruh teks antarmuka. Berkas lokal sudah ada, bukan CDN.",
+      "requirements": [
+        "Berkas woff2 lokal, magic bytes 774F4632 (wOF2) terverifikasi",
+        "Bobot 400 sampai 800 dimuat sebagai satu berkas variabel lewat @font-face di ui/msa-tokens.css; pakai hanya bobot 400, 600, 700, dan 800",
+        "Lisensi OFL tersimpan di assets/fonts/OFL-NunitoSans.txt",
+        "Build memeriksa document.fonts.ready, FontFace yang termuat, dan bahwa tabular-nums mengubah lebar digit",
+        "Tidak ada fallback sistem yang dihitung sebagai keluarga yang diperoleh"
+      ],
+      "role": "font",
+      "sectionIds": [
+        "shell",
+        "beranda-sesi",
+        "beranda-tren",
+        "beranda-jadwal",
+        "absensi-rekap",
+        "absensi-daftar",
+        "masuk-form",
+        "masuk-tautkan",
+        "kalender-bingkai"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Tidak berlaku, berkas huruf. Dipakai untuk badan teks 16px, label 12-13px, tombol 17px, dan navigasi.",
+      "source": {
+        "kind": "project",
+        "reference": "assets/fonts/nunito-sans-latin.woff2",
+        "license": "SIL Open Font License 1.1 (assets/fonts/OFL-NunitoSans.txt)"
+      },
+      "destination": "assets/fonts/nunito-sans-latin.woff2"
+    }
+  ]
+}

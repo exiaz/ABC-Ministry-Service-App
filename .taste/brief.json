@@ -1,0 +1,56 @@
+{
+  "originalRequest": "# MSA — UI/UX Overhaul Execution\n\nAct as a senior product designer and frontend engineer. Execute a focused, production-quality UI/UX overhaul of ABC Ministry Service App (MSA).\n\n**Goal:** Make MSA visually polished, mobile-first, accessible, and intuitive for mentors and administrators while preserving all existing functionality.\n\n## 1. Inspect and Establish Baseline\n\n- Read the latest local `project_status.md`, project instructions, and relevant frontend files.\n- Inspect the existing architecture, UI components, routes, and styling.\n- Identify the current Git branch and uncommitted changes.\n- Review available design references and Figma components when accessible.\n- Inspect the existing interface through a local preview if possible.\n\nDo not rebuild from scratch or replace the existing tech stack.\n\nWork only in an isolated checkout/worktree. If isolation is unavailable and existing work could be overwritten, stop rather than modifying it.\n\n## 2. Design Direction\n\nUse TasteCode Design Mode as the primary design workflow.\n\nApply the `design-taste-frontend` app-screen principles where available. Do not run a duplicate full design pipeline.\n\nDesign principles:\n- Mobile-first PWA\n- Clear information hierarchy\n- Simple navigation\n- Comfortable touch targets\n- Consistent typography and spacing\n- Accessible contrast\n- Modern, friendly, refined visual identity\n- ABC Movement branding: red, light blue, yellow\n- Functional use of color, not excessive decoration\n\nAvoid generic AI dashboards, unnecessary KPI cards, excessive gradients, decorative animations, and UI clutter.\n\nPreserve existing approved brand and design tokens where available.\n\n## 3. Implement the Overhaul\n\nPrioritize these existing interfaces:\n\n1. Authentication and sign-in screens\n2. Mentor Dashboard and navigation\n3. Attendance workflow and student lists\n4. Shared buttons, inputs, cards, navigation, and feedback states\n\nImprove the existing experience rather than introducing new workflows.\n\nMaintain all existing role permissions, validation, attendance behavior, and application integrations.\n\nDo not invent new features or change business logic.\n\nImplement actual frontend code changes, not just design recommendations.\n\n## 4. Use Supporting Tools Selectively\n\n- TasteCode: design direction, implementation, live preview, visual review.\n- Playwright: browser interaction and responsive smoke tests, if available.\n- Impeccable: one targeted visual/accessibility audit, if installed.\n- Emil Kowalski mobile-native/break-ui: apply relevant mobile and edge-case guidance, if available.\n- Figma Console MCP: read approved design references only when accessible.\n\nDo not install additional tools or run overlapping audits.\n\n## 5. Validate and Refine\n\nRun the existing application checks.\n\nReview the modified screens at:\n- 390px mobile\n- 768px tablet\n- 1280px desktop\n\nVerify:\n- Navigation and primary actions\n- Responsive layouts\n- No horizontal overflow\n- Empty, loading, and error states\n- Keyboard accessibility\n- No obvious browser errors\n- Existing functionality is preserved\n\nCapture screenshots, identify the three highest-impact issues, fix them, and perform one final verification pass.\n\n## 6. Execution Rules\n\n- Execute directly. Do not stop after planning.\n- Keep changes focused and minimal.\n- Reuse existing components and dependencies.\n- Avoid unrelated refactoring.\n- Never modify production data or credentials.\n- Do not modify Figma source files.\n- Keep detailed tool output out of the final response.\n- If blocked, report the blocker accurately instead of claiming completion.\n\n## 7. Final Output\n\nProvide a concise report in Indonesian:\n\n1. Screens improved\n2. Main UI/UX changes\n3. Files modified\n4. Tests passed/failed\n5. Screenshot or preview location\n6. Remaining issues\n\nPrioritize completed, verified improvements over extensive explanations.",
+  "subject": "ABC Ministry Service App (MSA), an existing mobile-first PWA for attendance and ministry service management, used by Mentors, Volunteers and Admins. The UI is in Indonesian and built with vanilla HTML, CSS and ES modules, with no framework or bundler.",
+  "pageType": "dashboard",
+  "scope": "Redesign of the existing active interfaces (msa-*.html/js, msa-shell.css, msa-visual.css) in this priority order: (1) authentication and sign-in screens, (2) Mentor Dashboard and navigation, (3) attendance workflow and student lists, (4) shared buttons, inputs, cards, navigation and feedback states. Frontend code changes only, in the isolated worktree MSA-claude on branch claude/u6b-modul-admin. No new features or workflows, no business-logic changes, no backend, auth, authorization, firestore.rules or attendance-data changes, no new dependencies, and no changes to legacy pages. Validation covers 390, 768 and 1280 px.",
+  "primaryGoal": "Make MSA look polished, consistent and intuitive, with clear hierarchy, simple navigation, comfortable touch targets and accessible contrast. Mentors should be able to log in, find their service and record attendance quickly on a phone. All existing roles, validation, attendance behavior and integrations must stay exactly as they are.",
+  "audience": "Mentors, who mostly use phones during services and need fast, low-friction attendance. Admins and Volunteers manage groups, schedules and devices, mostly on phone or tablet, sometimes on desktop.",
+  "offer": "A refined, friendly ABC Movement visual identity (red, light blue, yellow used functionally) applied consistently across screens. It keeps the current functions and improves clarity, speed of use and accessibility.",
+  "primaryAction": "Sign in, then record student attendance in the Mentor workflow. On each screen there is one main action.",
+  "creativeControl": "Delegated: the user asked to proceed directly without a separate design-approval step. Direction is a restrained, refined application of the existing ABC Movement tokens; no new brand identity. Existing approved tokens take precedence over new styling.",
+  "requiredContent": [
+    "Authentication and sign-in screens: the existing login and pairing forms with clear labels, Indonesian error and loading messages, visible focus, and a single primary action",
+    "Mentor Dashboard and navigation: the existing service overview, upcoming sessions and simple primary navigation, with no decorative KPI cards",
+    "Attendance workflow and student lists: the existing session attendance screen with a scannable student list, status controls that pair icon and text rather than relying on colour alone, a status filter that keeps keyboard focus, and clear empty, saving and error states",
+    "Shared components: buttons, inputs, cards, navigation, and feedback states (empty, loading, error, success) with touch targets of at least 48 px",
+    "Feedback and states: empty, loading and error states in Indonesian for each modified screen",
+    "Validation deliverables: responsive checks at 390/768/1280 px with screenshots, a keyboard and accessibility pass, a check for horizontal overflow and browser errors, the three highest-impact issues fixed, and a final verification pass",
+    "Final report in Indonesian: screens improved, main changes, files modified, tests passed or failed, screenshot location, remaining issues"
+  ],
+  "constraints": [
+    "Work only in the isolated worktree MSA-claude on branch claude/*; do not touch the development branch or other agents' branches or paths",
+    "Keep the current stack: HTML/CSS/vanilla ES modules, no new dependencies, no build step",
+    "Keep all ids, names, data-* attributes, ARIA attributes read by JS or tests, hash routes, URLs and request/response contracts; record any change in the status file",
+    "Change text used in test assertions only together with the matching test, and note old and new text",
+    "Do not edit backend/, authentication, sessions, authorization, firestore.rules or attendance and data models; stop and hand these to Codex via the user if a UI task reaches them",
+    "The UI must not imply permissions or data the API does not support; hiding an element is not access control",
+    "Do not touch student private data (birth date, guardian, address); use fictional data only",
+    "Mobile-first starting at 360 px, then 390/768/1280 px; no horizontal overflow; content not covered by navigation, FAB or keyboard",
+    "WCAG AA contrast, visible focus rings, always-visible field labels, status shown with icon plus text, and respect for prefers-reduced-motion",
+    "All user-visible text is in Indonesian",
+    "Avoid generic AI dashboards, unnecessary KPI cards, heavy gradients, decorative animation and clutter",
+    "Do not modify production data, credentials or Figma source files; do not commit, merge, push or deploy without user approval",
+    "Ask the user before running the emulator or browser suites; run npm.cmd run check and npm.cmd test",
+    "Write the status file docs/status/<date>-claude-<task>.md; do not edit PROJECT_STATUS.md, sw.js or server.mjs, and only note what the integrator needs to apply",
+    "Do not run duplicate audits or install additional tools; use Playwright, Impeccable, mobile-native/break-ui and Figma reference reading only selectively and where available"
+  ],
+  "brandInputs": [
+    "ABC Movement brand palette: red, light blue and yellow (source: user request)",
+    "Existing approved design tokens and components in msa-shell.css, msa-visual.css and docs/ui-overhaul/BRIEF.md, to be preserved and extended (source: project instructions)",
+    "Typography, logo and current visual style: to be read from the existing tokens and assets in the repository during the build; no new brand decisions are invented"
+  ],
+  "assumptions": [
+    "The previous U6a/U6b work in the branch history is part of the existing baseline; this pass refines the four prioritized areas rather than redoing the whole app",
+    "The request is treated as an operating product interface (pageType dashboard); marketing sections and an eight-section minimum do not apply",
+    "Motion follows the dashboard rule: useful transitions for tabs, filters, drawers and navigation only, all disabled under prefers-reduced-motion; no decorative entrance animation, since the request lists decorative animation among the things to avoid",
+    "Where the CLAUDE.md role split conflicts with the request, the stricter rule wins: Claude does UI/markup/CSS/text and leaves msa-*.js logic, backend and auth to Codex or to the user's decision, and records any such need in the status file",
+    "Where the Figma references and TasteCode live preview are not reachable, the existing design tokens and BRIEF.md serve as the design source, and this limit is reported honestly",
+    "Where there is no data, existing fictional or demo data is used for previews; no real child data",
+    "If the build finds a needed change in a Codex-owned area, it is recorded as a request in the status file and not made"
+  ],
+  "unresolved": [
+    "Whether the emulator or browser test suites may be run depends on user approval at execution time",
+    "Availability of Figma references, Impeccable and Playwright in the environment is unverified"
+  ],
+  "explicitAnswers": []
+}

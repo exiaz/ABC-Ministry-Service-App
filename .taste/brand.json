@@ -1,0 +1,326 @@
+{
+  "version": 1,
+  "foundation": {
+    "strategy": "preserve",
+    "existingAssets": [
+      "ui/msa-tokens.css",
+      "ui/msa-components.css",
+      "ui/msa-auth.css",
+      "ui/msa-admin.css",
+      "assets/abc-movement-logo.png",
+      "icon.svg",
+      "assets/icons/ui-sprite.svg",
+      "assets/fonts/baloo2-latin.woff2",
+      "assets/fonts/nunito-sans-latin.woff2",
+      "docs/ui-overhaul/BRIEF.md"
+    ],
+    "assetActions": [
+      {
+        "asset": "ui/msa-tokens.css",
+        "action": "protect",
+        "reason": "Token ABC tema ceria (merah, biru muda, kuning, Baloo 2 + Nunito Sans) sudah disetujui; tugas ini menyempurnakan pemakaiannya, bukan mengganti nilainya."
+      },
+      {
+        "asset": "assets/abc-movement-logo.png",
+        "action": "preserve",
+        "reason": "Logo ABC Movement yang ada dipakai apa adanya di bar atas dan layar masuk; tidak ada logo baru."
+      },
+      {
+        "asset": "icon.svg",
+        "action": "preserve",
+        "reason": "Ikon PWA yang ada tetap."
+      },
+      {
+        "asset": "assets/icons/ui-sprite.svg",
+        "action": "preserve",
+        "reason": "Sprite ikon outline (Lucide) dipakai untuk ikon status; ikon baru hanya ditambahkan ke sprite yang sama bila perlu."
+      },
+      {
+        "asset": "assets/fonts/baloo2-latin.woff2",
+        "action": "preserve",
+        "reason": "Sudah dimuat lewat @font-face lokal dengan lisensi OFL; tanpa CDN."
+      },
+      {
+        "asset": "assets/fonts/nunito-sans-latin.woff2",
+        "action": "preserve",
+        "reason": "Huruf antarmuka merek yang sudah dimuat lokal; menggantikan Geist dari lembar karena merek yang ada lebih tinggi prioritasnya."
+      },
+      {
+        "asset": "ui/msa-components.css",
+        "action": "evolve",
+        "reason": "Tombol, input, kartu, navigasi, dan keadaan umpan balik dirapikan di sini agar konsisten; kontrak kelas dan atribut dipertahankan."
+      }
+    ],
+    "lockedDecisions": [
+      "Palet merek ABC Movement: merah #c81e1e untuk aksi utama, biru muda #64a4d9 / #1d5f99 untuk fokus dan data, kuning #f8ed32 untuk sorotan kecil",
+      "Huruf: Baloo 2 hanya untuk judul dan angka besar, Nunito Sans untuk seluruh antarmuka; tanpa huruf tampilan ketiga",
+      "Target sentuh minimal 48px, tombol utama 56px, baris siswa minimal 64px",
+      "Seluruh teks pengguna berbahasa Indonesia",
+      "Tumpukan teknologi: HTML, CSS, ES modules vanilla; tanpa dependensi baru",
+      "id, name, data-*, ARIA yang dibaca JS atau tes, rute hash, dan kontrak request/response tetap",
+      "Status tidak hanya dengan warna: selalu ikon ditambah teks"
+    ],
+    "assumptions": [
+      "Lembar 'Achromatic ledger' dipakai untuk disiplin (sedikit warna, datar, angka tabular, tanpa KPI hias), tetapi warna dan huruf Geist-nya diganti oleh merek ABC yang sudah ada",
+      "Ground krem #fff8d6 dari token yang ada dipertahankan sebagai ground; kartu putih di atasnya, dibedakan dengan garis 1px, bukan bayangan",
+      "Bayangan --shadow-float hanya untuk yang melayang (menu, sheet); --shadow-card tidak dipakai saat diam",
+      "Bar atas tanpa sidebar di layar lebar dan bar navigasi bawah di ponsel, mengikuti navigasi yang sudah ada",
+      "Tidak ada logo baru; tanda produk memakai logo ABC Movement yang ada"
+    ]
+  },
+  "creativeDirection": {
+    "summary": "Wajah produk: ledger kehadiran yang hangat. Krem ABC sebagai ground, kartu putih datar dengan garis tipis, aksi utama merah ABC berbentuk pil, dan angka kehadiran dalam Baloo 2 sebagai satu-satunya suara besar. Warna ada pada tindakan dan status, bukan pada hiasan.",
+    "traits": [
+      {
+        "quality": "ramah dan jelas",
+        "boundary": "not kekanak-kanakan atau penuh hiasan"
+      },
+      {
+        "quality": "cepat dipindai dengan satu jempol",
+        "boundary": "not padat seperti dasbor desktop"
+      },
+      {
+        "quality": "tenang, satu aksi utama per layar",
+        "boundary": "not deretan kartu KPI"
+      },
+      {
+        "quality": "hangat berkat merek ABC",
+        "boundary": "not gradien, kilau, atau ilustrasi dekoratif"
+      }
+    ],
+    "productiveTension": "Merek ABC yang ceria (pil, Baloo 2, krem, merah) dipertemukan dengan disiplin alat kerja yang datar dan hemat warna, sehingga terasa ramah tanpa mengorbankan kecepatan mencatat absensi.",
+    "signatureDevice": {
+      "description": "Strip rekap kehadiran sesi: satu bilah segmen tipis di atas daftar siswa yang menghitung Hadir, Izin, dan Belum dicatat secara langsung saat mentor mengetuk, dengan hitungan dalam Baloo 2 dan setiap segmen berpasangan ikon plus teks.",
+      "status": "candidate",
+      "invariants": [
+        "Segmen dan hitungan selalu berasal dari data sesi yang sama dengan daftar di bawahnya",
+        "Setiap segmen memakai ikon dan teks, tidak hanya warna",
+        "Hitungan tabular dan nol ditulis sebagai 0",
+        "Tidak ada sparkline atau ikon berlatar warna"
+      ]
+    },
+    "restraint": "Warna hanya pada aksi utama, fokus, dan status; kartu datar; satu aksi utama per layar; tanpa bayangan saat diam; tanpa animasi masuk.",
+    "avoid": [
+      "Gradien, kilau, kaca, atau bayangan kartu",
+      "Kartu KPI hias atau sparkline",
+      "Ikon di dalam kotak berwarna",
+      "Emoji dan ilustrasi dekoratif",
+      "Status hanya dengan warna",
+      "Ikon dan teks di bawah kontras AA",
+      "Pil abu-abu sebagai satu-satunya tombol untuk tugas utama"
+    ]
+  },
+  "colorPalette": [
+    {
+      "name": "ground",
+      "value": "#FFF8D6",
+      "usage": "Latar halaman krem dari token merek yang ada (--surface-200); satu tingkat di bawah kartu putih."
+    },
+    {
+      "name": "surface",
+      "value": "#FFFFFF",
+      "usage": "Kartu, baris daftar, input, dan sheet."
+    },
+    {
+      "name": "raised",
+      "value": "#FDF1C0",
+      "usage": "Sumur lembut untuk bidang bersarang atau baris terpilih, satu langkah lebih dalam dari ground."
+    },
+    {
+      "name": "border",
+      "value": "#E6DDD2",
+      "usage": "Garis kartu 1px dari token --line yang ada."
+    },
+    {
+      "name": "rule",
+      "value": "#F0E9DF",
+      "usage": "Garis pemisah baris, satu langkah lebih terang dari border."
+    },
+    {
+      "name": "control",
+      "value": "#857A76",
+      "usage": "Garis input dan tombol sekunder; token --control-border yang ada, melampaui 3:1 pada putih."
+    },
+    {
+      "name": "text",
+      "value": "#231F20",
+      "usage": "Teks utama (--ink)."
+    },
+    {
+      "name": "muted",
+      "value": "#5C5350",
+      "usage": "Teks sekunder dan label (--ink-muted); sekitar 7:1 pada ground krem dan 7.5:1 pada putih."
+    },
+    {
+      "name": "accent",
+      "value": "#C81E1E",
+      "usage": "Merah ABC untuk satu aksi utama per layar dan tanda produk; teks putih di atasnya lolos 4.5:1. Hover memakai #A31717."
+    },
+    {
+      "name": "positive",
+      "value": "#2E7D32",
+      "usage": "Teks dan ikon status Hadir pada putih, di atas 4.5:1."
+    },
+    {
+      "name": "negative",
+      "value": "#C4242A",
+      "usage": "Teks dan ikon kesalahan atau Alpa pada putih, di atas 4.5:1."
+    },
+    {
+      "name": "warning",
+      "value": "#92400E",
+      "usage": "Teks dan ikon peringatan atau Izin."
+    },
+    {
+      "name": "chart-1",
+      "value": "#231F20",
+      "usage": "Seri utama dalam tinta (angka dan bilah rekap)."
+    },
+    {
+      "name": "chart-2",
+      "value": "#857A76",
+      "usage": "Pembanding atau bagian yang belum dicatat, dalam abu-abu."
+    },
+    {
+      "name": "chart-3",
+      "value": "#1D5F99",
+      "usage": "Satu warna data (biru ABC gelap) untuk elemen data utama, seperti sesi hari ini; cincin fokus juga memakai nilai ini."
+    },
+    {
+      "name": "pill-positive-bg",
+      "value": "#DCFAE5",
+      "usage": "Latar pil Hadir."
+    },
+    {
+      "name": "pill-positive-ink",
+      "value": "#04250E",
+      "usage": "Teks pil Hadir, di atas 4.5:1."
+    },
+    {
+      "name": "pill-negative-bg",
+      "value": "#FFEDEA",
+      "usage": "Latar pil Alpa atau gagal."
+    },
+    {
+      "name": "pill-negative-ink",
+      "value": "#831C1E",
+      "usage": "Teks pil Alpa atau gagal."
+    },
+    {
+      "name": "pill-warning-bg",
+      "value": "#FFFBEB",
+      "usage": "Latar pil Izin atau perlu perhatian."
+    },
+    {
+      "name": "pill-warning-ink",
+      "value": "#92400E",
+      "usage": "Teks pil Izin atau perlu perhatian."
+    },
+    {
+      "name": "pill-neutral-bg",
+      "value": "#EEEEEE",
+      "usage": "Latar pil Belum dicatat atau netral."
+    },
+    {
+      "name": "pill-neutral-ink",
+      "value": "#3D3D3D",
+      "usage": "Teks pil netral."
+    }
+  ],
+  "typefaces": [
+    {
+      "family": "Nunito Sans",
+      "source": "Google Fonts",
+      "roles": [
+        "interface"
+      ],
+      "weights": [
+        400,
+        600,
+        700,
+        800
+      ]
+    },
+    {
+      "family": "Baloo 2",
+      "source": "Google Fonts",
+      "roles": [
+        "display-numbers"
+      ],
+      "weights": [
+        700,
+        800
+      ]
+    }
+  ],
+  "interfaceDirection": "Mobile-first. Ponsel: bar atas ringan dengan logo ABC dan judul layar, konten satu kolom dengan margin 16px, navigasi bawah 72px dengan ruang 96px di bawah konten agar tidak tertutup. Tablet dan desktop: bar atas di atas kolom terpusat (tanpa sidebar gelap), navigasi sebagai tautan teks, kolom konten sekitar 1088px. Kepadatan lapang: celah 16px, kartu 24px, tombol utama 56px, kontrol 48px, baris siswa minimal 64px. Satu gaya label: 12-13px kalimat biasa, abu-abu, tanpa huruf kapital berjarak. Pil status berpasangan sesuai token: Hadir hijau, Izin kuning-cokelat, Alpa merah, Belum dicatat netral, selalu dengan ikon outline 16px ditambah teks. Keadaan kontrol: hover menggelapkan merah ke #A31717, fokus berupa cincin 3px biru #1D5F99 dengan offset 2px yang selalu terlihat, tekan menggeser 1px, nonaktif memakai #E6DDD2 dengan teks #5C5350 dan tetap terbaca, kesalahan menandai input dengan garis merah, ikon, dan pesan tertulis. Label bidang selalu terlihat di atas input. Keadaan kosong, memuat, dan gagal punya teks Indonesia sendiri dan tetap berada dalam bingkai.",
+  "designTokens": {
+    "typeScale": {
+      "display": "36px",
+      "h1": "36px",
+      "h2": "20px",
+      "h3": "40px",
+      "body": "16px",
+      "small": "13px",
+      "label": "12px"
+    },
+    "radius": {
+      "scale": [
+        "28px",
+        "36px"
+      ],
+      "pill": "999px"
+    },
+    "spacing": {
+      "section": "24px",
+      "gutter": "16px",
+      "stack": "12px"
+    },
+    "buttons": {
+      "primary": "Pil merah #C81E1E, teks putih Nunito Sans 800 17px, tinggi 56px, hover #A31717, tanpa bayangan; satu per layar.",
+      "secondary": "Pil berlatar putih dengan garis 1px #857A76, teks tinta, tinggi 48px, fokus cincin biru #1D5F99."
+    },
+    "surfaces": "Ground krem #FFF8D6, kartu putih datar dengan garis 1px #E6DDD2, pemisah baris #F0E9DF; tidak ada bayangan saat diam, bayangan lembut hanya untuk yang melayang (menu, sheet)."
+  },
+  "imageDirection": {
+    "summary": "Tidak ada citra dekoratif. Yang tampil hanya logo ABC Movement yang ada dan, di dalam baris, siswa dan mentor sebagai inisial pada lingkaran 44px berwarna pucat dari warna masing-masing.",
+    "subjects": [
+      "Logo ABC Movement di bar atas dan layar masuk",
+      "Inisial siswa dan mentor pada lingkaran pucat, dengan data fiktif",
+      "Ikon outline status dari sprite yang ada"
+    ],
+    "treatment": "Inisial memakai tint pucat yang stabil per orang dan tetap di luar warna status; ikon outline 1.5px, 16-20px, abu-abu tinta.",
+    "avoid": [
+      "Foto stok",
+      "Ilustrasi dekoratif",
+      "Gambar latar hero",
+      "Foto atau data pribadi anak sungguhan"
+    ]
+  },
+  "motionDirection": {
+    "summary": "Gerak hanya sebagai umpan balik; tidak ada animasi masuk, dan semua gerak mati di bawah prefers-reduced-motion dengan keadaan akhir langsung terbaca.",
+    "principles": [
+      "Umpan balik tekan: tombol dan centang kehadiran bergeser 1px dan berubah warna saat diketuk; elemen yang ditekan; 100-150ms; ease-out tegas",
+      "Filter status: daftar siswa berganti saat filter dipilih, baris mempertahankan identitasnya dan fokus tetap pada filter; hubungan filter dengan daftar; 150-200ms; ease-out",
+      "Sheet dan menu: panel muncul dari tepi bawah atau pemicunya lalu fokus kembali ke pemicu saat Escape; hubungan pemicu dengan panel; 180-250ms; ease-out",
+      "Strip rekap kehadiran: segmen memanjang saat satu siswa dicatat; hubungan hitungan dengan daftar; 150-220ms; ease-out dengan skala tetap",
+      "Pesan simpan atau gagal: umpan balik hadir dengan memudar singkat, tanpa menutup konten; hubungan aksi dengan hasilnya; 120-200ms; ease-out"
+    ],
+    "avoid": [
+      "Animasi masuk saat halaman dimuat",
+      "Hitung naik pada angka",
+      "Gerak dekoratif yang berulang",
+      "Pantulan pada kontrol utama"
+    ]
+  },
+  "voice": {
+    "summary": "Bahasa Indonesia hangat, singkat, dan sesuai istilah pelayanan: Hadir, Izin, Alpa, Belum dicatat, Kelompok, Sesi hari ini, Catat kehadiran, Simpan absensi. Pesan kesalahan menyebut apa yang terjadi dan langkah berikutnya.",
+    "avoid": [
+      "Kata generik templat seperti Item, Record, Status saja",
+      "Nada menggurui atau seruan berlebihan",
+      "Jargon teknis di layar mentor",
+      "Emoji",
+      "Menyiratkan izin yang tidak didukung API"
+    ]
+  }
+}
