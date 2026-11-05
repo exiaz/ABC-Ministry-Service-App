@@ -1,3 +1,4 @@
+import {sendWorkbook} from './msa-xlsx.mjs';
 import {AttendanceError} from './attendance.mjs';
 import {SCOPE_KEYS} from './access-control.mjs';
 import {requestProof} from './pairing-http.mjs';
@@ -22,16 +23,19 @@ async function jsonBody(req,mentorOrigin){
 
 export async function attendanceRoute({req,url,authorization,local,pairing,attendance,mentorOrigin,send,personal}){
   const base=url.pathname==='/api/attendance',finalize=url.pathname==='/api/attendance/finalize',correct=url.pathname==='/api/attendance/corrections';
-  if(!base&&!finalize&&!correct)return false;
+  const exporting=url.pathname==='/api/attendance/export';
+  if(!base&&!finalize&&!correct&&!exporting)return false;
+  if(exporting&&process.env.ABC_MSA_XLSX!=='1'){send(404,{error:'Tidak ditemukan.'});return true;}
   const methods=base?['GET','PUT']:['POST'];
   if(!methods.includes(req.method)){send(405,{error:'Metode tidak diizinkan.'},{Allow:methods.join(', ')});return true;}
   if(!local||!pairing||!attendance)throw new AttendanceError(503,'API absensi emulator lokal tidak tersedia.');
   if(req.headers.origin&&req.headers.origin!==mentorOrigin)throw new AttendanceError(403,'Origin mentor tidak diizinkan.');
-  const action=base?(req.method==='GET'?'read':'save'):finalize?'finalize':'correct';
+  const action=base?(req.method==='GET'?'read':'save'):finalize?'finalize':exporting?'export':'correct';
   const {body,raw}=action==='read'?{body:undefined,raw:''}:await jsonBody(req,mentorOrigin);
   const proof=await pairing.verifyRequest(authorization,requestProof(req,raw));
   const validParameters=[...url.searchParams.keys()].every(k=>SCOPE_KEYS.includes(k))&&SCOPE_KEYS.every(k=>url.searchParams.getAll(k).length===1);
   const scope=validParameters?Object.fromEntries(SCOPE_KEYS.map(k=>[k,url.searchParams.get(k)])):null;
   const result=await attendance.executeAuthorized({authorization,proof,scope,action,body,personal});
-  send(200,result);return true;
+  if(exporting)sendWorkbook(send,result,body?.format==='students'?'siswa.xlsx':'absensi.xlsx');else send(200,result);
+  return true;
 }

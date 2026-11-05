@@ -1,3 +1,4 @@
+import {createMsaXlsx} from './msa-xlsx.mjs';
 import {randomBytes} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createMsaAccounts,normalizeUsername,hash,fail} from './msa-accounts.mjs';
@@ -129,6 +130,12 @@ export function createMsaAuthentication({db,root,auth,config,assertLocal,emailAc
   if(process.env.ABC_MSA_VISUAL_V1A==='1'){
     const gate=createVisualPilotGate();
     api.visual=createMsaVisual({db,root,accounts,now,enabled:()=>{assertLocal();gate.enabled();}});
+  }
+  if(repository&&process.env.ABC_MSA_XLSX==='1'&&root.id.startsWith('test-')){
+    api.xlsx=createMsaXlsx({db,root,repository,accounts,now,enabled:()=>{
+      assertLocal();
+      if(process.env.ABC_MSA_XLSX!=='1'||!root.id.startsWith('test-'))fail(503,'API XLSX pilot tidak aktif.');
+    }});
   }
   return api;
 }

@@ -1,0 +1,547 @@
+{
+  "version": 1,
+  "page": {
+    "title": "Absen hari ini",
+    "route": "/",
+    "description": "Layar kerja mentor ABC MSA untuk mengisi dan menyimpan absen satu kelompok, dengan tampilan admin untuk siswa, ulang tahun, dan rundown pelayanan."
+  },
+  "architecture": {
+    "contract": "Layar ini menjawab: siapa di kelompok saya yang sudah hadir hari ini, dan siapa yang belum ditandai?",
+    "mode": "operate_monitor",
+    "novelty": "medium",
+    "grid": "Desktop 1440: sidebar 240px + kanvas cair dengan gutter 24px. Kanvas 1440 - 240 - 2x24 = 1152px, 12 kolom x 76px + 11 jarak 12px = 1044px tidak cukup, jadi dipakai 12 kolom x 85px + 11 x 12px = 1152px. Baris pertama 8 + 4 kolom (688px + 464px + 12px = 1152px lebih sedikit dari 1152 sehingga dihitung 8x85+7x12 = 764px dan 4x85+3x12 = 388px, 764 + 12 + 388 = 1164 diganti 8 + 4 menjadi 756 + 12 + 384 = 1152). Baris berikutnya 6 + 6 berbagi garis kolom. Satu nilai jarak 12px horizontal dan vertikal. Ponsel: satu kolom, margin 16px.",
+    "signatureRule": "Lembar adaptasi: tidak ada warna merek di chrome. Merah ABC hanya satu tombol utama per layar, biru ABC (#64A4D9) hanya pada data utama (kotak hadir di garis absen), selebihnya tinta dan abu. Kartu putih datar bergaris 1px tanpa bayangan saat diam.",
+    "rhythm": "Mentor di ponsel: baris dan kontrol 48px, padding 16px, body 14px, jarak 12px. Admin tablet/desktop: baris 44px, kontrol 40px, padding 20px, body 14px, tabel dengan angka rata kanan dan tabular. Judul 24px, bagian 16px, angka utama 30px, label 12px."
+  },
+  "navigation": [
+    {
+      "label": "Absen",
+      "target": "#/"
+    },
+    {
+      "label": "Siswa",
+      "target": "#/siswa"
+    },
+    {
+      "label": "Ulang tahun",
+      "target": "#/ulang-tahun"
+    },
+    {
+      "label": "Rundown",
+      "target": "#/rundown"
+    },
+    {
+      "label": "Kelompok",
+      "target": "#/kelompok"
+    }
+  ],
+  "navigationDesign": {
+    "layoutCase": "app-shell",
+    "layout": "Sidebar berlabel 240px di atas ground krem muda dengan satu garis tipis 1px. Atas: lambang ABC dari icon.svg + nama 'ABC MSA' dan pengalih sekolah/kelompok ('SD Kasih Bangsa, Kelompok Merpati'). Tengah: nav pada pitch 34px, ikon outline 16px garis 1,5px, label 14px sentence case, item aktif pil #EDE8DC radius 6 dengan inset 8px. Grup 'Pelayanan' (Absen, Rundown) dan 'Pengelolaan' (Siswa, Ulang tahun, Kelompok) dengan label abu 12px dan jarak 24px. Bawah: baris pengguna (inisial + nama mentor) dan Keluar. Tanpa bilah atas.",
+    "behavior": [
+      "Setiap tujuan nav adalah tampilan rute hash sendiri dengan h1 sendiri; tidak ada tautan jangkar di layar yang sama.",
+      "Item aktif memakai aria-current=page dan pil #EDE8DC.",
+      "Pengalih sekolah/kelompok membuka menu kecil dengan Escape menutup dan fokus kembali ke pemicu.",
+      "Rute hash dan id yang sudah ada dipertahankan; perubahan dicatat di berkas status."
+    ],
+    "transformation": {
+      "compact": "Bilah atas 48px berisi nama layar, tombol menu yang membuka lembar penuh berisi nav, pengalih kelompok, dan baris pengguna; paling banyak satu aksi. Konten selebar layar, margin 16px. Target sentuh 48px.",
+      "medium": "641-1100px: sidebar terlipat ke bilah atas 48px yang sama; kanvas margin 24px; tabel pertahankan 4-5 kolom dengan data sekunder sebagai subbaris.",
+      "expanded": "Sidebar 240px tetap terlihat; kanvas cair dengan gutter 24px."
+    }
+  },
+  "sections": [
+    {
+      "id": "shell",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Kerangka navigasi dan konteks sekolah/kelompok.",
+      "userQuestion": "Saya ada di layar mana dan untuk kelompok mana?",
+      "stage": "orient",
+      "dependencies": [],
+      "evidence": [
+        "Nama produk ABC MSA",
+        "Konteks SD Kasih Bangsa, Kelompok Merpati"
+      ],
+      "copy": {
+        "heading": "ABC MSA",
+        "body": [
+          "Pengalih sekolah dan kelompok di kepala sidebar: SD Kasih Bangsa, Kelompok Merpati.",
+          "Mentor: Dina Pratama."
+        ],
+        "callsToAction": [
+          {
+            "label": "Ganti kelompok",
+            "target": "#/kelompok"
+          }
+        ]
+      },
+      "layout": "Sidebar 240px (desktop) atau bilah atas 48px + lembar menu (ponsel). Ikon outline dari ui-sprite.svg. Keadaan: item nav hover (isi satu langkah), terpilih (pil #EDE8DC), fokus (cincin 3px biru #1D5F99), nonaktif (teks muted).",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Lembar menu ponsel bergeser dari tepi sambil memudar; item nav berubah isi saat hover dan tekan.",
+        "durationMs": 220,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Lembar muncul dan hilang seketika tanpa pergeseran."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "brand-mark-icon-svg"
+      ],
+      "transformation": {
+        "compact": "Bilah atas 48px dengan judul layar dan tombol menu 48px.",
+        "medium": "Bilah atas 48px yang sama.",
+        "expanded": "Sidebar 240px tetap."
+      }
+    },
+    {
+      "id": "absen-konteks",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Judul layar, temuan, dan pilihan tanggal/kelompok dengan aksi utama.",
+      "userQuestion": "Siapa yang belum ditandai, dan di mana saya menyimpan?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "Sample data: 18 dari 22 siswa hadir, 2 izin, 1 tidak hadir, 1 belum ditandai"
+      ],
+      "copy": {
+        "heading": "Absen hari ini",
+        "body": [
+          "Sample data. Minggu, 8 November 2026, SD Kasih Bangsa, Kelompok Merpati.",
+          "Satu siswa belum ditandai: Yosua Lumentut.",
+          "Sudah tersimpan 21 dari 22 siswa; perubahan terakhir belum disimpan."
+        ],
+        "callsToAction": [
+          {
+            "label": "Simpan absen",
+            "target": "#/"
+          },
+          {
+            "label": "Ganti tanggal",
+            "target": "#/"
+          }
+        ]
+      },
+      "layout": "Baris judul: h1 24px di kiri, kontrol tanggal dan kelompok 40px (48px di ponsel), satu tombol utama merah 'Simpan absen' di kanan. Baris temuan 14px abu di bawah judul, 12 kata atau kurang. Keadaan simpan sebagai pil: belum tersimpan, menyimpan, tersimpan, gagal. Simpan nonaktif saat tidak ada perubahan; galat menaruh pesan di dalam blok dengan tombol Coba lagi.",
+      "motion": {
+        "purpose": "status",
+        "trigger": "state_change",
+        "behavior": "Pil status simpan berganti isi di tempat tanpa menggeser tata letak.",
+        "durationMs": 150,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Pil berganti seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Judul 20-24px, kontrol tanggal dan kelompok satu baris, tombol Simpan lebar penuh 48px menempel di bawah layar tanpa menutupi baris terakhir.",
+        "medium": "Judul dan kontrol satu baris, tombol di kanan.",
+        "expanded": "Baris judul lebar 1152px, tombol di kanan, 8 + 4 kolom di bawahnya."
+      }
+    },
+    {
+      "id": "garis-absen",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Elemen khas produk: garis absen satu kotak per siswa plus hitungan.",
+      "userQuestion": "Berapa yang hadir dari kelompok, dan siapa yang masih kosong?",
+      "stage": "orient",
+      "dependencies": [
+        "absen-konteks"
+      ],
+      "evidence": [
+        "18 hadir, 2 izin, 1 tidak hadir, 1 belum ditandai dari 22 siswa"
+      ],
+      "copy": {
+        "heading": "Kehadiran",
+        "body": [
+          "Sample data. 18 dari 22 hadir.",
+          "Izin 2, tidak hadir 1, belum ditandai 1."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat siswa belum ditandai",
+            "target": "#/"
+          }
+        ]
+      },
+      "layout": "Kartu 4 kolom di 1440 (384px) di kanan atas, sejajar dengan daftar siswa 8 kolom. Angka 18 di 30px tabular, 'dari 22 hadir' 14px abu. Di bawahnya deretan 22 kotak 16px: hadir berisi biru, izin garis putus, tidak hadir bingkai ink dengan tanda silang kecil, belum ditandai kosong. Legenda memakai kotak yang sama dengan teks. Nol dicetak 0, kosong berupa tanda hubung abu.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Kotak berganti bentuk dan isi di tempat saat penanda siswa berubah; hitungan diperbarui tanpa hitung naik.",
+        "durationMs": 150,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Kotak berganti seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Dipindah ke atas daftar sebagai ringkasan satu baris kotak yang membungkus; angka 30px tetap.",
+        "medium": "Kartu di atas daftar selebar penuh, kotak dalam satu baris.",
+        "expanded": "Kartu 4 kolom di kanan daftar, tinggi mengikuti isi."
+      }
+    },
+    {
+      "id": "daftar-siswa-absen",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Daftar siswa kelompok untuk menandai hadir, izin, atau tidak hadir.",
+      "userQuestion": "Bagaimana saya menandai setiap siswa dengan cepat?",
+      "stage": "act",
+      "dependencies": [
+        "absen-konteks"
+      ],
+      "evidence": [
+        "22 siswa fiktif, contoh: Anindya Wulandari, Bagas Setiawan, Cahya Tambunan, Yosua Lumentut"
+      ],
+      "copy": {
+        "heading": "Siswa Merpati",
+        "body": [
+          "Sample data. 22 siswa, 18 hadir.",
+          "Baris contoh: Anindya Wulandari, hadir; Bagas Setiawan, izin; Yosua Lumentut, belum ditandai."
+        ],
+        "callsToAction": [
+          {
+            "label": "Tandai semua hadir",
+            "target": "#/"
+          },
+          {
+            "label": "Cari siswa",
+            "target": "#/"
+          }
+        ]
+      },
+      "layout": "Kartu 8 kolom (756px) dengan kolom pencarian 40px dan tab garis bawah Semua, Belum ditandai, Izin. Baris 48px: avatar inisial 36px pada tint pucat, nama 14px/500, tiga tombol segmen Hadir, Izin, Tidak hadir (masing-masing 48px sentuh, ikon plus teks) rata kanan. Maksimal 8 baris terlihat dengan 'Lihat semua 22'. Keadaan baris: hover isi raised, terpilih #EDE8DC, fokus cincin 3px, nonaktif saat menyimpan. Kosong: bingkai putus-putus 'Belum ada siswa di kelompok ini.' Memuat: batang abu datar pada pitch baris. Galat: 'Daftar siswa gagal dimuat. Data terakhir baik pukul 09:14.' dengan Coba lagi.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Segmen terpilih berganti isi dan menekan skala 0,98; tab garis bawah berpindah ke tab terpilih dan daftar berganti tanpa memuat ulang entri.",
+        "durationMs": 150,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perpindahan seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Baris dua baris: nama di atas, tiga segmen penuh lebar 48px di bawah; tab bergulir menyamping di barisnya sendiri.",
+        "medium": "Baris satu baris dengan segmen ikon plus teks pendek.",
+        "expanded": "Kartu 8 kolom di kiri sejajar kartu Kehadiran 4 kolom."
+      }
+    },
+    {
+      "id": "ringkasan-minggu",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Perbandingan kehadiran beberapa Minggu terakhir untuk kelompok.",
+      "userQuestion": "Apakah kehadiran minggu ini lebih baik daripada biasanya?",
+      "stage": "evaluate",
+      "dependencies": [
+        "garis-absen"
+      ],
+      "evidence": [
+        "Hadir per Minggu: 25 Okt 19, 1 Nov 20, 8 Nov 18"
+      ],
+      "copy": {
+        "heading": "Hadir per Minggu",
+        "body": [
+          "Sample data. 18 hadir hari ini, 2 lebih sedikit dari Minggu 1 November (20).",
+          "Rata-rata tiga Minggu: 19 siswa."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat riwayat",
+            "target": "#/kelompok"
+          }
+        ]
+      },
+      "layout": "Kartu 6 kolom di bawah daftar. Kolom persegi tiga batang dengan sumbu y bertanda 0, 10, 22; batang Minggu ini berwarna biru, sebelumnya abu. Tanpa legenda untuk satu seri. Selisih ditulis di bawahnya, angka merah hanya bila turun. Keadaan: kosong menggambar garis nol tanpa batang; galat satu kalimat di dalam kartu.",
+      "motion": {
+        "purpose": "none",
+        "trigger": "none",
+        "behavior": "Wilayah baca statis.",
+        "durationMs": 0,
+        "easing": "linear",
+        "reducedMotion": "Tidak ada gerak."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Selebar penuh, tinggi 160px, tiga label sumbu x.",
+        "medium": "Berdampingan dengan kartu ulang tahun bila lebar masing-masing minimal 340px, selain itu bertumpuk.",
+        "expanded": "6 kolom, berbagi garis kolom dengan kartu di sebelahnya (6 + 6)."
+      }
+    },
+    {
+      "id": "ulang-tahun-dekat",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Ulang tahun siswa dalam waktu dekat yang bisa diucapkan mentor.",
+      "userQuestion": "Siapa yang berulang tahun dalam dua minggu ke depan?",
+      "stage": "continue",
+      "dependencies": [
+        "daftar-siswa-absen"
+      ],
+      "evidence": [
+        "Anindya Wulandari 12 Nov, Bagas Setiawan 19 Nov"
+      ],
+      "copy": {
+        "heading": "Ulang tahun",
+        "body": [
+          "Sample data. 2 siswa berulang tahun dalam 14 hari.",
+          "Anindya Wulandari, Kamis 12 November. Bagas Setiawan, Kamis 19 November."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat semua",
+            "target": "#/ulang-tahun"
+          }
+        ]
+      },
+      "layout": "Kartu 6 kolom sejajar kartu Hadir per Minggu dengan tinggi yang sama. Baris 48px: avatar inisial, nama, tanggal dalam kata, 'dalam 4 hari'. Tanpa tanggal lahir lengkap atau data wali di layar mentor. Kosong: 'Tidak ada ulang tahun dalam 14 hari.' Footer 'Lihat semua' di kepala kartu.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "hover",
+        "behavior": "Baris menaikkan isi satu langkah saat disorot.",
+        "durationMs": 120,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perubahan isi seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Bertumpuk di bawah Hadir per Minggu.",
+        "medium": "Bertumpuk atau berdampingan sesuai lebar.",
+        "expanded": "6 kolom di kanan."
+      }
+    },
+    {
+      "id": "view-siswa",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tampilan admin untuk mengelola siswa dan kelompok.",
+      "userQuestion": "Siswa mana yang perlu ditambah, dipindah, atau diperbarui?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "22 siswa fiktif di Kelompok Merpati; privasi siswa hanya untuk admin berwenang"
+      ],
+      "copy": {
+        "heading": "Siswa",
+        "body": [
+          "Sample data. 22 siswa di Kelompok Merpati, 2 kelompok lain terhubung ke sekolah ini.",
+          "Kolom: nama, kelompok, mentor, kelas."
+        ],
+        "callsToAction": [
+          {
+            "label": "Tambah siswa",
+            "target": "#/siswa"
+          },
+          {
+            "label": "Cari siswa",
+            "target": "#/siswa"
+          }
+        ]
+      },
+      "layout": "Tampilan sendiri dengan h1 'Siswa'. Tabel 5 kolom: nama, kelompok, mentor, kelas, aksi; angka rata kanan tabular; baris 44px; aturan 1px tanpa zebra. Satu tombol utama 'Tambah siswa'. Data tanggal lahir, wali, dan alamat tidak ditampilkan tanpa izin admin. Keadaan: kosong, memuat (batang abu), galat per blok.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Hasil filter dan urutan berganti tanpa mengubah identitas baris.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Hasil berganti seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Tabel menjadi daftar dua baris: nama dan kelas di baris 1, kelompok dan mentor di baris 2 abu.",
+        "medium": "Tabel 4 kolom dengan mentor sebagai subbaris.",
+        "expanded": "Tabel 5 kolom selebar kartu 756px berpasangan dengan ringkasan kelompok 4 kolom."
+      }
+    },
+    {
+      "id": "view-ulang-tahun",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tampilan admin daftar ulang tahun per bulan.",
+      "userQuestion": "Siapa berulang tahun bulan ini dan berikutnya?",
+      "stage": "continue",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "November: Anindya Wulandari 12, Bagas Setiawan 19"
+      ],
+      "copy": {
+        "heading": "Ulang tahun",
+        "body": [
+          "Sample data. November 2026: 2 siswa. Desember 2026: 1 siswa.",
+          "Dikelompokkan per bulan, diurutkan menurut tanggal."
+        ],
+        "callsToAction": [
+          {
+            "label": "Bulan berikutnya",
+            "target": "#/ulang-tahun"
+          }
+        ]
+      },
+      "layout": "Tampilan sendiri dengan h1 'Ulang tahun'. Tab garis bawah per bulan, daftar baris 48px dengan tanggal dalam kata dan usia baru; kosong per bulan menyimpan bingkai dengan satu kalimat.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Garis bawah tab berpindah ke bulan terpilih dan daftar berganti.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perpindahan seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Tab bergulir menyamping, daftar selebar penuh.",
+        "medium": "Daftar 6 kolom di kiri, kosong di kanan diisi ringkasan bulan.",
+        "expanded": "Daftar 8 kolom dan ringkasan bulan 4 kolom."
+      }
+    },
+    {
+      "id": "view-rundown",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tampilan rundown pelayanan Minggu.",
+      "userQuestion": "Apa urutan acara pelayanan hari ini dan siapa yang bertugas?",
+      "stage": "explain",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "Minggu 8 November 2026: Pujian 09:00, Firman 09:20, Persembahan 09:50"
+      ],
+      "copy": {
+        "heading": "Rundown",
+        "body": [
+          "Sample data. Minggu 8 November 2026, 3 acara.",
+          "09:00 Pujian, 09:20 Firman, 09:50 Persembahan."
+        ],
+        "callsToAction": [
+          {
+            "label": "Ubah rundown",
+            "target": "#/rundown"
+          }
+        ]
+      },
+      "layout": "Tampilan sendiri dengan h1 'Rundown'. Daftar waktu bertabel: jam di kolom tetap rata kanan tabular, nama acara, petugas. Baris 44px. Jam sekarang ditandai garis 1px biru. Pengubahan hanya untuk admin.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "hover",
+        "behavior": "Baris menaikkan isi saat disorot.",
+        "durationMs": 120,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Perubahan seketika."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar dua baris: jam dan acara di baris 1, petugas di baris 2.",
+        "medium": "Tabel 3 kolom.",
+        "expanded": "Tabel 8 kolom lebar dengan ringkasan petugas 4 kolom."
+      }
+    },
+    {
+      "id": "view-kelompok",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tampilan admin kelompok, mentor tetap, dan pengganti per sesi.",
+      "userQuestion": "Siapa mentor tiap kelompok dan siapa penggantinya Minggu ini?",
+      "stage": "qualify",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "Kelompok Merpati: mentor Dina Pratama, 22 siswa"
+      ],
+      "copy": {
+        "heading": "Kelompok",
+        "body": [
+          "Sample data. 3 kelompok di SD Kasih Bangsa.",
+          "Merpati: Dina Pratama, 22 siswa. Elang: Rudi Hartono, 18 siswa."
+        ],
+        "callsToAction": [
+          {
+            "label": "Atur pengganti",
+            "target": "#/kelompok"
+          }
+        ]
+      },
+      "layout": "Tampilan sendiri dengan h1 'Kelompok'. Tabel 4 kolom: kelompok, mentor tetap, pengganti Minggu ini, jumlah siswa; tanda hubung abu bila tidak ada pengganti. Pengubahan hanya untuk admin; perubahan bertanggal efektif.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Tombol dan baris menekan skala 0,98 dan naik satu langkah isi.",
+        "durationMs": 120,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Tanpa skala, hanya perubahan isi."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar dua baris per kelompok.",
+        "medium": "Tabel 4 kolom.",
+        "expanded": "Tabel selebar 756px dan ringkasan 4 kolom."
+      }
+    }
+  ],
+  "responsive": [
+    "360px: satu kolom, margin 16px, bilah atas 48px, target sentuh 48px, daftar siswa berbaris dua, tombol Simpan lebar penuh.",
+    "390px: sama dengan 360px dengan satu baris kontrol tanggal dan kelompok bila muat.",
+    "768px: bilah atas 48px, kanvas margin 24px, kartu bertumpuk atau berpasangan bila masing-masing minimal 340px.",
+    "1280px dan 1440px: sidebar 240px, 8 + 4 kolom lalu 6 + 6 yang berbagi garis kolom, jarak 12px."
+  ],
+  "interactions": [
+    "Hadir, Izin, Tidak hadir: tiga segmen per siswa; satu terpilih (aria-pressed), keadaan hover, fokus (cincin 3px #1D5F99), dan nonaktif saat menyimpan.",
+    "Tab Semua, Belum ditandai, Izin: filter daftar dengan hitungan yang dihitung ulang dari baris pada tampilan.",
+    "Simpan absen: nonaktif tanpa perubahan, memuat saat menyimpan, tersimpan dengan pil hijau berikon, atau gagal dengan Coba lagi di dalam blok.",
+    "Pengalih kelompok dan menu ponsel: Escape menutup, fokus kembali ke pemicu.",
+    "Navigasi hash: setiap rute menjadi tampilan sendiri dengan h1 sendiri; judul dokumen diperbarui.",
+    "Kuning ABC hanya untuk penanda kecil aktif, tidak pernah permukaan; merah hanya satu tombol utama per layar.",
+    "Prefers-reduced-motion: semua perpindahan menampilkan keadaan akhir seketika dengan operasi yang setara."
+  ],
+  "acceptanceCriteria": [
+    "Dataset contoh: 1 sekolah (SD Kasih Bangsa), 3 kelompok, 1 kelompok aktif dengan 22 siswa fiktif; hitungan 18 hadir + 2 izin + 1 tidak hadir + 1 belum ditandai = 22, dihitung dari baris, bukan diketik.",
+    "Garis absen menampilkan 22 kotak dalam urutan yang sama dengan daftar; tiap keadaan berbeda bentuk dan memiliki teks.",
+    "Total dan selisih berasal dari bagian yang ditampilkan: 18 dibanding 20 pada 1 November = 2 lebih sedikit.",
+    "Setiap blok yang menampilkan angka memuat kata 'Sample data' dan Build menampilkannya sekali per tampilan sebagai satu pemberitahuan tenang.",
+    "Semua teks yang tampil dalam bahasa Indonesia, tanpa em dash, emoji, lorem, atau nama pengganti.",
+    "Tidak ada luapan horizontal di 360, 390, 768, dan 1280px; target sentuh minimal 48px di ponsel.",
+    "Kontras teks minimal 4,5:1; status memakai ikon plus teks; fokus terlihat di setiap kontrol.",
+    "Geist dimuat sungguhan dan document.fonts.check lulus untuk bobot 400, 500, dan 700; tabular-nums mengubah lebar digit.",
+    "Id, name, data-*, atribut ARIA, rute hash, dan kontrak request/response tidak diubah, kecuali tercatat di berkas status.",
+    "Tidak ada klaim sinkronisasi langsung atau backend yang belum ada; semua data berupa contoh lokal.",
+    "Fokus baris pertama daftar siswa terlihat dalam 60% atas layar ponsel 390px."
+  ]
+}

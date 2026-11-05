@@ -3,7 +3,7 @@
 Peninjau: Codex | Claude · Diff: `development...<branch>` @ <hash> · Tanggal: <YYYY-MM-DD>
 Berkas status yang dibaca: `docs/status/<berkas>.md`
 
-Salin menjadi `docs/reviews/<branch-dengan-garis-miring-jadi-strip>.md` dan simpan di branch peninjau sendiri (`<agen>/review-<tugas>`), bukan di branch yang ditinjau. Peninjau read-only: tidak mengubah kode branch yang ditinjau. Pisahkan temuan terkonfirmasi, risiko potensial, dan hipotesis yang belum diverifikasi. Sebutkan apa yang tidak dapat diverifikasi.
+Salin menjadi `docs/reviews/<branch-dengan-garis-miring-jadi-strip>.md` dan simpan di workspace bersama tanpa berpindah branch; jangan menyunting implementasi yang ditinjau. Peninjau read-only: tidak mengubah kode branch yang ditinjau. Pisahkan temuan terkonfirmasi, risiko potensial, dan hipotesis yang belum diverifikasi. Sebutkan apa yang tidak dapat diverifikasi.
 
 ## Temuan
 

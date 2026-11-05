@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "brand-mark-icon-svg",
+      "kind": "icon",
+      "status": "existing",
+      "purpose": "Lambang ABC di kepala sidebar dan bilah atas ponsel sebagai tanda produk.",
+      "requirements": [
+        "Pakai icon.svg proyek apa adanya, tanpa membuat logo baru.",
+        "Tampil 24-32px di sebelah nama 'ABC MSA' dengan nama aksesibel."
+      ],
+      "role": "logo",
+      "sectionIds": [
+        "shell"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Lambang persegi di kiri nama produk pada kepala sidebar, rata tengah vertikal; tanpa wadah berwarna.",
+      "source": {
+        "kind": "project",
+        "reference": "icon.svg"
+      },
+      "destination": "icon.svg"
+    },
+    {
+      "id": "font-geist",
+      "kind": "font",
+      "status": "ready",
+      "purpose": "Geist variabel untuk seluruh antarmuka (bobot 400, 500, 700).",
+      "requirements": [
+        "Muat dengan @font-face font-weight 400 700 dari berkas lokal; tanpa CDN.",
+        "Verifikasi document.fonts.check untuk 400, 500, 700 dan tabular-nums mengubah lebar digit.",
+        "Lisensi SIL OFL 1.1 tersimpan di assets/fonts/OFL-Geist.txt."
+      ],
+      "role": "font",
+      "sectionIds": [
+        "shell",
+        "absen-konteks",
+        "garis-absen",
+        "daftar-siswa-absen",
+        "ringkasan-minggu",
+        "ulang-tahun-dekat",
+        "view-siswa",
+        "view-ulang-tahun",
+        "view-rundown",
+        "view-kelompok"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Berkas font, bukan visual.",
+      "source": {
+        "kind": "external",
+        "reference": "https://github.com/google/fonts/tree/main/ofl/geist",
+        "license": "SIL Open Font License 1.1, Copyright 2024 The Geist Project Authors",
+        "contentType": "application/octet-stream"
+      },
+      "destination": "assets/fonts/geist-variable.ttf"
+    },
+    {
+      "id": "font-geist-mono",
+      "kind": "font",
+      "status": "ready",
+      "purpose": "Geist Mono hanya untuk ID dan kunci.",
+      "requirements": [
+        "Muat bobot 400 dari berkas lokal; pakai hanya pada ID dan kunci.",
+        "Lisensi SIL OFL 1.1 sama dengan keluarga Geist (assets/fonts/OFL-Geist.txt)."
+      ],
+      "role": "font",
+      "sectionIds": [
+        "daftar-siswa-absen",
+        "view-siswa",
+        "view-kelompok"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Berkas font, bukan visual.",
+      "source": {
+        "kind": "external",
+        "reference": "https://github.com/google/fonts/tree/main/ofl/geistmono",
+        "license": "SIL Open Font License 1.1, Copyright 2024 The Geist Project Authors",
+        "contentType": "application/octet-stream"
+      },
+      "destination": "assets/fonts/geist-mono-variable.ttf"
+    }
+  ]
+}

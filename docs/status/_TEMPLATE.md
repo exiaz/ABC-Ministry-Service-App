@@ -14,7 +14,7 @@ Satu sampai tiga kalimat: apa yang berubah dan mengapa.
 ## Kontrak yang berubah (wajib, untuk agen lain)
 `id`, `name`, `data-*`, atribut ARIA, rute hash, URL halaman, endpoint, atau teks yang dipakai assertion tes: lama -> baru. Tulis "tidak ada" bila memang tidak ada.
 
-## Kebutuhan saat merge (untuk integrator)
+## Kebutuhan integrasi (untuk integrator)
 - Versi cache `sw.js`: naik / tidak
 - Modul baru di `server.mjs`: <daftar> / tidak
 - Baris indeks `PROJECT_STATUS.md` yang disarankan: <satu baris>
@@ -31,7 +31,7 @@ Satu sampai tiga kalimat: apa yang berubah dan mengapa.
 - Diff: `git diff development...<branch>`
 
 ## Jawaban atas tinjauan
-Diisi penulis setelah membaca `docs/reviews/<berkas>.md` (lewat `git show <branch-peninjau>:docs/reviews/<berkas>.md`).
+Diisi penulis setelah membaca `docs/reviews/<berkas>.md` (dari `docs/reviews/<berkas>.md` di workspace bersama).
 - R1: diterima | ditolak (alasan) | ditunda (alasan). Sudah diverifikasi di kode: ya/tidak.
 
 ## Usulan commit

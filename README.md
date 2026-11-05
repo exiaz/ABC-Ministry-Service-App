@@ -1,4 +1,4 @@
-# ABC | Ministry Service App — Prototipe lokal
+# ABC | Ministry Service App — Pilot lokal
 
 ## Mulai MSA di Windows
 
@@ -14,7 +14,7 @@ Sesi portal diaktifkan hanya oleh launcher fiktif ini. Cookie berisi handle acak
 
 **Batas setup Windows:** dialog native WPF adalah bagian alur penyiapan lokal, bukan form password bootstrap HTTP. Endpoint hanya menerima pilihan dua akun fixture untuk membuka dialog; password, UID, role dan grant dari HTTP ditolak. Kata sandi masuk melalui kontrol `PasswordBox` dan anonymous pipe milik launcher, tanpa file, URL, clipboard atau log. Tidak ada kredensial persisten sehingga DPAPI/vault tidak diperlukan. Penyiapan memerlukan Windows PowerShell dan WPF; launcher tidak mengubah execution policy. Tutup dialog yang tidak Anda minta; bila status gagal, periksa ketersediaan PowerShell/WPF atau kebijakan skrip bersama operator. Komputer/pengguna Windows lokal harus tepercaya. Password baru mencabut sesi lama; masuk kembali. Sesudah Stop → Start, kedua akun memiliki UID fixture baru dan **wajib setup ulang**; password run sebelumnya tidak dipulihkan. Username tetap, UID operasional/grant/data lama tidak diubah. Pengujian CMD/ShellExecute dan WPF otomatis dibedakan dari klik/pengisian manual operator dalam PROJECT_STATUS.md.
 
-Regresi portal: `node --test tests/msa-portal.test.mjs` dan `node --test tests/msa-portal-browser.mjs`. Regresi onboarding/aktivasi: `node --test tests/auth-pilot-browser.mjs`. Regresi penuh: `npm.cmd run test:stage6`. Hasil aktual dan batas platform dicatat di PROJECT_STATUS.md.
+`npm.cmd run test:browser` menjalankan regresi akun Mentor dengan Auth/Firestore Emulator terisolasi, serta pengujian Chrome portal dengan respons sesi simulasi. Gunakan `node --test tests/msa-portal-browser.mjs` untuk login dan navigasi pada portal terpadu, atau `node --test tests/auth-pilot-browser.mjs` untuk onboarding dan aktivasi. Regresi penuh tersedia lewat **Test MSA.cmd** atau `npm.cmd run test:stage6`. Kalender demo, laporan, dan muat ulang offline PWA ABC Attendance lama diuji terpisah lewat `npm.cmd run test:browser:legacy`. Hasil aktual dan batas pengujian dicatat di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 ### Jika navigasi meminta login Admin lama
 
@@ -265,7 +265,7 @@ Backup tidak memindah siswa, mengubah mentor tetap atau memperpanjang pairing. B
 
 Jika perangkat tidak muncul, periksa sisa masa akses, sekolah/ID sesi, identitas mentor dan cakupan PIC, lalu muat ulang. Jika hasil simpan tidak pasti, **Coba lagi penugasan yang sama** memakai intent yang sama; jangan membuat penugasan baru sebelum memeriksa daftar. Reload halaman membuang intent di memori, sehingga daftar wajib diperiksa dahulu. Perubahan tanggal/mentor, pencabutan izin penerbit atau expiry dapat membuat penugasan tidak berlaku; kalender tidak memberikan akses baru.
 
-Uji dengan `npm.cmd run test:stage6` atau **Test ABC Attendance.cmd**. Runner memakai port/namespace/data fiktif terisolasi, mencakup regresi Stage 1–5 dan skenario backup. Lihat [QA.md](QA.md) dan hasil aktual [PROJECT_STATUS.md](PROJECT_STATUS.md). Tetap lokal/emulator; Stage 7 dan produksi belum dijalankan.
+Uji dengan `npm.cmd run test:stage6` atau **Test MSA.cmd**. Runner memakai port/namespace/data fiktif terisolasi, mencakup regresi Stage 1–5 dan skenario backup. Lihat [QA.md](QA.md) dan hasil aktual [PROJECT_STATUS.md](PROJECT_STATUS.md). Tetap lokal/emulator; Stage 7 dan produksi belum dijalankan.
 
 ## Stage 5 — Jadwal pelayanan semua hari
 
@@ -282,7 +282,7 @@ Jika respons penyimpanan terputus, gunakan **Coba simpan lagi** dengan permintaa
 
 API: `GET/POST /api/admin/service-sessions`, dengan bearer Admin. POST menerima `schoolId`, `date`, `groupIds`, `expectedRevision`, `idempotencyKey`, serta `id` hanya untuk edit. Semua cakupan diperiksa kembali dalam transaksi; peran dari klien tidak memberi akses. Hanya sesi tersimpan dengan tanggal valid dan bukan provisional yang dapat dipakai Mentor. Semua fitur masih khusus emulator/data fiktif.
 
-Uji lengkap: **Test ABC Attendance.cmd** atau `npm.cmd run test:stage5`. Runner yang sama menjalankan regresi Stage 1–5, kalender demo/offline dengan port sementara, serta cold recovery. Startup/Stop mengikuti Stage 3; tidak perlu reset data atau dependensi baru.
+Uji lengkap: **Test MSA.cmd** atau `npm.cmd run test:stage5`. Runner yang sama menjalankan regresi Stage 1–5, kalender demo/offline dengan port sementara, serta cold recovery. Startup/Stop mengikuti Stage 3; tidak perlu reset data atau dependensi baru.
 
 ## Stage 4 — Kode aktivasi Mentor
 
@@ -296,13 +296,13 @@ Status membedakan **Belum dipakai**, **Sudah dipakai**, **Kedaluwarsa**, **Dicab
 
 Endpoint baru: `GET/POST /api/admin/activation-codes` (bearer Admin); POST menerima `grants` dan `idempotencyKey`, tanpa TTL dari klien. Penebusan tetap `POST /api/pairing/redeem` dengan proof P-256; status `/api/device/status` menyertakan penugasan minimal. Endpoint pairing lama dipertahankan untuk kompatibilitas, termasuk perangkat/grant lama; form Superadmin/PIC sekarang memakai kode Stage 4. Token dan kode mentah tidak disimpan server. Batas percobaan lama tetap berlaku; penerbitan bulk dihitung per kode.
 
-Uji lengkap yang terisolasi: **Test ABC Attendance.cmd** atau `npm.cmd run test:stage4` (runner yang sama dengan `test:stage3`). Data fiktif dan screenshot berada pada folder run terpisah, tanpa mengimpor snapshot operasional. Jika Node/Java/cache tidak tersedia, perbaiki prasyarat; jangan menonaktifkan autentikasi atau mereset data. Aturan startup, snapshot dan shutdown Stage 3 tetap berlaku. Seluruh fitur ini masih emulator lokal; backup Stage 6 dijelaskan di atas, deployment belum dikerjakan.
+Uji lengkap yang terisolasi: **Test MSA.cmd** atau `npm.cmd run test:stage4` (runner yang sama dengan `test:stage3`). Data fiktif dan screenshot berada pada folder run terpisah, tanpa mengimpor snapshot operasional. Jika Node/Java/cache tidak tersedia, perbaiki prasyarat; jangan menonaktifkan autentikasi atau mereset data. Aturan startup, snapshot dan shutdown Stage 3 tetap berlaku. Seluruh fitur ini masih emulator lokal; backup Stage 6 dijelaskan di atas, deployment belum dikerjakan.
 
 ## Stage 3 — Persiapan, pengujian dan pemulihan Windows
 
 Operator menyiapkan dependensi dengan `npm.cmd ci` setelah memperoleh izin instalasi. Bila cache belum tersedia, siapkan Firestore Emulator dengan `node node_modules/firebase-tools/lib/bin/firebase.js setup:emulators:firestore` setelah memperoleh izin unduh. Start hanya memeriksa prasyarat; tidak melakukan kedua tindakan ini otomatis. Pastikan `java -version` menunjukkan 21+ dan `node --version` menunjukkan 22+; bila perlu atur `JAVA_HOME` ke folder JDK. Jangan memakai kredensial cloud atau project selain `demo-abc-attendance`.
 
-**Pengujian:** klik dua kali **`Test ABC Attendance.cmd`**, atau jalankan `npm.cmd run test:stage3`. Runner menampilkan **PASS/FAIL** per tahap dan mengembalikan exit code **0** hanya jika semuanya lulus; kegagalan/prasyarat yang kurang menghasilkan **1**. Perintah ini memeriksa sintaks/import, regresi unit, Auth/RBAC Superadmin/PIC, pairing/Mentor, absensi dan konkurensi/idempotensi Stage 2, startup/Stop, serta export/import dan login setelah restart. Tes browser memerlukan Chrome dan Playwright yang sudah tersedia (`CHROME_PATH`/`ABC_PLAYWRIGHT_MODULE` dapat menunjuk instalasi operator). Tidak memasang paket atau browser otomatis.
+**Pengujian:** klik dua kali **`Test MSA.cmd`**, atau jalankan `npm.cmd run test:stage3`. Runner menampilkan **PASS/FAIL** per tahap dan mengembalikan exit code **0** hanya jika semuanya lulus; kegagalan/prasyarat yang kurang menghasilkan **1**. Perintah ini memeriksa sintaks/import, regresi unit, Auth/RBAC Superadmin/PIC, pairing/Mentor, absensi dan konkurensi/idempotensi Stage 2, startup/Stop, serta export/import dan login setelah restart. Tes browser memerlukan Chrome dan Playwright yang sudah tersedia (`CHROME_PATH`/`ABC_PLAYWRIGHT_MODULE` dapat menunjuk instalasi operator). Tidak memasang paket atau browser otomatis.
 
 Tes memakai emulator baru pada lima port loopback sementara, namespace/akun fiktif terpisah, serta folder `.emulator-data/stage3-tests/run-*`. Snapshot operasional tidak diimpor dan layanan operasional tidak diambil alih. Screenshot regresi ditulis dalam folder run tersebut, bukan menimpa bukti historis. Log/artefak tes dipertahankan untuk pemeriksaan dan diabaikan Git. Bila tes gagal sebelum teardown, periksa log run dan layanan milik tes; jangan mematikan proses berdasarkan nama atau port secara massal.
 
@@ -350,7 +350,7 @@ Jalankan dari root proyek di Windows PowerShell interaktif:
 1. **Terminal Emulator:** jika Auth 9099 dan Firestore 8080 sudah aktif, gunakan instance yang sama. Jika belum:
 
 ```powershell
-Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+Set-Location 'D:\Work\ABC Ministry Service App\abc-ministry-service-app'
 $env:ABC_JAVA_TCP_FALLBACK='1'
 npm.cmd run emulators:start
 ```
@@ -358,7 +358,7 @@ npm.cmd run emulators:start
 2. **Konfigurasi bersama:** salin blok berikut ke terminal provisioning, terminal API, dan terminal Admin. Semua harus memakai namespace yang sama; jangan mengganti ID sesi dengan tanggal atau memakai namespace tes sementara.
 
 ```powershell
-Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+Set-Location 'D:\Work\ABC Ministry Service App\abc-ministry-service-app'
 $env:ABC_ROSTER_ADAPTER='firestore-emulator'
 $env:ABC_ADMIN_AUTH_MODE='firebase-auth-emulator'
 $env:ABC_FIREBASE_PROJECT_ID='demo-abc-attendance'
@@ -402,7 +402,7 @@ npm.cmd run start:admin
 6. **Terminal Mentor:**
 
 ```powershell
-Set-Location 'D:\Work\ABC Goes to School Attendance PWA\ABC Goes to School Attendance PWA'
+Set-Location 'D:\Work\ABC Ministry Service App\abc-ministry-service-app'
 $env:ABC_API_ORIGIN='http://127.0.0.1:4175'
 $env:ABC_MENTOR_PORT='4176'
 npm.cmd run start:mentor

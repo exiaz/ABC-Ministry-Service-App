@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "foundation": {
+    "strategy": "extend",
+    "existingAssets": [
+      "docs/ui-overhaul/BRIEF.md",
+      "msa-shell.css",
+      "icon.svg",
+      "manifest.webmanifest",
+      "assets/icons/ui-sprite.svg"
+    ],
+    "assetActions": [
+      {
+        "asset": "docs/ui-overhaul/BRIEF.md",
+        "action": "protect",
+        "reason": "Memuat token ABC (merah #c81e1e, kuning #f8ed32, biru #64a4d9, tinta #231f20, krem #fff8d6) yang menjadi acuan merek proyek."
+      },
+      {
+        "asset": "icon.svg",
+        "action": "preserve",
+        "reason": "Lambang aplikasi yang sudah ada dipakai sebagai tanda produk; tidak dibuat logo baru."
+      },
+      {
+        "asset": "assets/icons/ui-sprite.svg",
+        "action": "preserve",
+        "reason": "Sprite ikon outline yang sudah dipakai komponen; jangan diganti gaya."
+      },
+      {
+        "asset": "msa-shell.css",
+        "action": "evolve",
+        "reason": "Token lama (--msa-*, radius 12px, biru #1455bd) menyimpang dari BRIEF; disatukan ke token baru tanpa mengubah id, data-* atau ARIA."
+      },
+      {
+        "asset": "manifest.webmanifest",
+        "action": "preserve",
+        "reason": "Nama, ikon, dan warna tema PWA tidak diubah tanpa persetujuan pengguna."
+      }
+    ],
+    "lockedDecisions": [
+      "Teks tampilan seluruhnya bahasa Indonesia.",
+      "Merah, biru muda, dan kuning ABC tetap menjadi identitas, tetapi hanya sebagai aksen terarah.",
+      "Target sentuh minimal 48px, kontras WCAG AA, status selalu ikon plus teks, hormati prefers-reduced-motion.",
+      "Tanpa dependensi, framework, atau langkah build baru; id, name, data-*, ARIA, dan rute hash dipertahankan.",
+      "Mobile-first mulai 360px lalu 390/768/1280px; tanpa luapan horizontal.",
+      "Data hanya fiktif."
+    ],
+    "assumptions": [
+      "Lembar 'achromatic ledger' diadaptasi: karena merek ABC eksplisit, tombol utama memakai merah ABC (satu per layar), bukan hitam; anggaran warna tetap kecil (sekitar 3% piksel) dan kartu tidak diberi tint.",
+      "Mentor di ponsel mengalahkan kepadatan 'sparse' dari lembar: baris dan kontrol memakai 48px, bukan 44/36px; layar admin desktop boleh lebih padat.",
+      "Biru #64a4d9 hanya untuk elemen data utama (kehadiran, periode berjalan); teks biru memakai #1d5f99 agar 4,5:1.",
+      "Krem #fff8d6 terlalu jenuh untuk ground; dipakai ground krem muda #f8f5ec dengan kartu putih."
+    ]
+  },
+  "creativeDirection": {
+    "summary": "Muka produk: papan absen yang hangat. Geist untuk seluruh antarmuka, ground krem muda dari dunia kertas daftar hadir, kartu putih datar bergaris, dan biru ABC khusus pada elemen data utama (jumlah hadir). Merah ABC hanya untuk satu tombol utama per layar.",
+    "traits": [
+      {
+        "quality": "Hangat dan membumi",
+        "boundary": "not manis atau kekanak-kanakan"
+      },
+      {
+        "quality": "Tenang dan mudah dipindai",
+        "boundary": "not ramai oleh warna jenuh"
+      },
+      {
+        "quality": "Cepat dipakai satu tangan",
+        "boundary": "not padat atau penuh dekorasi"
+      },
+      {
+        "quality": "Jujur dengan data",
+        "boundary": "not mempercantik angka"
+      }
+    ],
+    "productiveTension": "Identitas ABC yang ceria (merah, biru, kuning) ditahan di atas permukaan datar dan tenang, sehingga warna hanya muncul di tempat yang bermakna: satu aksi utama dan satu data utama.",
+    "signatureDevice": {
+      "description": "Garis absen: baris siswa dengan penanda tiga keadaan (hadir, izin, tidak hadir) di tepi kiri dan hitungan 'hadir dari total' di atasnya, digambar sebagai deretan kotak kecil satu per siswa dalam biru ABC, berisi untuk hadir, garis putus untuk izin, kosong untuk belum ditandai.",
+      "status": "candidate",
+      "invariants": [
+        "Satu kotak mewakili satu siswa, urutan sama dengan daftar.",
+        "Setiap keadaan punya bentuk sendiri (isi, putus-putus, kosong) dan teks, bukan hanya warna.",
+        "Hanya biru ABC dipakai untuk kotak; tidak ada warna lain di garis ini.",
+        "Hitungan dicetak sebagai angka tabular, misalnya 18 dari 22 hadir."
+      ]
+    },
+    "restraint": "Tanpa gradasi, cahaya, kaca, bayangan saat diam, ikon dalam kotak berwarna, atau emoji. Kuning hanya untuk penanda aktif/FAB kecil, bukan permukaan. Tidak ada elemen yang beranimasi masuk.",
+    "avoid": [
+      "Tombol utama lebih dari satu per layar",
+      "Kartu atau KPI dengan tint warna",
+      "Sparkline di KPI",
+      "Sidebar gelap atau jenuh",
+      "Bold selain angka uang atau hitungan utama",
+      "Ikon dalam lingkaran berwarna",
+      "Gradasi dan bayangan dekoratif"
+    ]
+  },
+  "colorPalette": [
+    {
+      "name": "ground",
+      "value": "#F8F5EC",
+      "usage": "Kanvas halaman, krem muda dari dunia kertas daftar hadir; lebih tenang daripada krem #fff8d6 pada BRIEF."
+    },
+    {
+      "name": "surface",
+      "value": "#FFFFFF",
+      "usage": "Kartu, panel, kolom isian, lembar nav di ponsel."
+    },
+    {
+      "name": "raised",
+      "value": "#F1EEE6",
+      "usage": "Isi baris tersambung, trek, avatar netral, kolom pencarian."
+    },
+    {
+      "name": "border",
+      "value": "#E6DDD2",
+      "usage": "Garis tepi kartu 1px; nilai --line dari BRIEF."
+    },
+    {
+      "name": "rule",
+      "value": "#EFE9E0",
+      "usage": "Garis pemisah baris dalam tabel dan daftar."
+    },
+    {
+      "name": "control",
+      "value": "#857A76",
+      "usage": "Tepi kolom isian dan kotak centang kosong; nilai --control-border BRIEF, 3:1 untuk komponen."
+    },
+    {
+      "name": "text",
+      "value": "#231F20",
+      "usage": "Teks utama dan angka."
+    },
+    {
+      "name": "muted",
+      "value": "#5C5350",
+      "usage": "Teks sekunder, label, keterangan; 4,5:1 atau lebih di atas putih dan ground."
+    },
+    {
+      "name": "accent",
+      "value": "#C81E1E",
+      "usage": "Hanya tombol utama (satu per layar), teks putih di atasnya; hover #A31717."
+    },
+    {
+      "name": "positive",
+      "value": "#247B50",
+      "usage": "Teks status berhasil/hadir yang tersimpan, 5,2:1 di atas putih."
+    },
+    {
+      "name": "negative",
+      "value": "#B3261E",
+      "usage": "Teks galat dan tindakan merusak."
+    },
+    {
+      "name": "warning",
+      "value": "#92400E",
+      "usage": "Teks peringatan, misalnya belum tersimpan."
+    },
+    {
+      "name": "chart-1",
+      "value": "#231F20",
+      "usage": "Seri tinta untuk perbandingan atau total."
+    },
+    {
+      "name": "chart-2",
+      "value": "#8A817D",
+      "usage": "Seri pembanding, bagian setelah kursor, nol."
+    },
+    {
+      "name": "chart-3",
+      "value": "#64A4D9",
+      "usage": "Satu-satunya warna data: kotak hadir, batang periode berjalan. Teks biru memakai #1d5f99."
+    },
+    {
+      "name": "pill-positive-bg",
+      "value": "#DCFAE5",
+      "usage": "Latar pil sukses/tersimpan."
+    },
+    {
+      "name": "pill-positive-ink",
+      "value": "#04250E",
+      "usage": "Teks pil sukses."
+    },
+    {
+      "name": "pill-negative-bg",
+      "value": "#FFEDEA",
+      "usage": "Latar pil galat/tidak hadir."
+    },
+    {
+      "name": "pill-negative-ink",
+      "value": "#831C1E",
+      "usage": "Teks pil galat."
+    },
+    {
+      "name": "pill-warning-bg",
+      "value": "#FFFBEB",
+      "usage": "Latar pil belum tersimpan/izin, dengan garis #FDE68A."
+    },
+    {
+      "name": "pill-warning-ink",
+      "value": "#92400E",
+      "usage": "Teks pil peringatan."
+    },
+    {
+      "name": "pill-neutral-bg",
+      "value": "#F1EEE6",
+      "usage": "Latar pil netral (belum ditandai)."
+    },
+    {
+      "name": "pill-neutral-ink",
+      "value": "#3D3835",
+      "usage": "Teks pil netral."
+    },
+    {
+      "name": "active",
+      "value": "#EDE8DC",
+      "usage": "Isi item nav aktif dan baris terpilih, bukan warna jenuh."
+    },
+    {
+      "name": "focus",
+      "value": "#1D5F99",
+      "usage": "Cincin fokus 3px dan teks/ikon tautan biru; 6:1 di atas putih."
+    }
+  ],
+  "typefaces": [
+    {
+      "family": "Geist",
+      "source": "Google Fonts",
+      "roles": [
+        "interface"
+      ],
+      "weights": [
+        400,
+        500,
+        700
+      ]
+    },
+    {
+      "family": "Geist Mono",
+      "source": "Google Fonts",
+      "roles": [
+        "IDs and keys only"
+      ],
+      "weights": [
+        400
+      ]
+    }
+  ],
+  "interfaceDirection": "Shell open-plane: di desktop, sidebar berlabel (lebar 240px) di atas ground dengan satu garis tipis, pengalih sekolah/kelompok di atas, grup nav dengan label abu 12-13px kalimat biasa, pengguna di bawah; tanpa bilah atas, kartu putih langsung di ground. Item aktif: pil abu-krem #EDE8DC radius 6, ikon outline 16px garis 1,5px. Di ponsel: bilah atas 48px berisi nama layar, tombol menu yang membuka lembar penuh berisi nav, dan paling banyak satu aksi; konten selebar layar dengan margin 16px. Kepadatan mengikuti alur: mentor (ponsel) baris dan kontrol 48px, jarak 12px, satu tombol utama merah per layar; admin (tablet/desktop) baris 44px, kontrol 40px, tabel dengan angka rata kanan dan tabular. Satu gaya label: 12-14px kalimat biasa abu. Pil status berpasangan latar pucat + teks gelap + ikon (hadir hijau, izin kuning, tidak hadir merah, belum ditandai netral). Keadaan kontrol: tepi 1,5px #857A76; hover naik satu langkah isi; fokus cincin 3px biru #1D5F99 offset 2px; nonaktif teks muted dengan isi raised; galat tepi negatif plus pesan teks. Tombol sekunder: putih, tepi kontrol. Zero dicetak sebagai 0, nilai kosong sebagai tanda hubung abu.",
+  "designTokens": {
+    "typeScale": {
+      "display": "24px",
+      "h1": "24px",
+      "h2": "16px",
+      "h3": "30px",
+      "body": "14px",
+      "small": "12px",
+      "label": "12px"
+    },
+    "radius": {
+      "scale": [
+        "6px",
+        "8px"
+      ],
+      "pill": "999px"
+    },
+    "spacing": {
+      "section": "24px",
+      "gutter": "12px",
+      "stack": "12px"
+    },
+    "buttons": {
+      "primary": "Isi merah ABC #C81E1E, teks putih Geist 500 14px, tinggi 48px di ponsel dan 40px di desktop, radius 6px, satu per layar; hover #A31717.",
+      "secondary": "Isi putih, teks tinta, tepi 1px #857A76, tinggi dan radius sama dengan tombol utama; hover isi #F1EEE6."
+    },
+    "surfaces": "Ground krem muda #F8F5EC, kartu putih dengan garis 1px #E6DDD2, radius 8px; garis tiga langkah (border, rule, control). Tanpa bayangan saat diam; bayangan tipis hanya untuk menu, popover, dan FAB yang mengambang."
+  },
+  "imageDirection": {
+    "summary": "Tidak ada gambar dekoratif. Gambar hanya yang nyata di dalam baris: siswa dan mentor sebagai inisial pada tint pucat warna masing-masing, serta lambang ABC.",
+    "subjects": [
+      "Inisial siswa dan mentor di lingkaran 32-40px dengan tint pucat",
+      "Lambang ABC dari icon.svg di kepala shell",
+      "Ikon outline dari ui-sprite.svg"
+    ],
+    "treatment": "Inisial Geist 500 pada tint pucat dengan teks gelap; warna avatar berjarak minimal 60 derajat antar orang yang bersebelahan; tint tidak masuk legenda grafik.",
+    "avoid": [
+      "Foto stok",
+      "Ilustrasi dekoratif",
+      "Foto anak nyata",
+      "Ikon dalam kotak berwarna jenuh",
+      "Emoji"
+    ]
+  },
+  "motionDirection": {
+    "summary": "Gerak hanya sebagai umpan balik, dengan satu pasangan durasi dan easing di semua tampilan; tidak ada animasi masuk dan semua tetap bisa diinterupsi.",
+    "principles": [
+      "Tekan tombol atau baris absen: isi bergeser satu langkah dan skala 0,98 sebagai tanda ditekan; 120ms, ease-out kuat.",
+      "Penanda hadir/izin/tidak hadir berganti: kotak signature dan pil beralih bentuk dan isi di tempat tanpa menggeser baris lain; 150ms, ease-out.",
+      "Tab atau filter dipilih: garis bawah tab berpindah ke tab terpilih dan hasil daftar berganti tanpa memuat ulang entri; 180ms, ease-out.",
+      "Menu, lembar nav ponsel, atau laci terbuka dan tertutup: panel bergeser dari tepinya sambil memudar; 220ms, ease-out, kembali ke pemicu dengan fokus saat Escape.",
+      "Status simpan berubah (belum tersimpan, menyimpan, tersimpan): pil berganti isi di tempat; 150ms, ease-out; prefers-reduced-motion menampilkan keadaan akhir langsung."
+    ],
+    "avoid": [
+      "Animasi masuk saat memuat halaman",
+      "Hitung naik pada angka",
+      "Gerak dekoratif terus-menerus",
+      "Pantulan atau pegas",
+      "Menunda data tampil demi animasi"
+    ]
+  },
+  "voice": {
+    "summary": "Bahasa Indonesia sehari-hari, ramah, singkat, dan memakai istilah pelayanan: absen, kelompok, mentor, siswa, rundown, ulang tahun. Kalimat aktif, kalimat biasa, tanpa seru berlebihan.",
+    "avoid": [
+      "Kata generik templat seperti Item, Record, Status",
+      "Seruan dan emoji",
+      "Istilah teknis dalam pesan galat",
+      "Salam 'Selamat datang kembali' yang kosong"
+    ]
+  }
+}

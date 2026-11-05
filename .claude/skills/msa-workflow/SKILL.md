@@ -5,7 +5,7 @@ description: Menentukan alur kerja Claude + Codex untuk permintaan MSA (desain s
 
 # Alur kerja MSA: Claude + Codex
 
-Baca `AGENTS.md` (aturan bersama) dan, untuk UI overhaul, `docs/ui-overhaul/BRIEF.md`. Jalankan penjaga awal sesi (folder `MSA-claude`, branch `claude/*`, bukan `development` atau `wip/*`) dan pemeriksaan tumpang tindih dari `AGENTS.md`. Klasifikasikan permintaan **sebelum** bertindak.
+Baca `AGENTS.md` (aturan bersama) dan, untuk UI overhaul, `docs/ui-overhaul/BRIEF.md`. Jalankan pemeriksaan workspace bersama, branch dan perubahan lokal dari `AGENTS.md`; hanya satu penulis aktif. Klasifikasikan permintaan **sebelum** bertindak.
 
 ## 1. Klasifikasi
 
@@ -13,7 +13,7 @@ Baca `AGENTS.md` (aturan bersama) dan, untuk UI overhaul, `docs/ui-overhaul/BRIE
 2. **Implementasi kecil**: satu berkas/CSS/teks/bug sederhana tanpa efek perilaku. Kerjakan dan jalankan tes relevan. Tanpa Codex.
 3. **Perubahan substansial**: banyak berkas, logika baru, atau perubahan perilaku. Implementasi, tes, lalu sarankan `/codex:review`.
 4. **Sensitif**: arsitektur, autentikasi, sesi, otorisasi, `firestore.rules`, privasi siswa, absensi/riwayat. Ini wilayah Codex: jangan diimplementasikan Claude. Catat di berkas status dan serahkan lewat pengguna; bila perubahan sudah ada, rekomendasikan `/codex:adversarial-review` (dan `/codex:review`).
-5. **Audit branch Codex**: baca `git diff development...codex/<tugas>` dan berkas statusnya lewat `git show`, tulis `docs/reviews/` di branch sendiri. Read-only.
+5. **Audit branch Codex**: baca diff tugas dan berkas status di workspace bersama, tulis laporan `docs/reviews/` tanpa berpindah branch. Read-only.
 
 Bila ragu antara dua kelas, pilih yang lebih ringan; tanya pengguna hanya jika risikonya tinggi.
 
@@ -21,7 +21,7 @@ Bila ragu antara dua kelas, pilih yang lebih ringan; tanya pengguna hanya jika r
 
 1. Nyatakan klasifikasi dalam satu kalimat.
 2. Pisahkan usulan desain dari implementasi: tunggu persetujuan arah sebelum menulis kode dari usulan.
-3. Periksa `git status` agar perubahan yang belum di-commit tidak tertimpa, dan pastikan path yang akan disentuh tidak disentuh branch agen lain (pemeriksaan tumpang tindih).
+3. Periksa `git status` agar perubahan yang belum di-commit tidak tertimpa, dan pastikan tidak ada penulis lain pada workspace yang sama.
 4. Implementasikan minimal dan terarah; pertahankan hook (`id`, `data-*`, ARIA, rute hash).
 5. Jalankan `npm.cmd run check`, `npm.cmd test`, dan suite area yang relevan.
 6. Untuk kelas 3-4, usulkan perintah tinjauan. Tinjauan Codex read-only; jangan beri Codex akses tulis pada berkas yang sedang Claude sunting.

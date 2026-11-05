@@ -1,12 +1,19 @@
+import {SCOPE_KEYS} from './access-control.mjs';
+import {workbookLimit,workbookType,sendWorkbook} from './msa-xlsx.mjs';
 import {requireAdminOrigin} from './admin-session-http.mjs';
 import {fail} from './msa-accounts.mjs';
 
 async function json(req,limit=4096){
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??''))fail(400,'Permintaan harus berupa JSON.');
+  const raw=await readBody(req,limit);
+  let value;try{value=JSON.parse(raw.toString('utf8'));}catch{fail(400,'JSON tidak valid.');}
+  if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Data akun tidak valid.');return value;
+}
+async function readBody(req,limit){
+  if(Number(req.headers['content-length'])>limit){req.resume();fail(413,'Permintaan terlalu besar.');}
   const chunks=[];let size=0;req.setTimeout(5000,()=>req.destroy());
   try{for await(const chunk of req.iterator({destroyOnReturn:false})){size+=chunk.length;if(size>limit){req.resume();fail(413,'Permintaan akun terlalu besar.');}chunks.push(chunk);}}finally{req.setTimeout(0);}
-  let value;try{value=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fail(400,'JSON tidak valid.');}
-  if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Data akun tidak valid.');return value;
+  return Buffer.concat(chunks,size);
 }
 export async function msaRoute({req,url,authorization,local,adminAuthentication,send}){
   const intake=url.pathname.startsWith('/api/a2-2/');
@@ -23,6 +30,8 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   if(!a1||!local){send(404,{error:'Tidak ditemukan.'});return true;}
   requireAdminOrigin(req);
   const path=url.pathname;
+  const xlsx=path.startsWith('/api/a1/xlsx/');
+  if(xlsx){if(!a1.xlsx){send(404,{error:'Tidak ditemukan.'});return true;}a1.xlsx.enabled();}
   if(visual){if(!a1.visual){send(404,{error:'Tidak ditemukan.'});return true;}a1.visual.enabled();}
   if(scheduling){if(!a1.scheduling){send(404,{error:'Tidak ditemukan.'});return true;}a1.scheduling.enabled();}
   if(calendar){if(!a1.calendar){send(404,{error:'Tidak ditemukan.'});return true;}a1.calendar.enabled();}
@@ -53,6 +62,29 @@ export async function msaRoute({req,url,authorization,local,adminAuthentication,
   else{
     const p=await a1.authorize(authorization);
     actor={...p,check:async()=>{try{const fresh=await a1.authorize(authorization);return fresh.uid===p.uid&&fresh.revision===p.revision;}catch{return false;}}};
+  }
+  if(xlsx){
+    if(req.method!=='POST')fail(405,'Metode tidak diizinkan.');
+    const operation=path.slice('/api/a1/xlsx/'.length);
+    if(operation==='students/export'){
+      if(url.search)fail(400,'Parameter tidak diizinkan.');
+      const result=await a1.xlsx.exportStudents(actor,await json(req));
+      if(Buffer.isBuffer(result))sendWorkbook(send,result,'siswa.xlsx');else send(200,result);
+      return true;
+    }
+    if(!['students/preview','students/confirm'].includes(operation)){send(404,{error:'Tidak ditemukan.'});return true;}
+    if(req.headers['content-type']!==workbookType)fail(400,'Unggah berkas XLSX.');
+    if([...url.searchParams.keys()].some(key=>!SCOPE_KEYS.includes(key))||SCOPE_KEYS.some(key=>url.searchParams.getAll(key).length!==1))fail(400,'Cakupan roster tidak valid.');
+    await a1.xlsx.authorizeUpload(actor);
+    const scope=Object.fromEntries(url.searchParams);
+    const bytes=await readBody(req,workbookLimit);
+    if(operation==='students/preview')send(200,await a1.xlsx.preview(actor,scope,bytes));
+    else send(200,await a1.xlsx.confirm(actor,scope,bytes,{
+      expectedRevision:req.headers['x-msa-expected-revision'],
+      previewId:req.headers['x-msa-preview-id'],
+      idempotencyKey:req.headers['idempotency-key']
+    }));
+    return true;
   }
   if(visual){
     if(url.search)fail(400,'Parameter tidak diizinkan.');

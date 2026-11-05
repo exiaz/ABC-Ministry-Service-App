@@ -113,14 +113,15 @@ test('A2.2 rejects substitution/cross-scope links, cannot review legacy/A1 ident
 });
 
 test('A2.2 registration rate limits persist, origin/method/query/body safeguards and live/default/off-namespace gates fail closed',async t=>{
-  const f=await registrationFixture(t),v=f.value();
+  // Provider token verification keeps real time; the MSA budget stays in one minute.
+  const at=Date.now(),now=()=>at,f=await registrationFixture(t,{now}),v=f.value();
   assert.equal((await f.request('/api/a2-2/register',v,'',{Origin:'https://evil.example'})).status,403);
   assert.equal((await f.request('/api/a2-2/register?role=superadmin',v,'')).status,400);
   assert.equal((await f.request('/api/a2-2/register',{...v,fullName:'a'.repeat(5000)},'')).status,413);
   for(let i=0;i<8;i++)assert.equal((await f.register(v)).response.status,202);
   assert.equal((await f.register(v)).response.status,429);
-  const restarted=await createLocalAdminAuthentication({repository:f.repository});try{await assert.rejects(restarted.a1.registration.register(v),e=>e.status===429);}finally{await restarted.close();}
-  await f.root.collection('msaIntakeLimits').doc(hash('review:'+f.uid)).set({window:Math.floor(Date.now()/60000),count:120});
+  const restarted=await createLocalAdminAuthentication({repository:f.repository,now});try{await assert.rejects(restarted.a1.registration.register(v),e=>e.status===429);}finally{await restarted.close();}
+  await f.root.collection('msaIntakeLimits').doc(hash('review:'+f.uid)).set({window:Math.floor(at/60000),count:120});
   const limited=await f.request('/api/a2-2/queue');assert.equal(limited.status,429);assert.equal(limited.headers.get('retry-after'),'60');assert.equal((await f.call('missing','defaults')).status,429);
   delete process.env.ABC_MSA_A2_2;
   const disabled=await createLocalAdminAuthentication({repository:f.repository}),server=createAdminServer({adminAuthentication:disabled});server.listen(0,'127.0.0.1');await once(server,'listening');

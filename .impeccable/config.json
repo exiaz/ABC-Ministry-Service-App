@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "ui-absen.html"
+        ],
+        "createdAt": "2026-11-05T02:50:13.653Z",
+        "reason": "Brand phase decision: ground #F8F5EC is a toned-down form of the project's own ABC krem token (#fff8d6 in docs/ui-overhaul/BRIEF.md) and the dealt sheet allows a ground from the product's world; not user confirmed"
+      }
+    ]
+  }
+}

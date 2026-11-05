@@ -72,6 +72,8 @@
 .mentor-account .ui-mentor .mentor-roster .search .icon{position:absolute;left:var(--space-4);top:0;bottom:0;margin:auto 0;color:var(--ink-muted);pointer-events:none}
 .mentor-account .ui-mentor .mentor-roster .search .ui-input{display:block;width:100%;min-height:var(--control);height:var(--control);padding:0 var(--space-4) 0 52px;border:1.5px solid var(--control-border);border-radius:var(--radius-pill);background:var(--surface-100);color:var(--ink);font:var(--type-body)}
 .mentor-account .ui-mentor .mentor-tabs{background:var(--surface-100)}
+/* Tab yang meluber diberi pudar di tepi kanan; spacer agar tab terakhir tidak ikut pudar saat digulir habis. */
+@media(max-width:640px){.mentor-account .ui-mentor .mentor-tabs{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent)}.mentor-account .ui-mentor .mentor-tabs::after{content:"";flex:0 0 24px}}
 .mentor-account .ui-mentor .mentor-tabs .ui-tab{min-height:var(--control);padding:0 var(--space-4);font:var(--type-button);font-size:15px}
 .mentor-account .ui-mentor .mentor-tabs .ui-tab[aria-pressed=true]{background:var(--accent-yellow);color:var(--on-accent)}
 .mentor-account .ui-mentor .ui-student-list{display:flex;flex-direction:column;gap:var(--space-2)}

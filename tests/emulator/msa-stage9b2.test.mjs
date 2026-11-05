@@ -26,13 +26,13 @@ test('Concurrent retries and competing series requests never duplicate occurrenc
   const f=await schedulingFixture(t),v=await f.prepare();const replies=await Promise.all([f.create('racing',v),f.create('racing',v)]);assert.deepEqual(replies.map(r=>r.status),[200,200]);assert.deepEqual(await replies[0].json(),await replies[1].json());assert.equal((await f.root.collection('msaServiceEvents').get()).size,4);
   assert.equal((await f.create('other',v)).status,409);assert.equal((await f.create('racing',{...v,requestId:randomUUID()})).status,409);
   const next=await f.prepare(),competing=await Promise.all([f.create('compete',next),f.create('compete',{...next,requestId:randomUUID()})]);assert.deepEqual(competing.map(r=>r.status).sort(),[200,409]);assert.equal((await f.root.collection('msaServiceEvents').get()).size,8);
-  const before=await tables(f);assert.equal((await f.create('limit',{...v,requestId:randomUUID(),schedule:{...v.schedule,endDate:'2027-02-01'}})).status,400);assert.deepEqual(await tables(f),before);
+  const before=await tables(f);assert.equal((await f.create('limit',{...v,requestId:randomUUID(),schedule:{...v.schedule,endDate:f.date(90)}})).status,400);assert.deepEqual(await tables(f),before);
   await f.root.collection('msaEventGrants').doc(coreMembershipId(coreOrgA,f.uid)).update({permissions:['events:read','events:pic']});const revoked=await tables(f);assert.equal((await f.create('racing',v)).status,403);assert.deepEqual(await tables(f),revoked);
 });
 test('Exactly twelve weekly occurrences and one-time creation succeed; thirteenth and past creation do not write',async t=>{
-  const f=await schedulingFixture(t),v=await f.prepare({endDate:'2027-01-19'}),response=await f.create('twelve',v);assert.equal(response.status,200);assert.equal((await response.json()).events.length,12);
-  const once=await f.prepare({frequency:'once',endDate:'2026-11-03'});assert.equal((await (await f.create('once',once)).json()).events.length,1);const before=await tables(f);
-  assert.equal((await f.preview(f.schedule({endDate:'2027-01-26'}))).status,400);const past=await f.prepare({startDate:'2020-01-07',endDate:'2020-01-07',frequency:'once'});assert.equal((await f.create('past',past)).status,409);assert.deepEqual(await tables(f),before);
+  const f=await schedulingFixture(t),v=await f.prepare({endDate:f.date(77)}),response=await f.create('twelve',v);assert.equal(response.status,200);assert.equal((await response.json()).events.length,12);
+  const once=await f.prepare({frequency:'once',endDate:f.date()});assert.equal((await (await f.create('once',once)).json()).events.length,1);const before=await tables(f);
+  assert.equal((await f.preview(f.schedule({endDate:f.date(84)}))).status,400);const past=await f.prepare({startDate:'2020-01-07',endDate:'2020-01-07',frequency:'once'});assert.equal((await f.create('past',past)).status,409);assert.deepEqual(await tables(f),before);
 });
 test('Commit binds preview fields and current organization/program/PIC revisions with no partial writes',async t=>{
   const f=await schedulingFixture(t),v=await f.prepare({programId:'fictional-goes-to-school'}),program=f.root.collection('msaCorePrograms').doc('fictional-goes-to-school');
@@ -61,8 +61,8 @@ test('A write failure rolls back the entire bounded transaction; suspended PIC a
 });
 test('Individual edit, publish and cancellation retain series identity and leave siblings/history untouched',async t=>{
   const f=await schedulingFixture(t),v=await f.prepare(),r=await (await f.create('individual',v)).json(),[first,...siblings]=r.events,before=await Promise.all(siblings.map(e=>f.root.collection('msaServiceEvents').doc(e.id).get().then(d=>d.data())));
-  assert.equal((await f.save(first.id,{expectedRevision:1,startDate:'2026-11-04'})).status,200);assert.equal((await f.save(first.id,{expectedRevision:1,name:'Stale edit'})).status,409);assert.equal((await f.transition(first.id,'publish',{expectedRevision:2})).status,200);assert.equal((await f.transition(first.id,'cancel',{expectedRevision:3})).status,200);
-  const detail=await (await f.request(f.eventBase(coreOrgA)+'/'+first.id)).json();assert.equal(detail.event.seriesId,'individual');assert.equal(detail.event.id,first.id);assert.deepEqual(detail.history.map(h=>h.next.revision),[1,2,3,4]);assert.equal(detail.history[0].next.startDate,'2026-11-03');assert.deepEqual(await Promise.all(siblings.map(e=>f.root.collection('msaServiceEvents').doc(e.id).get().then(d=>d.data()))),before);
+  assert.equal((await f.save(first.id,{expectedRevision:1,startDate:f.date(1)})).status,200);assert.equal((await f.save(first.id,{expectedRevision:1,name:'Stale edit'})).status,409);assert.equal((await f.transition(first.id,'publish',{expectedRevision:2})).status,200);assert.equal((await f.transition(first.id,'cancel',{expectedRevision:3})).status,200);
+  const detail=await (await f.request(f.eventBase(coreOrgA)+'/'+first.id)).json();assert.equal(detail.event.seriesId,'individual');assert.equal(detail.event.id,first.id);assert.deepEqual(detail.history.map(h=>h.next.revision),[1,2,3,4]);assert.equal(detail.history[0].next.startDate,f.date());assert.deepEqual(await Promise.all(siblings.map(e=>f.root.collection('msaServiceEvents').doc(e.id).get().then(d=>d.data()))),before);
   const historical=f.root.collection('msaServiceEvents').doc(siblings[0].id);await historical.update({startAt:1});assert.equal((await f.save(siblings[0].id,{expectedRevision:1})).status,409);assert.equal((await f.transition(siblings[0].id)).status,409);assert.deepEqual((await (await f.request(f.calendarBase(coreOrgA,siblings[0].id))).json()).capabilities,{edit:false,publish:false,cancel:false});
 });
 test('Dashboard personalizes PIC and action drafts, denies draft/foreign exposure and has explicit limits',async t=>{
@@ -73,7 +73,7 @@ test('Dashboard personalizes PIC and action drafts, denies draft/foreign exposur
   const row=(await f.root.collection('msaServiceEvents').doc('visible').get()).data(),batch=f.db.batch();for(let i=0;i<201;i++)batch.create(f.root.collection('msaServiceEvents').doc('limit-'+i),{...row,id:'limit-'+i});await batch.commit();const overflow=await f.request(path);assert.equal(overflow.status,409);assert.match((await overflow.json()).error,/200 pelayanan/);
 });
 test('Dashboard ninety-day horizon includes the last local WIT date and excludes instants beyond the horizon',async t=>{
-  const f=await schedulingFixture(t),at=Date.parse('2026-11-03T18:00:00Z'),horizon=at+90*86400000;
+  const f=await schedulingFixture(t),at=Date.parse(f.date()+'T18:00:00Z'),horizon=at+90*86400000;
   for(const [id,offset] of [['edge',-1800000],['outside',3600000]]){const local=new Date(horizon+offset+9*3600000).toISOString();assert.equal((await f.save(id,{startDate:local.slice(0,10),startTime:local.slice(11,16),timezone:'Asia/Jayapura'})).status,200);assert.equal((await f.transition(id)).status,200);}
   const s=createMsaScheduling({...f,core:f.core,events:f.events,calendar:f.calendar,now:()=>at}),result=await s.dashboard(f.actor);assert.deepEqual(result.upcoming.map(e=>e.id),['edge']);
 });

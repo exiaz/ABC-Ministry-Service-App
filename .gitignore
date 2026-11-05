@@ -145,3 +145,7 @@ firebase-debug.log*
 
 # Worktree buatan Claude Code
 .claude/worktrees/
+
+# Local agent permissions and generated design hook cache
+.claude/settings.local.json
+.impeccable/hook.cache.json

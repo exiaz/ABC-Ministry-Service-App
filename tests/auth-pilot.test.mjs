@@ -61,6 +61,8 @@ test('Pilot reuse requires matching portal mode, source signature and ports; inc
   const attempt=()=>runPilot({base:{},address,unified:true,verifyApps:async()=>{},open:async()=>{opens++;},log:()=>{},prerequisites:async()=>assert.fail('Reuse must not provision or start emulators')});
   try{
     await attempt();assert.equal(opens,1);
+    await assert.rejects(runPilot({base:{ABC_MSA_XLSX:'1'},address,unified:true,open:async()=>assert.fail('Incompatible XLSX mode must not open a browser')}),/mode, versi aplikasi atau port berbeda/);
+    assert.equal(stops,0);assert.equal(opens,1);
     const matching={...status};
     for(const incompatible of [{phase:'ready'},{...matching,unified:false},{...matching,signature:'0'.repeat(64)},{...matching,protocol:0},{...matching,ports:[...PILOT_PORTS].reverse()}]){
       status=incompatible;await assert.rejects(attempt(),/mode, versi aplikasi atau port berbeda/);assert.equal(opens,1);assert.equal(stops,0);assert.deepEqual(await controlRequest(address,'status'),status);

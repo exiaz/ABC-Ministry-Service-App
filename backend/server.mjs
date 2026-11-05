@@ -27,7 +27,7 @@ export function createRosterServer({credentials=createInMemoryCredentialReposito
     let corsHeaders={};
     const send=(status,body,headers={})=>{
       res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-ABC-Mode':'test-foundation','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",...corsHeaders,...headers});
-      res.end(JSON.stringify(body));
+      res.end(Buffer.isBuffer(body)?body:JSON.stringify(body));
     };
     try{
       const url=new URL(req.url,'http://localhost');

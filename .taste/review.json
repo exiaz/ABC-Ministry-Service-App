@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "verdict": "pass",
+  "summary": "Tidak ada selisih yang terlihat pada kedua tangkapan layar. Di 1440 px, Yosua Lumentut (belum ditandai) muncul sebagai baris pertama sehingga temuan di bawah judul langsung terjawab. Hadir terpilih netral, hanya Izin dan Tidak hadir berwarna, dan dasar kartu Siswa dan Ulang tahun sejajar. Legenda Kehadiran rapi dengan angka rata kanan. Satu-satunya hue pada data adalah biru di kotak hadir dan batang Minggu ini, dan satu-satunya tombol utama adalah merah 'Simpan absen'. Angka konsisten: 18+2+1+1=22, selisih 2 dari 20, rata-rata 19. Di 390 px sidebar terlipat jadi bilah atas, tanggal dan kelompok berdampingan, legenda kotak tampil satu baris, dan baris siswa pertama mulai di sekitar 59-60% tinggi layar. DOM audit: satu h1 dan tanpa pelanggaran target sentuh. Yang tidak bisa dinilai dari tangkapan layar: interaksi, animasi, tampilan 360 px, dan tampilan tablet.",
+  "findings": []
+}

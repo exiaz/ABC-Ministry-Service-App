@@ -14,7 +14,7 @@ Rincian arsitektur dan roadmap perluasan MSA yang berstatus **PLANNED / NOT IMPL
 - Gunakan hanya data fiktif dalam tes; jangan pernah memakai data pribadi anak nyata.
 - Utamakan perubahan kode minimal dan terarah; hindari refaktor di luar lingkup.
 - Jalankan tes yang relevan setelah perubahan kode; gunakan `npm.cmd run check` dan `npm.cmd test` sesuai lingkup. Jika npm tidak tersedia, jalankan skrip Node ekuivalen dan laporkan batas verifikasi.
-- Catat kemajuan implementasi signifikan, hasil validasi, dan batasan yang tersisa di `docs/status/<tanggal>-<agen>-<tugas>.md` (template: `docs/status/_TEMPLATE.md`). `PROJECT_STATUS.md` hanya diperbarui oleh integrator saat merge.
+- Catat kemajuan implementasi signifikan, hasil validasi, dan batasan yang tersisa di `docs/status/<tanggal>-<agen>-<tugas>.md` (template: `docs/status/_TEMPLATE.md`). `PROJECT_STATUS.md` diperbarui oleh integrator setelah integrasi yang diminta pengguna.
 - Jangan deploy, mengaktifkan billing, commit, merge, atau push tanpa persetujuan pengguna. Persetujuan berlaku untuk sesi yang memberikannya.
 
 ## Penyuntingan teks dengan No AI Slop
@@ -59,14 +59,17 @@ Berkas ini sumber aturan bersama untuk semua agen. Claude membacanya lewat `CLAU
 - **Codex**: developer utama untuk logika aplikasi, `backend/`, autentikasi, sesi, otorisasi, `firestore.rules`, model data dan absensi, launcher, serta tes terkait.
 - **Claude**: UI/UX overhaul (tampilan, CSS, markup, teks UI) dan auditor independen read-only atas branch Codex.
 - Peninjau tidak mengubah kode di branch milik agen lain. Perbaikan selalu dikerjakan penulis aslinya.
+- Pisahkan usulan desain dari implementasi; tunggu pilihan arah pengguna sebelum menerapkan desain baru. Desain saja dan perbaikan UI kecil dikerjakan tanpa delegasi otomatis.
+- Perubahan UI substansial dapat diusulkan untuk tinjauan independen; arsitektur/auth/otorisasi/integritas data dapat diusulkan untuk tinjauan adversarial. Tinjauan atau delegasi dimulai hanya atas permintaan eksplisit pengguna; jangan mengaktifkan review gate otomatis.
+- Claude yang menemukan kebutuhan perubahan backend/auth/data di luar tugasnya mencatat kebutuhan tersebut dan menyerahkannya lewat pengguna. `/codex:review` dan `/codex:adversarial-review` read-only; `/codex:rescue` memerlukan permintaan pengguna dan tidak berjalan bersama penulis lain.
+- Temuan tinjauan diverifikasi di kode sebelum diterapkan; jawab setiap temuan di laporan status (diterima, ditolak beserta alasan, atau ditunda). Gunakan template tinjauan untuk severity, evidence, reproduksi, koreksi dan missing coverage.
 
-### Folder dan branch
+### Workspace dan branch
 
-- Setiap agen bekerja hanya di worktree miliknya: Codex di `MSA-codex`, Claude di `MSA-claude`. Folder `abc-ministry-service-app` adalah folder integrasi, khusus merge.
-- Branch integrasi: `development`. Tugas bercabang dari `development` dengan nama `codex/<tugas>` atau `claude/<tugas>`. Jangan memakai branch lama (`wip/*`, `*/setup`) untuk tugas.
-- **Penjaga awal sesi (wajib sebelum menulis berkas apa pun):** jalankan `git rev-parse --show-toplevel` dan `git branch --show-current`. Berhenti dan tanyakan kepada pengguna jika folder bukan worktree milik agen ini, atau branch aktif adalah `development`, `wip/*`, atau berprefiks agen lain.
-- Jangan berpindah branch, checkout, mengedit, me-reset, atau me-rebase branch di luar tugas sendiri. Jangan membuat worktree baru tanpa diminta.
-- Sebelum meminta merge, perbarui branch tugas dari `development` (`git merge development`).
+- Satu workspace aktif untuk Claude dan Codex: `D:\Work\ABC Ministry Service App\abc-ministry-service-app`. Folder `MSA-claude`, `MSA-codex`, `MSA-codex-xlsx`, dan worktree bersarang adalah sumber historis; jangan dipakai untuk pekerjaan baru, dihapus, atau ditimpa.
+- Jalankan `git rev-parse --show-toplevel`, `git branch --show-current`, dan `git status --short` sebelum menulis. Pastikan root sama dengan workspace aktif; jangan menimpa perubahan lokal milik tugas lain.
+- Pertahankan branch aktif. Bekerja di `development` diizinkan untuk tugas pengguna di workspace ini; jangan membuat/berpindah branch, merge, rebase, reset, commit, atau push tanpa perintah eksplisit pengguna. Branch historis tetap dipertahankan.
+- Hanya satu penulis aktif pada workspace bersama. Agen kedua melakukan tinjauan read-only atau menunggu; jangan mengubah branch atau berkas saat penulis pertama bekerja. Pembagian agen paralel hanya atas permintaan pengguna.
 
 ### Kepemilikan berkas
 
@@ -75,29 +78,25 @@ Berkas ini sumber aturan bersama untuk semua agen. Claude membacanya lewat `CLAU
 | `backend/`, `*-server.mjs`, `local-*.mjs`, `firestore.rules`, kode autentikasi/sesi/otorisasi, model data dan absensi, launcher `.cmd`, tes untuk area ini | Codex |
 | `ui/`, `msa-*.css`, `docs/ui-overhaul/`, markup tampilan di `msa-*.html`, teks UI | Claude |
 | `msa-*.js` yang mencampur UI dan logika, `package.json`, tes lintas area | Ditentukan pengguna per tugas |
-| `sw.js` (versi cache), daftar modul di `server.mjs`, `PROJECT_STATUS.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.codex/`, `.agents/` | Hanya saat merge atau atas permintaan pengguna |
+| `sw.js` (versi cache), daftar modul di `server.mjs`, `PROJECT_STATUS.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/`, `.codex/`, `.agents/` | Hanya saat merge atau atas permintaan pengguna |
 | `docs/status/`, `docs/reviews/` | Setiap agen menulis berkasnya sendiri (nama berkas memuat nama agen) |
 
 Jika tugas memerlukan path milik agen lain, jangan menyentuhnya; tulis permintaannya di berkas status. Penulis `sw.js`/`server.mjs` hanya mencatat kebutuhannya (mis. "cache naik, modul X ditambahkan"); integrator yang menerapkannya.
 
 ### Berbagi informasi antaragen
 
-Worktree terpisah, tetapi semuanya berbagi satu repositori Git. Yang sudah di-commit terlihat oleh agen lain tanpa checkout; yang belum di-commit tidak terlihat. Karena itu laporan status harus di-commit (setelah persetujuan pengguna) agar dapat dipakai agen lain.
-
-- Tugas aktif: `git branch --list "codex/*" "claude/*" -vv` dan `git worktree list`.
-- Berkas yang disentuh agen lain: `git diff --name-only development...<branch>`.
-- Laporan agen lain tanpa checkout: `git show <branch>:docs/status/<berkas>.md`.
-- Pemeriksaan tumpang tindih (sebelum mulai dan sebelum meminta merge): untuk tiap branch dari `git for-each-ref --format="%(refname:short)" refs/heads/codex/ refs/heads/claude/`, jalankan `git diff --name-only development...<branch>`. Jika ada berkas yang juga disentuh branch agen lain, berhenti dan tanyakan kepada pengguna.
-- Pengguna adalah koordinator emulator dan suite browser (`Start MSA.cmd`, `node tests/stage3.mjs`, `tests/*-browser.mjs`): tanyakan sebelum menjalankannya, karena port dan data dipakai bersama. Tes unit tanpa emulator aman dijalankan paralel.
+- `AGENTS.md` adalah satu sumber aturan; `CLAUDE.md` hanya mengimpornya. Konfigurasi native tetap di `.claude/` dan `.codex/`; implementasi hook bersama ada di `.agents/hooks/`.
+- Baca `git status --short`, `git diff`, dan laporan `docs/status/` sebelum melanjutkan tugas agen lain. Perubahan belum di-commit sudah terlihat di workspace yang sama; jangan menganggap branch historis sebagai pekerjaan aktif.
+- Penulisan lintas kepemilikan memerlukan penugasan pengguna. Saat konsolidasi yang secara eksplisit diminta pengguna, integrator boleh menggabungkan path lintas area setelah backup dan perbandingan; jangan mengaktifkan flag bypass hook secara permanen.
+- Pengujian emulator/browser harus memakai namespace `test-*`, data fiktif, dan port terisolasi. Permintaan validasi aplikasi memberi izin menjalankan runner terisolasi yang sudah ada; di luar itu koordinasikan dengan pengguna. Jangan menghentikan proses atau mengambil alih port milik pihak lain.
 
 ### Siklus tugas
 
-1. **Mulai.** Penjaga awal sesi, buat branch tugas dari `development`, lalu pemeriksaan tumpang tindih.
-2. **Kerjakan** hanya di path milik sendiri; terapkan aturan pencegahan regresi di atas.
-3. **Selesai.** Tulis `docs/status/<tanggal>-<agen>-<tugas>.md` dari template dan siapkan usulan Summary dan Description commit. Commit ke branch sendiri setelah pengguna menyetujui.
-4. **Tinjauan silang (read-only).** Branch Codex ditinjau Claude; branch Claude ditinjau Codex. Peninjau membaca `git diff development...<branch>` dan berkas statusnya, lalu menulis `docs/reviews/<branch-dengan-garis-miring-jadi-strip>.md` **di branch miliknya sendiri** (`<agen>/review-<tugas>`), bukan di branch yang ditinjau. Penulis membacanya dengan `git show`, memverifikasi tiap temuan di kode, dan menjawabnya (diterima, ditolak beserta alasan, atau ditunda) di bagian "Jawaban atas tinjauan" pada berkas statusnya.
-5. **Merge.** Di folder integrasi, hanya atas persetujuan eksplisit pengguna dan setelah tinjauan silang selesai: `git switch development`, `git merge --no-ff <branch>`, `npm.cmd run check`, `npm.cmd test`. Integrator menerapkan kebutuhan `sw.js`/`server.mjs` dari berkas status dan menambah satu baris indeks di `PROJECT_STATUS.md` yang merujuk berkas status.
-6. **Setelah merge**, agen lain memperbarui branch tugasnya dari `development` sebelum melanjutkan.
+1. **Mulai:** periksa root, branch, status dan lingkup tugas; satu penulis aktif.
+2. **Kerjakan:** pertahankan pekerjaan lokal dan kontrak aplikasi; perubahan minimal sesuai penugasan pengguna.
+3. **Verifikasi:** jalankan tes relevan dan periksa diff. Pisahkan hasil langsung dari klaim laporan historis.
+4. **Laporkan:** tulis `docs/status/<tanggal>-<agen>-<tugas>.md`, kontrak yang berubah, kebutuhan integrasi dan usulan Summary/Description. Tinjauan independen hanya bila diminta; laporan di `docs/reviews/` tidak memerlukan pergantian branch.
+5. **Integrasi:** pada workspace ini, hanya atas permintaan pengguna; backup dahulu dan jangan melakukan operasi destruktif atau menyelesaikan konflik yang belum jelas tanpa persetujuan. Perbarui `PROJECT_STATUS.md` secara aditif; commit/push/merge/deploy tetap memerlukan izin eksplisit.
 
 ### Kontrak antaragen
 
@@ -130,3 +129,7 @@ bd prime                # Refresh Beads context
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/core-concepts/sync-concepts.md for details and anti-patterns.
 <!-- END BEADS CODEX SETUP -->
+
+<!-- codebase-memory-mcp:start -->
+Untuk penelusuran struktur kode, gunakan skill `codebase-memory` dan indeks yang sudah ada. Jika tidak tersedia, laporkan batasnya lalu periksa sumber terkait; jangan re-index atau mengubah konfigurasi global otomatis.
+<!-- codebase-memory-mcp:end -->

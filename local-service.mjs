@@ -14,7 +14,7 @@ export function servicePath(port,root=ROOT){
 }
 export async function serviceSignature(env=process.env,root=ROOT){
   const keys=['ABC_ROSTER_ADAPTER','ABC_ADMIN_AUTH_MODE','ABC_FIREBASE_PROJECT_ID','GCLOUD_PROJECT','GOOGLE_CLOUD_PROJECT','FIRESTORE_EMULATOR_HOST','FIREBASE_AUTH_EMULATOR_HOST','ABC_FIRESTORE_NAMESPACE','ABC_ADMIN_UIDS','ABC_MENTOR_ORIGIN','ABC_API_ORIGIN','GOOGLE_APPLICATION_CREDENTIALS','FIREBASE_TOKEN','NODE_ENV'];
-  keys.push('ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A','ABC_MSA_A2_4B','ABC_MSA_A2_4C','ABC_MSA_STAGE8','ABC_MSA_STAGE9A','ABC_MSA_STAGE9B1','ABC_MSA_STAGE9B2','ABC_MSA_VISUAL_V1A','ABC_MSA_SESSION_1A');
+  keys.push('ABC_MSA_A1','ABC_MSA_USERNAME_PILOT','ABC_MSA_A2_2','ABC_MSA_A2_3','ABC_MSA_A2_4A','ABC_MSA_A2_4B','ABC_MSA_A2_4C','ABC_MSA_STAGE8','ABC_MSA_STAGE9A','ABC_MSA_STAGE9B1','ABC_MSA_STAGE9B2','ABC_MSA_VISUAL_V1A','ABC_MSA_SESSION_1A','ABC_MSA_XLSX');
   const config=Object.fromEntries(keys.map(key=>[key,env[key]??null]));
   try{config.ABC_ADMIN_UIDS=JSON.stringify(JSON.parse(config.ABC_ADMIN_UIDS).sort());}catch{}
   // Include source bytes so a process started before a code change is never reused.
@@ -25,7 +25,14 @@ export async function serviceSignature(env=process.env,root=ROOT){
     else if(item.isFile()&&/\.(m?js|html|css|ps1)$/.test(item.name))files.push(target);
   }}
   await scan(root);files.sort();
-  const source=createHash('sha256');for(const file of files){source.update(path.relative(root,file));source.update(await readFile(file));}
+  const source=createHash('sha256');
+  for(let offset=0;offset<files.length;offset+=16){
+    const batch=files.slice(offset,offset+16);
+    const contents=await Promise.all(batch.map(file=>readFile(file)));
+    for(const [index,file] of batch.entries()){
+      source.update(path.relative(root,file));source.update(contents[index]);
+    }
+  }
   return digest(JSON.stringify({config,source:source.digest('hex')}));
 }
 export function serviceRequest(address,message){

@@ -1,6 +1,6 @@
 // Bounded OOXML reader for student import. Uses browser XML and native ZIP decompression.
 const limit=20*1024*1024,expandedLimit=64*1024*1024;
-export async function readWorkbook(input){
+export async function readWorkbook(input,{parseXml=text=>new DOMParser().parseFromString(text,'application/xml'),cellTypes=false}={}){
   const bytes=new Uint8Array(input instanceof ArrayBuffer?input:await input.arrayBuffer());
   if(bytes.length>limit||bytes.length<22)throw Error('Berkas XLSX harus valid dan maksimal 20 MB.');
   const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),decoder=new TextDecoder('utf-8',{fatal:true});
@@ -36,7 +36,7 @@ export async function readWorkbook(input){
     if(((crc^-1)>>>0)!==file.crc)throw Error('Checksum XLSX tidak cocok.');
     const text=decoder.decode(data);
     if(/<!DOCTYPE|<!ENTITY/i.test(text))throw Error('Deklarasi entitas XML tidak didukung.');
-    const doc=new DOMParser().parseFromString(text,'application/xml');
+    const doc=parseXml(text);
     if(doc.getElementsByTagNameNS('*','parsererror').length)throw Error('XML pada XLSX rusak.');return doc;
   }
   const workbook=await xml('xl/workbook.xml'),relationships=await xml('xl/_rels/workbook.xml.rels');
@@ -59,7 +59,10 @@ export async function readWorkbook(input){
       let column=0;for(const char of match[1])column=column*26+char.charCodeAt(0)-64;column--;
       if(column>=50)throw Error('Maksimal 50 kolom untuk impor siswa.');
       const type=cell.getAttribute('t'),value=cell.getElementsByTagNameNS('*','v')[0]?.textContent||'';
-      cells[column]=type==='s'?strings[Number(value)]??'':type==='inlineStr'?[...cell.getElementsByTagNameNS('*','t')].map(t=>t.textContent).join(''):value;
+      if(cellTypes&&type==='s'&&(!/^\d+$/.test(value)||strings[Number(value)]===undefined))throw Error('Referensi string XLSX tidak valid.');
+      if(cellTypes&&(column<0||Object.hasOwn(cells,column)))throw Error('Referensi sel XLSX berulang.');
+      const content=type==='s'?strings[Number(value)]??'':type==='inlineStr'?[...cell.getElementsByTagNameNS('*','t')].map(t=>t.textContent).join(''):value;
+      cells[column]=cellTypes?{type,value:content}:content;
     }
     rows.push(cells);
   }

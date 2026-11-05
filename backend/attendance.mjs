@@ -1,3 +1,4 @@
+import {xlsxFile} from './msa-xlsx.mjs';
 import {createHash} from 'node:crypto';
 import {canReadRoster,validRosterScope,validServiceSession,SCOPE_KEYS} from './access-control.mjs';
 import {toRosterResponse} from './roster.mjs';
@@ -56,8 +57,8 @@ export function createEmulatorAttendance({db,root,credentials,now}){
           personalOperator=principal.personalIdentity;
         };
         await authorize();
-        if(!['read','save','finalize','correct'].includes(action))invalid();
-        const command=action==='read'?null:attendanceCommand(action,input);
+        if(!['read','export','save','finalize','correct'].includes(action))invalid();
+        const command=['read','export'].includes(action)?null:attendanceCommand(action,input);
         const {schoolId,groupId,serviceSessionId}=scope;
         const [school,group,visit]=(await tx.getAll(col('schools').doc(schoolId),col('groups').doc(groupId),col('serviceSessions').doc(serviceSessionId))).map(d=>d.data());
         if(school?.id!==schoolId||group?.id!==groupId||group.schoolId!==schoolId||!validServiceSession(visit)||visit?.id!==serviceSessionId||visit.schoolId!==schoolId||!Array.isArray(visit.groupIds)||!visit.groupIds.includes(groupId))deny();
@@ -81,6 +82,16 @@ export function createEmulatorAttendance({db,root,credentials,now}){
         if(records.length>300||records.some(r=>!id(r.studentId)||!statuses.has(r.status)||otherIds.has(r.studentId))||new Set(records.map(r=>r.studentId)).size!==records.length)conflict('Roster absensi tidak valid atau siswa tercatat ganda.');
         if(action==='read'){
           await authorize();return response(scope,batch,records);
+        }
+        if(action==='export'){
+          if(process.env.ABC_MSA_XLSX!=='1'||!root.id.startsWith('test-'))deny();
+          if(!input||!['students','attendance'].includes(input.format)||Object.keys(input).length!==2||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)invalid();
+          if(!batch||input.expectedRevision!==(batch.revision??0))conflict('Absensi telah berubah atau belum memiliki snapshot.');
+          const includeStatus=input.format==='attendance';
+          const file=await xlsxFile(records.map(r=>[r.studentId,r.name??'',r.schoolClass??'',...(includeStatus?[r.status,schoolId,groupId,serviceSessionId,visit.date]:[])]),{attendance:includeStatus});
+          await authorize();
+          tx.create(col('msaXlsxAudit').doc(),{operation:'export-'+input.format,scope,revision:input.expectedRevision,deviceId:proof.deviceId,at:now()});
+          return file;
         }
         const batchId=batch?.id??'attendance-'+hash(JSON.stringify([serviceSessionId,groupId]));
         const receiptRef=col('attendanceSubmissions').doc(hash(JSON.stringify([proof.deviceId,command.idempotencyKey])));

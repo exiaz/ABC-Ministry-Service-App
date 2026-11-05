@@ -123,7 +123,7 @@ export async function runPilot({base=process.env,ports=PILOT_PORTS,address=PILOT
   const env=pilotEnvironment(base,{ports,unified}),prior={...process.env};
   // Exclude fresh namespace/UID values: reuse compares the running source and
   // launcher contract, not credentials or a newly generated fixture identity.
-  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:env.ABC_MSA_VISUAL_V1A,ABC_MSA_SESSION_1A:env.ABC_MSA_SESSION_1A});
+  const signature=await serviceSignature({ABC_MSA_VISUAL_V1A:env.ABC_MSA_VISUAL_V1A,ABC_MSA_SESSION_1A:env.ABC_MSA_SESSION_1A,ABC_MSA_XLSX:env.ABC_MSA_XLSX});
   const existing=await controlRequest(address,'status');
   if(existing){
     if(existing.protocol!==1||existing.unified!==unified||existing.signature!==signature||JSON.stringify(existing.ports)!==JSON.stringify(ports))throw safe('Instance MSA yang berjalan memakai mode, versi aplikasi atau port berbeda. Hentikan melalui Stop MSA.cmd atau Enter di jendela launcher, lalu jalankan Start MSA.cmd kembali. Instance lama tidak diubah.');

@@ -3,7 +3,7 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/collab-guard.mjs\" claude" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/collab-guard.mjs\" claude" }
         ]
       }
     ],
@@ -11,7 +11,7 @@
       {
         "matcher": "Write|Edit|NotebookEdit|Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/collab-guard.mjs\" claude" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/collab-guard.mjs\" claude" }
         ]
       }
     ]

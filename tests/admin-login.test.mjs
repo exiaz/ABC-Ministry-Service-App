@@ -18,6 +18,7 @@ test('Admin shell exposes only its own assets and protected API, without demo or
   assert.equal((await fetch(api+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,401);
 });
 test('Login/logout enforce input limits, origin, methods and a bounded attempt budget',async t=>{
+  t.mock.method(Date,'now',()=>59999);
   let issued=0;
   const base=await start(t,createAdminServer({adminAuthentication:{async signIn(){issued++;throw Error();},async authorize(){return {kind:'unauthenticated'};}}}));
   const request=(body,headers={})=>fetch(base+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json',...headers},body});
@@ -26,6 +27,18 @@ test('Login/logout enforce input limits, origin, methods and a bounded attempt b
   assert.equal((await request(JSON.stringify({email:'fictional@example.invalid',password:'fictional',uid:'admin',role:'admin'}))).status,400);assert.equal(issued,0);
   for(let n=0;n<6;n++)assert.equal((await request(JSON.stringify({email:'fictional@example.invalid',password:'fictional'}))).status,401);
   assert.equal((await request('{}')).status,429);assert.equal(issued,6);
+});
+
+test('Login attempt budget resets at the next fixed minute without changing input validation',async t=>{
+  let at=59999;t.mock.method(Date,'now',()=>at);
+  const base=await start(t,createAdminServer({adminAuthentication:{async signIn(){throw Error();}}}));
+  const request=()=>fetch(base+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  for(let i=0;i<10;i++)assert.equal((await request()).status,400);
+  assert.equal((await request()).status,429);
+  at=60000;
+  assert.equal((await request()).status,400);
+  for(let i=1;i<10;i++)assert.equal((await request()).status,400);
+  assert.equal((await request()).status,429);
 });
 test('Unavailable authentication and a revoked token during login return safe errors without a bearer',async t=>{
   let unavailable=true,revoked=false;
