@@ -187,7 +187,7 @@ if(process.argv[1]&&canonical(process.argv[1])===canonical(main)){
     const coordinator=createWorkspaceLock(fileURLToPath(new URL('../../',import.meta.url)));
     const [action,agent,session,...files]=process.argv.slice(2);
     let result;
-    if(action==='status')result=coordinator.status();
+    if(action==='status')result={mode:'legacy',notice:'State lock lama tidak dipakai hook bersama. Periksa koordinasi aktif: node .agents/hooks/coord.mjs status',...coordinator.status()};
     else if(action==='read')result=coordinator.read(agent,session,files.map(file=>path.resolve(process.cwd(),file)));
     else if(action==='recover')result=coordinator.recover(agent,session==='--confirmed-session-ended');
     else if(action==='recover-mutex')result=coordinator.recoverMutex(agent,session==='--confirmed-session-ended');

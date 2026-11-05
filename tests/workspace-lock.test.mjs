@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {mkdirSync,readFileSync,renameSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,readFileSync,renameSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {createWorkspaceLock,coordinationCommand} from '../.agents/hooks/workspace-lock.mjs';
 import {agentWorkspace} from './fixtures/agent-workspace.mjs';
@@ -12,6 +12,36 @@ function hook(f,agent,payload){
   assert.equal(result.status,0,result.stderr);return result.stdout?JSON.parse(result.stdout):{};
 }
 const pre=(session_id,tool_use_id,tool_input={file_path:'example.txt'})=>({hook_event_name:'PreToolUse',session_id,tool_use_id,tool_name:'Write',tool_input});
+
+test('Current status ignores legacy locks and never creates or rewrites coordination state',t=>{
+  const f=setup(t),dir=path.join(f.root,'.git/msa-coord');
+  f.lock.start('claude','legacy');f.lock.begin('claude','legacy','unfinished-shell',null);
+  const legacyFile=path.join(f.root,'.agents/.runtime/state.json'),legacy=readFileSync(legacyFile,'utf8');
+  const status=()=>{
+    const result=spawnSync(process.execPath,[path.join(f.root,'.agents/hooks/coord.mjs'),'status'],{cwd:path.join(f.root,'backend'),encoding:'utf8',windowsHide:true,timeout:5000});
+    assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);
+  };
+  const empty=status();assert.equal(empty.mode,'task-scoped');assert.deepEqual(empty.tasks,[]);
+  assert.equal(existsSync(dir),false);
+  assert.notEqual(hook(f,'codex',pre('current','write')).hookSpecificOutput?.permissionDecision,'deny');
+  const stateFile=path.join(dir,'state.json'),state=JSON.parse(readFileSync(stateFile,'utf8'));
+  for(const task of Object.values(state.tasks)){task.leaseUntil=0;task.pid=2**22-1;}
+  writeFileSync(stateFile,JSON.stringify(state));
+  const before=readFileSync(stateFile,'utf8'),audit=readFileSync(path.join(dir,'audit.log'),'utf8');
+  mkdirSync(path.join(dir,'mutex'));writeFileSync(path.join(dir,'mutex/owner'),String(process.pid));
+  const current=status();assert.equal(current.tasks.length,1);assert.equal(current.tasks[0].agent,'codex');
+  assert.equal(current.statePath,stateFile);assert.equal(current.mutex,true);
+  assert.equal(readFileSync(stateFile,'utf8'),before);assert.equal(readFileSync(path.join(dir,'audit.log'),'utf8'),audit);
+  assert.equal(readFileSync(legacyFile,'utf8'),legacy);
+});
+
+test('Legacy status explicitly directs callers to the current coordination status',t=>{
+  const f=setup(t);f.lock.start('claude','legacy');f.lock.begin('claude','legacy','unfinished-shell',null);
+  const result=spawnSync(process.execPath,[path.join(f.root,'.agents/hooks/workspace-lock.mjs'),'status'],{cwd:f.root,encoding:'utf8',windowsHide:true});
+  assert.equal(result.status,0,result.stderr);
+  const status=JSON.parse(result.stdout);assert.equal(status.mode,'legacy');
+  assert.match(status.notice,/coord\.mjs status/);assert.equal(status.owner.session,'legacy');
+});
 
 test('Workspace ownership is per session, survives tools, and rejects stale edits after handoff',t=>{
   const f=setup(t),{lock}=f;

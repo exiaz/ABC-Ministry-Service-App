@@ -2,83 +2,65 @@
   "version": 1,
   "assets": [
     {
-      "id": "brand-mark-icon-svg",
-      "kind": "icon",
+      "id": "abc-movement-logo",
+      "kind": "image",
       "status": "existing",
-      "purpose": "Lambang ABC di kepala sidebar dan bilah atas ponsel sebagai tanda produk.",
+      "purpose": "Identitas ABC MSA pada shell laporan.",
       "requirements": [
-        "Pakai icon.svg proyek apa adanya, tanpa membuat logo baru.",
-        "Tampil 24-32px di sebelah nama 'ABC MSA' dengan nama aksesibel."
+        "Berkas lokal telah diperiksa secara visual dan memiliki signature PNG valid.",
+        "Dimensi asli 2392×1018 piksel, ukuran 126387 byte; memenuhi batas raster.",
+        "Pertahankan seluruh bentuk, warna, dan proporsi. Gunakan object-fit: contain tanpa crop atau pewarnaan ulang.",
+        "Gunakan berkas proyek langsung; tidak perlu menyalin atau menghasilkan logo baru."
       ],
       "role": "logo",
       "sectionIds": [
         "shell"
       ],
-      "aspectRatio": "1:1",
-      "composition": "Lambang persegi di kiri nama produk pada kepala sidebar, rata tengah vertikal; tanpa wadah berwarna.",
+      "aspectRatio": "1196:509",
+      "composition": "Logo lengkap berupa tangan dan tulisan ABC Movement pada bidang horizontal. Tempatkan utuh di kepala sidebar atau menu sheet, dengan nama produk sebagai teks terpisah. Tidak menimpa logo dengan teks atau memasukkannya ke wadah berwarna.",
       "source": {
         "kind": "project",
-        "reference": "icon.svg"
+        "reference": "assets/abc-movement-logo.png",
+        "license": "Aset merek existing proyek; digunakan untuk identitas ABC MSA, tanpa mengasumsikan lisensi redistribusi publik."
       },
-      "destination": "icon.svg"
+      "destination": "assets/abc-movement-logo.png"
     },
     {
-      "id": "font-geist",
+      "id": "font-nunito-sans",
       "kind": "font",
-      "status": "ready",
-      "purpose": "Geist variabel untuk seluruh antarmuka (bobot 400, 500, 700).",
+      "status": "existing",
+      "purpose": "Font antarmuka bersama untuk seluruh tampilan laporan.",
       "requirements": [
-        "Muat dengan @font-face font-weight 400 700 dari berkas lokal; tanpa CDN.",
-        "Verifikasi document.fonts.check untuk 400, 500, 700 dan tabular-nums mengubah lebar digit.",
-        "Lisensi SIL OFL 1.1 tersimpan di assets/fonts/OFL-Geist.txt."
+        "Berkas lokal berukuran 31076 byte memiliki magic bytes wOF2 dan berhasil didekompresi; panjang tabel hasil dekompresi sesuai direktori WOFF2.",
+        "Metadata internal menunjukkan keluarga Nunito Sans dan sumbu wght 200–1000. Gunakan bobot normal 400, 500, 600, dan 700 sesuai brand system; tidak memerlukan italic.",
+        "Lisensi lokal tersedia pada assets/fonts/OFL-NunitoSans.txt. Pertahankan bersama font.",
+        "Keluarga, rentang bobot, dan lisensi dikonfirmasi melalui [metadata resmi Google Fonts](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/METADATA.pb) dan [lisensi resmi](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/OFL.txt). Pemeriksaan ini tidak membuktikan berkas lokal identik dengan versi upstream terbaru.",
+        "Tidak ada unduhan baru sehingga header Content-Type unduhan tidak tersedia.",
+        "Pada Build, muat berkas lokal, tunggu document.fonts.ready, dan periksa FontFace serta document.fonts.check untuk seluruh bobot yang digunakan.",
+        "Tabel GSUB lokal tidak memuat fitur tnum. Perubahan lebar digit dan perilaku angka tabular belum diuji di browser; jangan menyatakan pemeriksaan tipografi tersebut lulus atau mengganti keluarga tanpa keputusan desain."
       ],
       "role": "font",
       "sectionIds": [
         "shell",
-        "absen-konteks",
-        "garis-absen",
-        "daftar-siswa-absen",
-        "ringkasan-minggu",
-        "ulang-tahun-dekat",
-        "view-siswa",
-        "view-ulang-tahun",
-        "view-rundown",
-        "view-kelompok"
+        "tinjauan-ringkasan",
+        "tinjauan-pemeriksaan",
+        "tinjauan-sumber",
+        "tinjauan-kesimpulan",
+        "portal-review",
+        "masuk-review",
+        "mentor-review",
+        "organisasi-review",
+        "pelayanan-review",
+        "pengguna-review"
       ],
       "aspectRatio": "1:1",
-      "composition": "Berkas font, bukan visual.",
+      "composition": "Aset nonvisual tanpa crop atau penempatan gambar; digunakan sebagai font teks, label, kontrol, dan angka.",
       "source": {
-        "kind": "external",
-        "reference": "https://github.com/google/fonts/tree/main/ofl/geist",
-        "license": "SIL Open Font License 1.1, Copyright 2024 The Geist Project Authors",
-        "contentType": "application/octet-stream"
+        "kind": "project",
+        "reference": "assets/fonts/nunito-sans-latin.woff2",
+        "license": "SIL Open Font License 1.1; Copyright 2016 The Nunito Sans Project Authors. Lisensi lokal: assets/fonts/OFL-NunitoSans.txt."
       },
-      "destination": "assets/fonts/geist-variable.ttf"
-    },
-    {
-      "id": "font-geist-mono",
-      "kind": "font",
-      "status": "ready",
-      "purpose": "Geist Mono hanya untuk ID dan kunci.",
-      "requirements": [
-        "Muat bobot 400 dari berkas lokal; pakai hanya pada ID dan kunci.",
-        "Lisensi SIL OFL 1.1 sama dengan keluarga Geist (assets/fonts/OFL-Geist.txt)."
-      ],
-      "role": "font",
-      "sectionIds": [
-        "daftar-siswa-absen",
-        "view-siswa",
-        "view-kelompok"
-      ],
-      "aspectRatio": "1:1",
-      "composition": "Berkas font, bukan visual.",
-      "source": {
-        "kind": "external",
-        "reference": "https://github.com/google/fonts/tree/main/ofl/geistmono",
-        "license": "SIL Open Font License 1.1, Copyright 2024 The Geist Project Authors",
-        "contentType": "application/octet-stream"
-      },
-      "destination": "assets/fonts/geist-mono-variable.ttf"
+      "destination": "assets/fonts/nunito-sans-latin.woff2"
     }
   ]
 }

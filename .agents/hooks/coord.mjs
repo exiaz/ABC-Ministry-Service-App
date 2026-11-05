@@ -4,6 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync} from 'node:fs';
 import {createHash, randomUUID} from 'node:crypto';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {canonical, within} from './workspace-lock.mjs';
 
 export const LEASE_MS = 10 * 60 * 1000;
@@ -129,3 +130,14 @@ export function createCoord(cwd) {
 }
 
 export {canonical, within};
+
+if(process.argv[1]&&canonical(process.argv[1])===canonical(fileURLToPath(import.meta.url))){
+  try{
+    if(process.argv.length!==3||process.argv[2]!=='status')throw Error('Gunakan: node .agents/hooks/coord.mjs status');
+    const dir=path.join(commonDir(fileURLToPath(new URL('../../',import.meta.url))),'msa-coord'),statePath=path.join(dir,'state.json');
+    // Status membaca snapshot terakhir tanpa mengambil mutex, memperbarui lease, atau membersihkan tugas.
+    const state=existsSync(statePath)?JSON.parse(readFileSync(statePath,'utf8')):{version:2,tasks:{}};
+    if(state.version!==2||!state.tasks||typeof state.tasks!=='object'||Array.isArray(state.tasks))throw Error('State koordinasi tidak kompatibel.');
+    process.stdout.write(JSON.stringify({mode:'task-scoped',statePath,leaseMs:LEASE_MS,tasks:Object.values(state.tasks),mutex:existsSync(path.join(dir,'mutex'))},null,2)+'\n');
+  }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
+}

@@ -1,53 +1,64 @@
 {
   "version": 1,
   "page": {
-    "title": "Absen hari ini",
+    "title": "Tinjauan UI/UX",
     "route": "/",
-    "description": "Layar kerja mentor ABC MSA untuk mengisi dan menyimpan absen satu kelompok, dengan tampilan admin untuk siswa, ulang tahun, dan rundown pelayanan."
+    "description": "Laporan review ABC MSA dengan tampilan pemeriksaan per area. Referensi desktop dipilih sebagai acuan komposisi utama, dengan penerapannya menunggu pemeriksaan visual PDF."
   },
   "architecture": {
-    "contract": "Layar ini menjawab: siapa di kelompok saya yang sudah hadir hari ini, dan siapa yang belum ditandai?",
+    "contract": "Layar ini menjawab: bagian UI/UX ABC MSA mana yang sudah dapat dinilai, dan pemeriksaan apa yang perlu dilakukan berikutnya? Kesimpulan awal: bukti visual belum lengkap sehingga peningkatan usability belum dapat disimpulkan.",
     "mode": "operate_monitor",
-    "novelty": "medium",
-    "grid": "Desktop 1440: sidebar 240px + kanvas cair dengan gutter 24px. Kanvas 1440 - 240 - 2x24 = 1152px, 12 kolom x 76px + 11 jarak 12px = 1044px tidak cukup, jadi dipakai 12 kolom x 85px + 11 x 12px = 1152px. Baris pertama 8 + 4 kolom (688px + 464px + 12px = 1152px lebih sedikit dari 1152 sehingga dihitung 8x85+7x12 = 764px dan 4x85+3x12 = 388px, 764 + 12 + 388 = 1164 diganti 8 + 4 menjadi 756 + 12 + 384 = 1152). Baris berikutnya 6 + 6 berbagi garis kolom. Satu nilai jarak 12px horizontal dan vertikal. Ponsel: satu kolom, margin 16px.",
-    "signatureRule": "Lembar adaptasi: tidak ada warna merek di chrome. Merah ABC hanya satu tombol utama per layar, biru ABC (#64A4D9) hanya pada data utama (kotak hadir di garis absen), selebihnya tinta dan abu. Kartu putih datar bergaris 1px tanpa bayangan saat diam.",
-    "rhythm": "Mentor di ponsel: baris dan kontrol 48px, padding 16px, body 14px, jarak 12px. Admin tablet/desktop: baris 44px, kontrol 40px, padding 20px, body 14px, tabel dengan angka rata kanan dan tabular. Judul 24px, bagian 16px, angka utama 30px, label 12px."
+    "novelty": "low",
+    "grid": "Pada 1440px: sidebar 230px termasuk garis + gutter 24px + kanvas 1162px + gutter 24px = 1440px. Kanvas: kolom utama 754px + gap 24px + rail 384px = 1162px. Pada 1365px: 230 + 24 + 1087 + 24 = 1365; kolom utama 679 + gap 24 + rail 384 = 1087. Blok penuh mengikuti kedua tepi kanvas.",
+    "signatureRule": "Gunakan tangga merah ABC dari brand system: warna pekat pada satu aksi utama dan tanda kecil, tint pucat pada pilihan dan konteks. Signature pelayanan, kelompok, dan tanggal dipakai pada pemeriksaan Mentor. Referensi pengguna yang dipilih mengungguli komposisi sheet setelah isi visualnya dapat diverifikasi.",
+    "rhythm": "Sparse: padding dan gap 24px; baris informasi 45px, baris interaktif minimal 48px, baris bersubline 64px. Gunakan Nunito Sans dan skala brand system. Navigasi memakai pitch 48px agar area sentuh tidak bertumpang tindih."
   },
   "navigation": [
     {
-      "label": "Absen",
-      "target": "#/"
+      "label": "Tinjauan UI/UX",
+      "target": "#/tinjauan"
     },
     {
-      "label": "Siswa",
-      "target": "#/siswa"
+      "label": "Portal",
+      "target": "#/portal"
     },
     {
-      "label": "Ulang tahun",
-      "target": "#/ulang-tahun"
+      "label": "Masuk",
+      "target": "#/masuk"
     },
     {
-      "label": "Rundown",
-      "target": "#/rundown"
+      "label": "Mentor",
+      "target": "#/mentor"
     },
     {
-      "label": "Kelompok",
-      "target": "#/kelompok"
+      "label": "Organisasi dan program",
+      "target": "#/organisasi"
+    },
+    {
+      "label": "Pelayanan",
+      "target": "#/pelayanan"
+    },
+    {
+      "label": "Pengguna",
+      "target": "#/pengguna"
     }
   ],
   "navigationDesign": {
     "layoutCase": "app-shell",
-    "layout": "Sidebar berlabel 240px di atas ground krem muda dengan satu garis tipis 1px. Atas: lambang ABC dari icon.svg + nama 'ABC MSA' dan pengalih sekolah/kelompok ('SD Kasih Bangsa, Kelompok Merpati'). Tengah: nav pada pitch 34px, ikon outline 16px garis 1,5px, label 14px sentence case, item aktif pil #EDE8DC radius 6 dengan inset 8px. Grup 'Pelayanan' (Absen, Rundown) dan 'Pengelolaan' (Siswa, Ulang tahun, Kelompok) dengan label abu 12px dan jarak 24px. Bawah: baris pengguna (inisial + nama mentor) dan Keluar. Tanpa bilah atas.",
+    "layout": "Ruled T-frame sesuai brand system. Sidebar menampilkan logo asli, ABC MSA, cakupan Tinjauan UI/UX, dan tujuan berlabel. Top bar 64px memuat breadcrumb serta pencarian pemeriksaan. Tidak membuat workspace switcher untuk laporan dengan satu cakupan.",
     "behavior": [
-      "Setiap tujuan nav adalah tampilan rute hash sendiri dengan h1 sendiri; tidak ada tautan jangkar di layar yang sama.",
-      "Item aktif memakai aria-current=page dan pil #EDE8DC.",
-      "Pengalih sekolah/kelompok membuka menu kecil dengan Escape menutup dan fokus kembali ke pemicu.",
-      "Rute hash dan id yang sudah ada dipertahankan; perubahan dicatat di berkas status."
+      "Rute / membuka #/tinjauan sebagai tampilan default yang lengkap.",
+      "Setiap tujuan membuka view tersendiri, bukan anchor pada halaman panjang.",
+      "Rute laporan terpisah dari URL dan hash aplikasi ABC MSA.",
+      "Navigasi aktif menggunakan aria-current dan tint dari brand system.",
+      "Pencarian global menampilkan hasil pada daftar pemeriksaan dan mempertahankan kata pencarian.",
+      "Perpindahan view memperbarui judul dokumen dan fokus ke satu h1 aktif.",
+      "Menu sheet mendukung Escape, focus trap, aria-expanded, dan focus return."
     ],
     "transformation": {
-      "compact": "Bilah atas 48px berisi nama layar, tombol menu yang membuka lembar penuh berisi nav, pengalih kelompok, dan baris pengguna; paling banyak satu aksi. Konten selebar layar, margin 16px. Target sentuh 48px.",
-      "medium": "641-1100px: sidebar terlipat ke bilah atas 48px yang sama; kanvas margin 24px; tabel pertahankan 4-5 kolom dengan data sekunder sebagai subbaris.",
-      "expanded": "Sidebar 240px tetap terlihat; kanvas cair dengan gutter 24px."
+      "compact": "Sampai 640px, sidebar menjadi menu sheet penuh; top bar 56px memuat menu, nama area, dan Cari. Margin konten 16px.",
+      "medium": "641–1100px, sidebar dilipat. Top bar membawa breadcrumb dan pencarian. Margin 24px; metadata tabel menjadi subline.",
+      "expanded": "Di atas 1100px, sidebar 230px dan top bar 64px; konten mengikuti grid terhadap area di samping sidebar."
     }
   },
   "sections": [
@@ -57,491 +68,584 @@
       "layoutCases": [
         "app-screen"
       ],
-      "purpose": "Kerangka navigasi dan konteks sekolah/kelompok.",
-      "userQuestion": "Saya ada di layar mana dan untuk kelompok mana?",
+      "referenceDirectionId": "user-reference-1",
+      "purpose": "Memberi identitas produk dan orientasi area review.",
+      "userQuestion": "Produk dan area apa yang sedang saya tinjau?",
       "stage": "orient",
       "dependencies": [],
       "evidence": [
-        "Nama produk ABC MSA",
-        "Konteks SD Kasih Bangsa, Kelompok Merpati"
+        "msa-brand.js menggunakan assets/abc-movement-logo.png.",
+        "Panduan gaya Pil dipilih sebagai referensi bentuk komponen; isi PDF belum diperiksa."
       ],
       "copy": {
         "heading": "ABC MSA",
         "body": [
-          "Pengalih sekolah dan kelompok di kepala sidebar: SD Kasih Bangsa, Kelompok Merpati.",
-          "Mentor: Dina Pratama."
+          "Tinjauan UI/UX"
         ],
         "callsToAction": [
           {
-            "label": "Ganti kelompok",
-            "target": "#/kelompok"
+            "label": "Cari pemeriksaan",
+            "target": "action:open-check-search"
           }
         ]
       },
-      "layout": "Sidebar 240px (desktop) atau bilah atas 48px + lembar menu (ponsel). Ikon outline dari ui-sprite.svg. Keadaan: item nav hover (isi satu langkah), terpilih (pil #EDE8DC), fokus (cincin 3px biru #1D5F99), nonaktif (teks muted).",
+      "layout": "Shell bersama seluruh view, logo asli tanpa wadah berwarna dan pencarian berlabel. Sumber komposisi sementara ialah brand system dan sheet; referensi terpilih belum digunakan untuk mengklaim ukuran atau bentuk PDF. Shell tetap tersedia saat pencarian loading, kosong, atau gagal.",
       "motion": {
         "purpose": "state_change",
         "trigger": "press",
-        "behavior": "Lembar menu ponsel bergeser dari tepi sambil memudar; item nav berubah isi saat hover dan tekan.",
-        "durationMs": 220,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Lembar muncul dan hilang seketika tanpa pergeseran."
+        "behavior": "Menu sheet membuka dan menutup dari tepi; indikator aktif berubah tanpa entrance halaman.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Menu dan indikator langsung berada pada keadaan akhir."
       },
       "componentNeeds": [],
       "assetNeeds": [
-        "brand-mark-icon-svg"
+        "abc-movement-logo"
       ],
       "transformation": {
-        "compact": "Bilah atas 48px dengan judul layar dan tombol menu 48px.",
-        "medium": "Bilah atas 48px yang sama.",
-        "expanded": "Sidebar 240px tetap."
+        "compact": "Top bar dan menu sheet penuh.",
+        "medium": "Top bar, menu sheet, dan pencarian yang mudah dijangkau.",
+        "expanded": "Sidebar berlabel dan top bar dalam ruled T-frame."
       }
     },
     {
-      "id": "absen-konteks",
+      "id": "tinjauan-ringkasan",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "app-screen"
+        "kpi-strip-chart-rail"
       ],
-      "purpose": "Judul layar, temuan, dan pilihan tanggal/kelompok dengan aksi utama.",
-      "userQuestion": "Siapa yang belum ditandai, dan di mana saya menyimpan?",
-      "stage": "act",
+      "referenceDirectionId": "user-reference-2",
+      "purpose": "Menyampaikan batas kesimpulan dan pekerjaan berikutnya.",
+      "userQuestion": "Apakah versi ini sudah terbukti lebih baik?",
+      "stage": "qualify",
       "dependencies": [
         "shell"
       ],
       "evidence": [
-        "Sample data: 18 dari 22 siswa hadir, 2 izin, 1 tidak hadir, 1 belum ditandai"
+        "Logo dan C10-preview.png diperiksa pada Brand phase.",
+        "Mockup desktop dipilih sebagai referensi utama orientasi desktop; isi PDF belum diperiksa.",
+        "Belum ada audit browser atau perbandingan versi pada rangkaian fase ini."
       ],
       "copy": {
-        "heading": "Absen hari ini",
+        "heading": "Tinjauan UI/UX",
         "body": [
-          "Sample data. Minggu, 8 November 2026, SD Kasih Bangsa, Kelompok Merpati.",
-          "Satu siswa belum ditandai: Yosua Lumentut.",
-          "Sudah tersimpan 21 dari 22 siswa; perubahan terakhir belum disimpan."
+          "Bukti visual belum lengkap; peningkatan usability belum dapat disimpulkan.",
+          "Sample data: 10 pemeriksaan menunggu verifikasi, 0 temuan terkonfirmasi."
         ],
         "callsToAction": [
           {
-            "label": "Simpan absen",
-            "target": "#/"
-          },
-          {
-            "label": "Ganti tanggal",
-            "target": "#/"
+            "label": "Tinjau portal",
+            "target": "#/portal"
           }
         ]
       },
-      "layout": "Baris judul: h1 24px di kiri, kontrol tanggal dan kelompok 40px (48px di ponsel), satu tombol utama merah 'Simpan absen' di kanan. Baris temuan 14px abu di bawah judul, 12 kata atau kurang. Keadaan simpan sebagai pil: belum tersimpan, menyimpan, tersimpan, gagal. Simpan nonaktif saat tidak ada perubahan; galat menaruh pesan di dalam blok dengan tombol Coba lagi.",
-      "motion": {
-        "purpose": "status",
-        "trigger": "state_change",
-        "behavior": "Pil status simpan berganti isi di tempat tanpa menggeser tata letak.",
-        "durationMs": 150,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Pil berganti seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Judul 20-24px, kontrol tanggal dan kelompok satu baris, tombol Simpan lebar penuh 48px menempel di bawah layar tanpa menutupi baris terakhir.",
-        "medium": "Judul dan kontrol satu baris, tombol di kanan.",
-        "expanded": "Baris judul lebar 1152px, tombol di kanan, 8 + 4 kolom di bawahnya."
-      }
-    },
-    {
-      "id": "garis-absen",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Elemen khas produk: garis absen satu kotak per siswa plus hitungan.",
-      "userQuestion": "Berapa yang hadir dari kelompok, dan siapa yang masih kosong?",
-      "stage": "orient",
-      "dependencies": [
-        "absen-konteks"
-      ],
-      "evidence": [
-        "18 hadir, 2 izin, 1 tidak hadir, 1 belum ditandai dari 22 siswa"
-      ],
-      "copy": {
-        "heading": "Kehadiran",
-        "body": [
-          "Sample data. 18 dari 22 hadir.",
-          "Izin 2, tidak hadir 1, belum ditandai 1."
-        ],
-        "callsToAction": [
-          {
-            "label": "Lihat siswa belum ditandai",
-            "target": "#/"
-          }
-        ]
-      },
-      "layout": "Kartu 4 kolom di 1440 (384px) di kanan atas, sejajar dengan daftar siswa 8 kolom. Angka 18 di 30px tabular, 'dari 22 hadir' 14px abu. Di bawahnya deretan 22 kotak 16px: hadir berisi biru, izin garis putus, tidak hadir bingkai ink dengan tanda silang kecil, belum ditandai kosong. Legenda memakai kotak yang sama dengan teks. Nol dicetak 0, kosong berupa tanda hubung abu.",
-      "motion": {
-        "purpose": "state_change",
-        "trigger": "state_change",
-        "behavior": "Kotak berganti bentuk dan isi di tempat saat penanda siswa berubah; hitungan diperbarui tanpa hitung naik.",
-        "durationMs": 150,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Kotak berganti seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Dipindah ke atas daftar sebagai ringkasan satu baris kotak yang membungkus; angka 30px tetap.",
-        "medium": "Kartu di atas daftar selebar penuh, kotak dalam satu baris.",
-        "expanded": "Kartu 4 kolom di kanan daftar, tinggi mengikuti isi."
-      }
-    },
-    {
-      "id": "daftar-siswa-absen",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Daftar siswa kelompok untuk menandai hadir, izin, atau tidak hadir.",
-      "userQuestion": "Bagaimana saya menandai setiap siswa dengan cepat?",
-      "stage": "act",
-      "dependencies": [
-        "absen-konteks"
-      ],
-      "evidence": [
-        "22 siswa fiktif, contoh: Anindya Wulandari, Bagas Setiawan, Cahya Tambunan, Yosua Lumentut"
-      ],
-      "copy": {
-        "heading": "Siswa Merpati",
-        "body": [
-          "Sample data. 22 siswa, 18 hadir.",
-          "Baris contoh: Anindya Wulandari, hadir; Bagas Setiawan, izin; Yosua Lumentut, belum ditandai."
-        ],
-        "callsToAction": [
-          {
-            "label": "Tandai semua hadir",
-            "target": "#/"
-          },
-          {
-            "label": "Cari siswa",
-            "target": "#/"
-          }
-        ]
-      },
-      "layout": "Kartu 8 kolom (756px) dengan kolom pencarian 40px dan tab garis bawah Semua, Belum ditandai, Izin. Baris 48px: avatar inisial 36px pada tint pucat, nama 14px/500, tiga tombol segmen Hadir, Izin, Tidak hadir (masing-masing 48px sentuh, ikon plus teks) rata kanan. Maksimal 8 baris terlihat dengan 'Lihat semua 22'. Keadaan baris: hover isi raised, terpilih #EDE8DC, fokus cincin 3px, nonaktif saat menyimpan. Kosong: bingkai putus-putus 'Belum ada siswa di kelompok ini.' Memuat: batang abu datar pada pitch baris. Galat: 'Daftar siswa gagal dimuat. Data terakhir baik pukul 09:14.' dengan Coba lagi.",
+      "layout": "View #/tinjauan. Judul penuh 1162px dengan finding di bawahnya dan aksi utama di kanan. Strip angka tunggal terbagi garis, tanpa kartu KPI individual. Tidak ada grafik karena belum ada hasil audit atau seri waktu. Komposisi sheet merupakan rencana sementara hingga referensi desktop dapat ditinjau.",
       "motion": {
         "purpose": "feedback",
         "trigger": "press",
-        "behavior": "Segmen terpilih berganti isi dan menekan skala 0,98; tab garis bawah berpindah ke tab terpilih dan daftar berganti tanpa memuat ulang entri.",
-        "durationMs": 150,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Perpindahan seketika."
+        "behavior": "Aksi membuka Portal; angka tampil langsung tanpa count-up.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Perpindahan langsung dengan fokus pada judul Portal."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Baris dua baris: nama di atas, tiga segmen penuh lebar 48px di bawah; tab bergulir menyamping di barisnya sendiri.",
-        "medium": "Baris satu baris dengan segmen ikon plus teks pendek.",
-        "expanded": "Kartu 8 kolom di kiri sejajar kartu Kehadiran 4 kolom."
+        "compact": "Judul 24px; finding dan aksi bertumpuk; angka dalam container dua kolom.",
+        "medium": "Judul dan aksi berbagi baris jika ruang cukup.",
+        "expanded": "Judul, finding, aksi, dan strip angka mengikuti tepi kanvas."
       }
     },
     {
-      "id": "ringkasan-minggu",
+      "id": "tinjauan-pemeriksaan",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Menentukan pemeriksaan berikutnya dan menyediakan akses per area.",
+      "userQuestion": "Bagian mana yang perlu diperiksa berikutnya?",
+      "stage": "act",
+      "dependencies": [
+        "tinjauan-ringkasan"
+      ],
+      "evidence": [
+        "Kategori berasal dari requiredContent brief, bukan cacat yang telah terbukti."
+      ],
+      "copy": {
+        "heading": "Urutan pemeriksaan",
+        "body": [
+          "Sample data: 10 pemeriksaan, seluruhnya Belum diperiksa.",
+          "Portal: navigasi dan akses tindakan.",
+          "Masuk: label, kata sandi, dan kesalahan.",
+          "Mentor: konteks sesi dan absensi.",
+          "Organisasi dan program: hierarki dan pemilihan konteks.",
+          "Pelayanan: daftar, kalender, dan draf.",
+          "Pengguna: pencarian dan perubahan akses."
+        ],
+        "callsToAction": [
+          {
+            "label": "Tampilkan semua",
+            "target": "action:show-all-checks"
+          },
+          {
+            "label": "Hapus filter",
+            "target": "action:clear-check-filters"
+          }
+        ]
+      },
+      "layout": "Kolom utama 754px. Tab Semua, Belum diperiksa, Terverifikasi; toolbar pencarian dan urutan. Tabel tanpa kartu luar: area, pemeriksaan, keadaan, dan Buka. Enam baris awal setinggi 64px, lalu Tampilkan semua. Empat pemeriksaan tambahan mencakup sumber, visual, responsivitas dan aksesibilitas, serta keadaan dan interaksi. Empty: Tidak ada pemeriksaan yang cocok. Zero tetap 0. Loading mempertahankan label dan pitch. Error lokal: Pemeriksaan belum dapat dimuat, dengan Coba lagi.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Tab, pencarian, dan urutan memperbarui hasil dengan identitas baris stabil.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Hasil serta indikator langsung diperbarui."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Pencarian selebar konten; filter tambahan dalam sheet. Baris menjadi dua tingkat dengan tindakan Buka.",
+        "medium": "Tabel empat kolom; uraian menjadi subline bila diperlukan.",
+        "expanded": "Enam baris awal pada kolom utama dengan sumber bukti di rail."
+      }
+    },
+    {
+      "id": "tinjauan-sumber",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "kpi-strip-chart-rail"
+      ],
+      "purpose": "Memperlihatkan sumber yang mendukung atau membatasi review.",
+      "userQuestion": "Bukti apa yang tersedia?",
+      "stage": "prove",
+      "dependencies": [
+        "tinjauan-ringkasan"
+      ],
+      "evidence": [
+        "Empat referensi pengguna telah dipilih dan dipetakan menurut area.",
+        "Pemilihan referensi tidak membuktikan isi PDF sudah diperiksa."
+      ],
+      "copy": {
+        "heading": "Sumber bukti",
+        "body": [
+          "Sample data: 8 entri sumber, 4 tersedia dan 4 belum tersedia.",
+          "Panduan Pil: belum tersedia.",
+          "Mockup desktop: belum tersedia.",
+          "Mockup masuk dan absensi: belum tersedia.",
+          "Mockup Mentor: belum tersedia.",
+          "C10, logo ABC, token lokal, dan markup halaman: tersedia."
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat sumber",
+            "target": "action:open-source-list"
+          }
+        ]
+      },
+      "layout": "Rail 384px sejajar daftar pemeriksaan. Empat referensi yang belum tersedia tampil sebagai baris ringkas, sumber lokal di bawahnya. Drawer memuat delapan entri dengan nama, path bila ada, jenis bukti, pemetaan referensi, dan batas pemeriksaan. Tidak membuat thumbnail PDF. Empty: Belum ada sumber tercatat. Loading dan error tetap lokal, angka zero dihitung dari entri.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Lihat sumber membuka drawer; Escape menutup dan mengembalikan fokus.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Drawer langsung tampil atau ditutup."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Ringkasan sumber mendahului daftar; rincian berada di drawer penuh.",
+        "medium": "Sumber menjadi blok selebar konten setelah daftar.",
+        "expanded": "Rail 384px mengikuti tinggi isi tanpa ruang kosong paksa."
+      }
+    },
+    {
+      "id": "tinjauan-kesimpulan",
       "layoutFamily": "dashboard",
       "layoutCases": [
         "app-screen"
       ],
-      "purpose": "Perbandingan kehadiran beberapa Minggu terakhir untuk kelompok.",
-      "userQuestion": "Apakah kehadiran minggu ini lebih baik daripada biasanya?",
-      "stage": "evaluate",
+      "purpose": "Menyediakan kesimpulan dan rekomendasi tanpa mengarang hasil.",
+      "userQuestion": "Perbaikan apa yang sudah didukung bukti?",
+      "stage": "de_risk",
       "dependencies": [
-        "garis-absen"
+        "tinjauan-pemeriksaan",
+        "tinjauan-sumber"
       ],
       "evidence": [
-        "Hadir per Minggu: 25 Okt 19, 1 Nov 20, 8 Nov 18"
+        "Belum ada temuan terkonfirmasi dari audit visual dan interaksi saat ini."
       ],
       "copy": {
-        "heading": "Hadir per Minggu",
+        "heading": "Rekomendasi",
         "body": [
-          "Sample data. 18 hadir hari ini, 2 lebih sedikit dari Minggu 1 November (20).",
-          "Rata-rata tiga Minggu: 19 siswa."
+          "Belum ada rekomendasi terkonfirmasi.",
+          "Perbandingan versi dan pengujian interaksi belum dilakukan."
         ],
-        "callsToAction": [
-          {
-            "label": "Lihat riwayat",
-            "target": "#/kelompok"
-          }
-        ]
+        "callsToAction": []
       },
-      "layout": "Kartu 6 kolom di bawah daftar. Kolom persegi tiga batang dengan sumbu y bertanda 0, 10, 22; batang Minggu ini berwarna biru, sebelumnya abu. Tanpa legenda untuk satu seri. Selisih ditulis di bawahnya, angka merah hanya bila turun. Keadaan: kosong menggambar garis nol tanpa batang; galat satu kalimat di dalam kartu.",
+      "layout": "Blok penuh 1162px setelah daftar dan rail. Keadaan kosong ringkas, tidak diberi tinggi berlebihan. Rekomendasi berikutnya wajib memiliki area, bukti, dampak, prioritas, dan koreksi. Loading mempertahankan header; error tidak menghapus hasil lama. Nol temuan tidak berarti bebas masalah.",
       "motion": {
         "purpose": "none",
         "trigger": "none",
         "behavior": "Wilayah baca statis.",
         "durationMs": 0,
         "easing": "linear",
-        "reducedMotion": "Tidak ada gerak."
+        "reducedMotion": "Tidak ada perubahan."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Selebar penuh, tinggi 160px, tiga label sumbu x.",
-        "medium": "Berdampingan dengan kartu ulang tahun bila lebar masing-masing minimal 340px, selain itu bertumpuk.",
-        "expanded": "6 kolom, berbagi garis kolom dengan kartu di sebelahnya (6 + 6)."
+        "compact": "Selebar konten dengan ringkasan langsung terbaca.",
+        "medium": "Selebar konten setelah sumber.",
+        "expanded": "Header dan keadaan kosong terlihat pada viewport awal 1440×900."
       }
     },
     {
-      "id": "ulang-tahun-dekat",
+      "id": "portal-review",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "app-screen"
+        "table-filter-bar"
       ],
-      "purpose": "Ulang tahun siswa dalam waktu dekat yang bisa diucapkan mentor.",
-      "userQuestion": "Siapa yang berulang tahun dalam dua minggu ke depan?",
-      "stage": "continue",
-      "dependencies": [
-        "daftar-siswa-absen"
-      ],
-      "evidence": [
-        "Anindya Wulandari 12 Nov, Bagas Setiawan 19 Nov"
-      ],
-      "copy": {
-        "heading": "Ulang tahun",
-        "body": [
-          "Sample data. 2 siswa berulang tahun dalam 14 hari.",
-          "Anindya Wulandari, Kamis 12 November. Bagas Setiawan, Kamis 19 November."
-        ],
-        "callsToAction": [
-          {
-            "label": "Lihat semua",
-            "target": "#/ulang-tahun"
-          }
-        ]
-      },
-      "layout": "Kartu 6 kolom sejajar kartu Hadir per Minggu dengan tinggi yang sama. Baris 48px: avatar inisial, nama, tanggal dalam kata, 'dalam 4 hari'. Tanpa tanggal lahir lengkap atau data wali di layar mentor. Kosong: 'Tidak ada ulang tahun dalam 14 hari.' Footer 'Lihat semua' di kepala kartu.",
-      "motion": {
-        "purpose": "feedback",
-        "trigger": "hover",
-        "behavior": "Baris menaikkan isi satu langkah saat disorot.",
-        "durationMs": 120,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Perubahan isi seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Bertumpuk di bawah Hadir per Minggu.",
-        "medium": "Bertumpuk atau berdampingan sesuai lebar.",
-        "expanded": "6 kolom di kanan."
-      }
-    },
-    {
-      "id": "view-siswa",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Tampilan admin untuk mengelola siswa dan kelompok.",
-      "userQuestion": "Siswa mana yang perlu ditambah, dipindah, atau diperbarui?",
-      "stage": "act",
+      "referenceDirectionId": "user-reference-2",
+      "purpose": "Memeriksa orientasi portal dan akses tindakan menurut peran.",
+      "userQuestion": "Apakah pengguna dapat menemukan pekerjaan pelayanannya?",
+      "stage": "evaluate",
       "dependencies": [
         "shell"
       ],
       "evidence": [
-        "22 siswa fiktif di Kelompok Merpati; privasi siswa hanya untuk admin berwenang"
+        "msa-portal.html memiliki bagian Welcome, masuk, dan Pelayanan Anda.",
+        "user-reference-2 dipilih untuk desktop dan beranda admin; komposisi PDF belum diverifikasi.",
+        "Visibilitas dan navigasi runtime belum diuji."
       ],
       "copy": {
-        "heading": "Siswa",
+        "heading": "Portal",
         "body": [
-          "Sample data. 22 siswa di Kelompok Merpati, 2 kelompok lain terhubung ke sekolah ini.",
-          "Kolom: nama, kelompok, mentor, kelas."
+          "Navigasi runtime belum diperiksa.",
+          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Orientasi: nama produk, peran, dan konteks pelayanan.",
+          "Tindakan utama: akses pelayanan sesuai peran.",
+          "Navigasi: tujuan, keadaan aktif, dan kembali."
         ],
         "callsToAction": [
           {
-            "label": "Tambah siswa",
-            "target": "#/siswa"
+            "label": "Buka bukti",
+            "target": "action:open-evidence:portal"
           },
           {
-            "label": "Cari siswa",
-            "target": "#/siswa"
+            "label": "Tinjau masuk",
+            "target": "#/masuk"
           }
         ]
       },
-      "layout": "Tampilan sendiri dengan h1 'Siswa'. Tabel 5 kolom: nama, kelompok, mentor, kelas, aksi; angka rata kanan tabular; baris 44px; aturan 1px tanpa zebra. Satu tombol utama 'Tambah siswa'. Data tanggal lahir, wali, dan alamat tidak ditampilkan tanpa izin admin. Keadaan: kosong, memuat (batang abu), galat per blok.",
+      "layout": "View #/portal dengan satu h1, finding dan satu aksi utama. Tabel tiga skenario 754px dan rail sumber 384px. Tab Cakupan dan Bukti mengubah isi terkait. Empty, zero, loading, dan error mengikuti kontrak pemeriksaan bersama. Referensi terpilih menjadi acuan visual setelah PDF diperiksa; tidak mengarang susunannya.",
       "motion": {
         "purpose": "state_change",
-        "trigger": "state_change",
-        "behavior": "Hasil filter dan urutan berganti tanpa mengubah identitas baris.",
-        "durationMs": 180,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Hasil berganti seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Tabel menjadi daftar dua baris: nama dan kelas di baris 1, kelompok dan mentor di baris 2 abu.",
-        "medium": "Tabel 4 kolom dengan mentor sebagai subbaris.",
-        "expanded": "Tabel 5 kolom selebar kartu 756px berpasangan dengan ringkasan kelompok 4 kolom."
-      }
-    },
-    {
-      "id": "view-ulang-tahun",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Tampilan admin daftar ulang tahun per bulan.",
-      "userQuestion": "Siapa berulang tahun bulan ini dan berikutnya?",
-      "stage": "continue",
-      "dependencies": [
-        "shell"
-      ],
-      "evidence": [
-        "November: Anindya Wulandari 12, Bagas Setiawan 19"
-      ],
-      "copy": {
-        "heading": "Ulang tahun",
-        "body": [
-          "Sample data. November 2026: 2 siswa. Desember 2026: 1 siswa.",
-          "Dikelompokkan per bulan, diurutkan menurut tanggal."
-        ],
-        "callsToAction": [
-          {
-            "label": "Bulan berikutnya",
-            "target": "#/ulang-tahun"
-          }
-        ]
-      },
-      "layout": "Tampilan sendiri dengan h1 'Ulang tahun'. Tab garis bawah per bulan, daftar baris 48px dengan tanggal dalam kata dan usia baru; kosong per bulan menyimpan bingkai dengan satu kalimat.",
-      "motion": {
-        "purpose": "state_change",
-        "trigger": "state_change",
-        "behavior": "Garis bawah tab berpindah ke bulan terpilih dan daftar berganti.",
-        "durationMs": 180,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Perpindahan seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Tab bergulir menyamping, daftar selebar penuh.",
-        "medium": "Daftar 6 kolom di kiri, kosong di kanan diisi ringkasan bulan.",
-        "expanded": "Daftar 8 kolom dan ringkasan bulan 4 kolom."
-      }
-    },
-    {
-      "id": "view-rundown",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Tampilan rundown pelayanan Minggu.",
-      "userQuestion": "Apa urutan acara pelayanan hari ini dan siapa yang bertugas?",
-      "stage": "explain",
-      "dependencies": [
-        "shell"
-      ],
-      "evidence": [
-        "Minggu 8 November 2026: Pujian 09:00, Firman 09:20, Persembahan 09:50"
-      ],
-      "copy": {
-        "heading": "Rundown",
-        "body": [
-          "Sample data. Minggu 8 November 2026, 3 acara.",
-          "09:00 Pujian, 09:20 Firman, 09:50 Persembahan."
-        ],
-        "callsToAction": [
-          {
-            "label": "Ubah rundown",
-            "target": "#/rundown"
-          }
-        ]
-      },
-      "layout": "Tampilan sendiri dengan h1 'Rundown'. Daftar waktu bertabel: jam di kolom tetap rata kanan tabular, nama acara, petugas. Baris 44px. Jam sekarang ditandai garis 1px biru. Pengubahan hanya untuk admin.",
-      "motion": {
-        "purpose": "feedback",
-        "trigger": "hover",
-        "behavior": "Baris menaikkan isi saat disorot.",
-        "durationMs": 120,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Perubahan seketika."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Daftar dua baris: jam dan acara di baris 1, petugas di baris 2.",
-        "medium": "Tabel 3 kolom.",
-        "expanded": "Tabel 8 kolom lebar dengan ringkasan petugas 4 kolom."
-      }
-    },
-    {
-      "id": "view-kelompok",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "app-screen"
-      ],
-      "purpose": "Tampilan admin kelompok, mentor tetap, dan pengganti per sesi.",
-      "userQuestion": "Siapa mentor tiap kelompok dan siapa penggantinya Minggu ini?",
-      "stage": "qualify",
-      "dependencies": [
-        "shell"
-      ],
-      "evidence": [
-        "Kelompok Merpati: mentor Dina Pratama, 22 siswa"
-      ],
-      "copy": {
-        "heading": "Kelompok",
-        "body": [
-          "Sample data. 3 kelompok di SD Kasih Bangsa.",
-          "Merpati: Dina Pratama, 22 siswa. Elang: Rudi Hartono, 18 siswa."
-        ],
-        "callsToAction": [
-          {
-            "label": "Atur pengganti",
-            "target": "#/kelompok"
-          }
-        ]
-      },
-      "layout": "Tampilan sendiri dengan h1 'Kelompok'. Tabel 4 kolom: kelompok, mentor tetap, pengganti Minggu ini, jumlah siswa; tanda hubung abu bila tidak ada pengganti. Pengubahan hanya untuk admin; perubahan bertanggal efektif.",
-      "motion": {
-        "purpose": "feedback",
         "trigger": "press",
-        "behavior": "Tombol dan baris menekan skala 0,98 dan naik satu langkah isi.",
-        "durationMs": 120,
-        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "reducedMotion": "Tanpa skala, hanya perubahan isi."
+        "behavior": "Tab mengganti isi terkait; drawer membuka bukti tanpa entrance halaman.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Isi dan drawer langsung tampil."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Daftar dua baris per kelompok.",
-        "medium": "Tabel 4 kolom.",
-        "expanded": "Tabel selebar 756px dan ringkasan 4 kolom."
+        "compact": "Finding dan aksi lebih dahulu, skenario menjadi daftar, sumber di bawah.",
+        "medium": "Tabel dan sumber ditumpuk.",
+        "expanded": "Tabel dan rail sejajar, semua header dan baris awal terlihat."
+      }
+    },
+    {
+      "id": "masuk-review",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "referenceDirectionId": "user-reference-3",
+      "purpose": "Memeriksa alur masuk tanpa menjalankan autentikasi tiruan.",
+      "userQuestion": "Apakah alur masuk jelas dan kesalahannya dapat dipulihkan?",
+      "stage": "evaluate",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "msa-portal.html memiliki label Username, Kata sandi, tombol Tampilkan, dan tautan pemulihan.",
+        "user-reference-3 dipilih untuk Welcome dan masuk; PDF belum diperiksa.",
+        "Hasil autentikasi belum diuji pada fase ini."
+      ],
+      "copy": {
+        "heading": "Masuk",
+        "body": [
+          "Label tersedia pada markup; perilaku masuk belum diuji.",
+          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Form: label, autocomplete, dan tampilkan kata sandi.",
+          "Kesalahan: pesan, fokus, dan percobaan ulang.",
+          "Peralihan: Welcome, daftar, pemulihan, dan akun Mentor."
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka bukti",
+            "target": "action:open-evidence:masuk"
+          }
+        ]
+      },
+      "layout": "View #/masuk. Tabel tiga skenario 754px, rail sumber 384px. Tidak menyediakan input kredensial atau tombol Masuk palsu. Drawer memuat bukti markup dan referensi terpilih dengan status pemeriksaannya. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Pemilihan skenario memperbarui bukti pada drawer dengan fokus terkendali.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Bukti langsung berubah."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar dua tingkat dan drawer penuh.",
+        "medium": "Tabel dan sumber ditumpuk.",
+        "expanded": "Tabel dan rail sejajar."
+      }
+    },
+    {
+      "id": "mentor-review",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "referenceDirectionId": "user-reference-4",
+      "purpose": "Menilai konteks pelayanan, pemilihan siswa, dan hasil penyimpanan.",
+      "userQuestion": "Apakah Mentor dapat mencatat absensi pada sesi yang benar?",
+      "stage": "evaluate",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "mentor-account.html memiliki area akun dan beranda Mentor.",
+        "PROJECT_STATUS.md melaporkan implementasi beranda dan absensi, bukan pengujian baru.",
+        "user-reference-4 dipilih untuk dashboard Mentor; user-reference-3 menjadi referensi pendamping alur absensi. Keduanya belum diperiksa."
+      ],
+      "copy": {
+        "heading": "Mentor",
+        "body": [
+          "Konteks sesi dan penyimpanan absensi belum diuji.",
+          "Sample data: 4 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Konteks absensi: pelayanan, kelompok, tanggal sesi.",
+          "Daftar siswa: pencarian, pilihan, dan belum diabsen.",
+          "Penyimpanan: menunggu, berhasil, gagal, dan konflik.",
+          "Akses: perangkat, sesi berakhir, dan koneksi terputus."
+        ],
+        "callsToAction": [
+          {
+            "label": "Tinjau konteks",
+            "target": "action:open-evidence:mentor-context"
+          }
+        ]
+      },
+      "layout": "View #/mentor. Signature berupa rangkaian label Pelayanan, Kelompok, Tanggal sesi. Nilai yang belum tersedia ditulis Belum diverifikasi, bukan diisi catatan rekaan. Empat skenario pada kolom 754px, sumber pada rail 384px. Tidak membuat roster operasional atau aksi simpan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Pemilihan konteks membuka bukti terkait tanpa mengubah absensi.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Bukti langsung tampil."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Konteks di atas daftar, baris minimal 64px, tindakan minimal 48px.",
+        "medium": "Konteks penuh, tabel dan sumber ditumpuk.",
+        "expanded": "Konteks dan aksi sebelum tabel; semua header dan skenario awal terlihat."
+      }
+    },
+    {
+      "id": "organisasi-review",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Memeriksa hierarki organisasi dan program.",
+      "userQuestion": "Apakah konteks organisasi dan program mudah dibedakan?",
+      "stage": "evaluate",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "msa-core.html berjudul Organisasi dan program; perilaku pengelolaan belum diuji."
+      ],
+      "copy": {
+        "heading": "Organisasi dan program",
+        "body": [
+          "Struktur halaman tersedia; pemilihan konteks belum diuji.",
+          "Sample data: 2 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Hierarki: organisasi, program, dan hubungan keduanya.",
+          "Tindakan: pemilihan konteks dan konfirmasi perubahan."
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka bukti",
+            "target": "action:open-evidence:organisasi"
+          }
+        ]
+      },
+      "layout": "View #/organisasi. Dua baris skenario pada tabel 754px, rail sumber 384px. Panel pendek mengikuti isi. Tidak menambahkan organisasi atau program rekaan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Buka bukti menampilkan rincian pemeriksaan.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Rincian langsung tampil."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar skenario lalu sumber.",
+        "medium": "Tabel dan sumber ditumpuk tanpa tinggi palsu.",
+        "expanded": "Tabel dan rail sejajar di bagian atas."
+      }
+    },
+    {
+      "id": "pelayanan-review",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Memeriksa alur kegiatan yang tersedia pada halaman pelayanan.",
+      "userQuestion": "Apakah admin dapat menemukan dan mengelola pelayanan dengan jelas?",
+      "stage": "evaluate",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "msa-events.html memiliki heading beranda, kalender, daftar, pembuatan pelayanan, dan tinjauan tanggal.",
+        "Heading tidak membuktikan keberhasilan tindakan runtime."
+      ],
+      "copy": {
+        "heading": "Pelayanan",
+        "body": [
+          "Daftar dan kalender tersedia pada markup; interaksinya belum diuji.",
+          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Penelusuran: daftar, pencarian, dan cakupan tanggal.",
+          "Kalender: tanggal pilihan dan konteks pelayanan.",
+          "Draf: label keadaan, tindakan utama, dan tinjau tanggal."
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka bukti",
+            "target": "action:open-evidence:pelayanan"
+          }
+        ]
+      },
+      "layout": "View #/pelayanan. Tiga skenario dalam tabel 754px, rail 384px. Tidak membuat kalender operasional, pelayanan baru, atau grafik laporan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Pemilihan skenario mengganti bukti dan selected state.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Bukti dan selected state berubah langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Skenario dua tingkat, sumber di bawah, drawer penuh.",
+        "medium": "Tabel dan sumber ditumpuk.",
+        "expanded": "Tabel dan rail sejajar tanpa panel kosong yang diregangkan."
+      }
+    },
+    {
+      "id": "pengguna-review",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Memeriksa pencarian pengguna dan tindakan perubahan akses.",
+      "userQuestion": "Apakah admin memahami siapa yang dipilih dan akses apa yang berubah?",
+      "stage": "de_risk",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "msa-users.html memiliki Daftar pengguna dan Konfirmasi perubahan akses.",
+        "Otorisasi dan hasil perubahan akses belum diuji pada fase ini."
+      ],
+      "copy": {
+        "heading": "Pengguna",
+        "body": [
+          "Konfirmasi perubahan akses tersedia pada markup; perilakunya belum diuji.",
+          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
+          "Penelusuran: identitas, pencarian, dan filter.",
+          "Pemilihan: pengguna yang dipilih dan tindakan tersedia.",
+          "Perubahan akses: konsekuensi, konfirmasi, dan hasil."
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka bukti",
+            "target": "action:open-evidence:pengguna"
+          }
+        ]
+      },
+      "layout": "View #/pengguna. Tiga skenario dalam tabel 754px, rail 384px. Tidak memuat data pribadi atau menyediakan perubahan akses operasional. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Buka bukti membuka drawer tanpa mengubah akses pengguna.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2,0,0,1)",
+        "reducedMotion": "Drawer langsung tampil."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar dua tingkat, identitas tidak terpotong, sumber di bawah.",
+        "medium": "Tabel mempertahankan identitas dan tindakan; sumber ditumpuk.",
+        "expanded": "Tabel dan rail mengikuti grid bersama."
       }
     }
   ],
   "responsive": [
-    "360px: satu kolom, margin 16px, bilah atas 48px, target sentuh 48px, daftar siswa berbaris dua, tombol Simpan lebar penuh.",
-    "390px: sama dengan 360px dengan satu baris kontrol tanggal dan kelompok bila muat.",
-    "768px: bilah atas 48px, kanvas margin 24px, kartu bertumpuk atau berpasangan bila masing-masing minimal 340px.",
-    "1280px dan 1440px: sidebar 240px, 8 + 4 kolom lalu 6 + 6 yang berbagi garis kolom, jarak 12px."
+    "Verifikasi pada 360, 390, 768, 1365, dan 1440px tanpa overflow horizontal halaman.",
+    "Pada 1440×900, setiap view memperlihatkan judul, finding, seluruh header bloknya, dan baris awal atau figur. Semua view tidak ditampilkan sekaligus.",
+    "Default menempatkan ringkasan sekitar y=88–208, daftar dan rail mulai sekitar y=232, serta header Rekomendasi sebelum y=820. Ukuran akhir diverifikasi setelah font dimuat.",
+    "Pada 390px, baris pemeriksaan pertama dimulai dalam 60% atas viewport; filter tambahan masuk sheet.",
+    "Rail ditumpuk ketika kolom terlalu sempit. Panel tidak diberi tinggi palsu.",
+    "Ponsel memakai judul 24px, isi 14px, subline minimal 12px, dan target interaksi minimal 48px."
   ],
   "interactions": [
-    "Hadir, Izin, Tidak hadir: tiga segmen per siswa; satu terpilih (aria-pressed), keadaan hover, fokus (cincin 3px #1D5F99), dan nonaktif saat menyimpan.",
-    "Tab Semua, Belum ditandai, Izin: filter daftar dengan hitungan yang dihitung ulang dari baris pada tampilan.",
-    "Simpan absen: nonaktif tanpa perubahan, memuat saat menyimpan, tersimpan dengan pil hijau berikon, atau gagal dengan Coba lagi di dalam blok.",
-    "Pengalih kelompok dan menu ponsel: Escape menutup, fokus kembali ke pemicu.",
-    "Navigasi hash: setiap rute menjadi tampilan sendiri dengan h1 sendiri; judul dokumen diperbarui.",
-    "Kuning ABC hanya untuk penanda kecil aktif, tidak pernah permukaan; merah hanya satu tombol utama per layar.",
-    "Prefers-reduced-motion: semua perpindahan menampilkan keadaan akhir seketika dengan operasi yang setara."
+    "Pencarian, tab, urutan, Tampilkan semua, Hapus filter, navigasi, dan drawer mengubah keadaan lokal laporan. Tidak ada backend atau sinkronisasi langsung.",
+    "Check memiliki ID stabil. Scenario ditautkan ke check induk dan tidak menambah total check.",
+    "Pencarian mencocokkan area dan uraian. Hitungan hasil dan keadaan kosong berasal dari hasil yang sama.",
+    "Buka menuju view area. Pemeriksaan lintas area membuka drawer sumber, visual, aksesibilitas, atau keadaan interaksi.",
+    "Baris interaktif memiliki hover ringan, selected state berbasis ID, fokus terlihat, dan disabled beralasan bila tindakan tidak tersedia. Pembacaan bukti tetap tersedia walau audit belum selesai.",
+    "Sumber PDF yang belum tersedia dapat dibuka untuk membaca nama dan keterbatasannya, tanpa tombol Buka PDF palsu.",
+    "Tab memakai aria-selected dan panel terkait; loading memakai aria-busy; hasil pencarian diumumkan secara singkat.",
+    "Drawer memiliki judul aksesibel, Escape, focus trap, dan focus return. Pergantian view menutup drawer lama.",
+    "Transisi 180ms dengan easing brand system dapat diinterupsi oleh input cepat. Wilayah baca statis tidak dianimasikan.",
+    "Reduced motion mempertahankan seluruh operasi dengan perubahan langsung.",
+    "Error hanya tampil jika pemuatan lokal benar-benar gagal. Tidak ada kontrol simulasi kegagalan dalam alur pengguna.",
+    "Pemeriksaan tidak dapat ditandai lulus tanpa bukti. Artefak awal merupakan laporan baca dengan penelusuran lokal."
   ],
   "acceptanceCriteria": [
-    "Dataset contoh: 1 sekolah (SD Kasih Bangsa), 3 kelompok, 1 kelompok aktif dengan 22 siswa fiktif; hitungan 18 hadir + 2 izin + 1 tidak hadir + 1 belum ditandai = 22, dihitung dari baris, bukan diketik.",
-    "Garis absen menampilkan 22 kotak dalam urutan yang sama dengan daftar; tiap keadaan berbeda bentuk dan memiliki teks.",
-    "Total dan selisih berasal dari bagian yang ditampilkan: 18 dibanding 20 pada 1 November = 2 lebih sedikit.",
-    "Setiap blok yang menampilkan angka memuat kata 'Sample data' dan Build menampilkannya sekali per tampilan sebagai satu pemberitahuan tenang.",
-    "Semua teks yang tampil dalam bahasa Indonesia, tanpa em dash, emoji, lorem, atau nama pengganti.",
-    "Tidak ada luapan horizontal di 360, 390, 768, dan 1280px; target sentuh minimal 48px di ponsel.",
-    "Kontras teks minimal 4,5:1; status memakai ikon plus teks; fokus terlihat di setiap kontrol.",
-    "Geist dimuat sungguhan dan document.fonts.check lulus untuk bobot 400, 500, dan 700; tabular-nums mengubah lebar digit.",
-    "Id, name, data-*, atribut ARIA, rute hash, dan kontrak request/response tidak diubah, kecuali tercatat di berkas status.",
-    "Tidak ada klaim sinkronisasi langsung atau backend yang belum ada; semua data berupa contoh lokal.",
-    "Fokus baris pertama daftar siswa terlihat dalam 60% atas layar ponsel 390px."
+    "Lingkup tetap penyajian laporan review, bukan redesign aplikasi atau audit yang telah selesai. Fase Page Blueprint tidak mengubah berkas, dependensi, aset, atau data aplikasi.",
+    "Referensi utama dipilih secara eksplisit: page.referenceDirectionId adalah user-reference-2. Pemetaan bagian: shell ke user-reference-1, ringkasan dan Portal ke user-reference-2, Masuk ke user-reference-3, Mentor ke user-reference-4 dengan user-reference-3 sebagai pendamping absensi.",
+    "Pemilihan referensi adalah keputusan arah, bukan klaim pemeriksaan visual. Keempat PDF belum tersedia pada lokasi yang diperiksa. Komposisi yang dapat diekstrak setelah PDF tersedia mengungguli sheet; jangan mengarang isi atau menyatakan kesetiaan visual sebelum pemeriksaan.",
+    "Bagian yang tidak memiliki referensi pengguna yang relevan tidak diberi referenceDirectionId. Diagram, tabel laporan, dan tampilan administrasi lain mengikuti brand system serta sheet.",
+    "Inventaris objek: View memiliki id, route, title, finding, sourceIds; Check memiliki id, area, question, state, scenarioIds, evidenceIds; Scenario memiliki id, parentCheckId, label, state; Source memiliki id, nama atau path, availability, inspectionKind, referenceDirectionId bila relevan; Finding memiliki id, checkId, evidenceIds, impact, priority, correction.",
+    "Inventaris pekerjaan: membaca batas kesimpulan, membuka area, memeriksa bukti, lalu menyusun koreksi yang didukung bukti. Pekerjaan tersering adalah membuka pemeriksaan area, satu klik dari ringkasan.",
+    "Mentor, Volunteer, dan admin adalah pengguna aplikasi yang dinilai, bukan akun rekaan laporan. Nama produk, logo, istilah pelayanan, dan konteks pelayanan-kelompok-tanggal menjaga identitas ABC MSA.",
+    "Dataset representatif memiliki 7 view, 10 check, 18 scenario area, 8 source, dan 0 finding. Semua check dan scenario berkeadaan Belum diperiksa. Ini struktur contoh laporan, bukan hasil audit.",
+    "Distribusi scenario: Portal 3 + Masuk 3 + Mentor 4 + Organisasi dan program 2 + Pelayanan 3 + Pengguna 3 = 18.",
+    "Sepuluh check terdiri atas enam area aplikasi dan empat pemeriksaan lintas area: sumber referensi, visual, responsivitas dan aksesibilitas, serta keadaan dan interaksi. Terverifikasi 0 + belum diperiksa 10 = total 10.",
+    "Delapan source terdiri atas empat PDF belum tersedia serta C10-preview.png, logo ABC, ui/msa-tokens.css, dan kelompok markup lima halaman yang tersedia. Kelompok markup dihitung sebagai satu entri sumber. Tersedia 4 + belum tersedia 4 = total 8.",
+    "Hitungan berasal dari dataset dan diverifikasi dengan assert. Tab, ringkasan, drawer, dan pencarian menggunakan variabel yang sama. Unit selalu pemeriksaan, skenario, sumber, atau temuan.",
+    "Setiap copy.body yang membawa angka mencantumkan Sample data. Saat dirender, label Sample data tampil satu kali per view sebagai pemberitahuan tenang.",
+    "Setiap blok mendukung empty, zero, loading, dan error: header tetap ada, nol tidak diganti nilai kosong, skeleton tanpa shimmer, error lokal dengan Coba lagi bila pemuatan ulang tersedia. Blok statis tidak memiliki loading buatan.",
+    "Setiap rekomendasi wajib menyebut area, bukti, dampak, prioritas, dan koreksi. Laporan historis dibedakan dari pengujian langsung. Tidak adanya temuan tidak berarti tidak ada masalah.",
+    "Gunakan brand system tanpa warna atau font baru. Logo asli dipertahankan. Pada implementasi berikutnya, pemuatan Nunito Sans, bobot, angka tabular, dan kontras hasil render wajib diverifikasi.",
+    "Setiap view memiliki satu h1 aktif. Semua tujuan navigasi adalah view nyata tanpa dead link atau anchor pengganti layar.",
+    "Verifikasi browser berikutnya mencakup pencarian, urutan, tab kosong, Tampilkan semua, navigasi, drawer, Escape, focus return, input cepat, reduced motion, dan seluruh lebar yang ditentukan. Screenshot bukan bukti perilaku.",
+    "Belum diperiksa: isi empat PDF, perbandingan versi, perilaku browser, perangkat fisik, dan screen reader. Tidak ada klaim peningkatan usability atau kesiapan produksi."
   ]
 }

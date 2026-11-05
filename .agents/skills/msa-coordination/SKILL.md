@@ -1,6 +1,6 @@
 ---
 name: msa-coordination
-description: Coordinate Claude and Codex writes in the shared ABC MSA workspace, handle busy or stale-file hook denials, and hand off a turn without overwriting another session. Use for workspace lock status, refresh and recovery diagnosis.
+description: Diagnose active task-scoped claims, distinguish legacy workspace locks, and coordinate Claude and Codex handoffs without overwriting another session.
 ---
 
 # Koordinasi workspace MSA
@@ -8,32 +8,31 @@ description: Coordinate Claude and Codex writes in the shared ABC MSA workspace,
 Baca `AGENTS.md`. Hook bersama menjalankan mekanisme lock; skill ini menjelaskan respons terhadap statusnya, tidak memberi izin untuk memperluas tugas atau melewati hook.
 
 - Sesi dikenali oleh pasangan agen dan `session_id` dari konteks `SessionStart`. Jangan meminjam ID sesi lain.
-- Sebelum tool penulis, hook mengambil lock workspace dan menolak penulis kedua. Shell selalu diperlakukan sebagai calon penulis; `Read`/`Grep`/`Glob` native tetap bisa dipakai untuk tinjauan. Tool penulis dalam sesi yang sama juga berjalan satu per satu.
-- Jika workspace sibuk, tunggu giliran pemilik selesai atau lakukan tinjauan tanpa menyimpan berkas. Jangan mencoba mengambil alih, menghapus state, mengganti session ID atau menjalankan pemulihan sendiri. Jangan melakukan polling rapat.
-- Jika hook menyebut versi berubah, baca seluruh keluaran helper di bawah, susun ulang perubahan dari isi terbaru, lalu ulangi edit. Membaca dengan tool biasa tidak otomatis memperbarui observasi hash hook.
+- Hook aktif adalah `.agents/hooks/collab-guard.mjs` dengan `.agents/hooks/coord.mjs`. Klaim path yang bertumpang tindih dalam worktree yang sama ditolak (`SCOPE_CONFLICT`). Perintah baca yang dikenali dan `Read`/`Grep`/`Glob` tidak mengambil klaim; shell penulis yang tidak diketahui mengambil klaim sementara seluruh worktree.
+- Jika ada konflik klaim aktif, tunggu pemilik selesai atau lakukan tinjauan tanpa menyimpan berkas. Jangan mengambil alih, menghapus state, mengganti session ID/PID, atau memaksa pelepasan. Jangan melakukan polling rapat. Aturan satu penulis workspace tetap berlaku kecuali pengguna mengatur kerja paralel secara eksplisit.
+- Baca ulang isi dan diff terbaru sebelum menyunting. Hook aktif tidak menjalankan pemeriksaan hash observasi dari mekanisme lama.
 
-Jalankan dari root proyek; ganti ID dan path dengan konteks sesi sendiri:
-
-```powershell
-node .agents/hooks/workspace-lock.mjs status
-node .agents/hooks/workspace-lock.mjs read codex SESSION_ID AGENTS.md .gitignore
-node .agents/hooks/workspace-lock.mjs read claude SESSION_ID ui/absen.css
-```
-
-Helper `read` menampilkan isi dan hash teks serta memperbarui hanya observasi path yang diminta. Gunakan path relatif terhadap direktori terminal, atau path absolut. Berkas hilang ditampilkan sebagai `content: null`. Perubahan HEAD/index atau berkas biner memerlukan inspeksi dan sesi baru; jangan me-reset baseline sesi lama.
-
-`PostToolUse` menyelesaikan reservasi tool. `Stop` melepas lock giliran; `SessionEnd`/`Interrupt` meminta pelepasan setelah tool aktif selesai. Jangan meninggalkan shell penulis di background atau menjalankan server yang kemudian menyunting sumber. Sebelum giliran selesai, tulis laporan serah terima sesuai template.
-
-## Pemulihan oleh operator
-
-Lock tidak kedaluwarsa otomatis. Jika sesi crash, laporkan `status` dan token pemilik kepada pengguna. Operator menghentikan sesi beserta tool/proses anaknya dahulu, memeriksa diff, lalu menjalankan dari terminal manual:
+Jalankan dari root proyek untuk memeriksa koordinasi yang benar:
 
 ```powershell
-node .agents/hooks/workspace-lock.mjs recover OWNER_TOKEN --confirmed-session-ended
-node .agents/hooks/workspace-lock.mjs recover-mutex MUTEX_TOKEN --confirmed-session-ended
+node .agents/hooks/coord.mjs status
 ```
 
-`recover` menolak token yang berubah. `recover-mutex` juga mensyaratkan PID pemilik mutex sudah mati; metadata mutex dipindah ke arsip lokal. Jika state rusak atau metadata pemulihan tidak lengkap, hentikan penulisan dan minta diagnosis operator; jangan menghapus direktori runtime sebagai jalan pintas.
+Keluaran `mode: "task-scoped"` menunjukkan `statePath`, tugas dan lingkupnya (`scopes`/`ephemeral`), PID, lease, serta keberadaan mutex. Ini snapshot terakhir: perintah status tidak membuat state, mengambil mutex, memperpanjang lease, atau membersihkan tugas. Cleanup berjalan pada transaksi hook berikutnya.
+
+`PostToolUse` dan callback kegagalan yang terdaftar melepas klaim shell sementara. Claude juga memakai `PostToolBatch` agar klaim tool yang selesai/ditolak tidak tertinggal sampai `Stop`. Klaim file bertahan sampai tugas dilepas melalui `Stop`/`SessionEnd`/`Interrupt` yang didukung. Tugas induk tidak dilepas selagi ada tugas anak. Jangan meninggalkan shell penulis di background atau menjalankan server yang kemudian menyunting sumber. Sebelum giliran selesai, tulis laporan serah terima sesuai template.
+
+## Cleanup otomatis dan diagnosis konflik
+
+- Tugas crash dibersihkan otomatis pada transaksi berikutnya hanya jika lease 10 menit sudah habis, PID pemilik sudah mati, dan tidak ada tugas anak. Lease habis dengan proses masih hidup tetap dilindungi.
+- Jika tool berhenti atau izin ditolak, biarkan callback selesai; jangan melepas klaim yang masih dipakai tool lain.
+- Jika konflik aktif tetap ada, laporkan task ID, scope, PID dan lease dari status. Minta pemilik menyelesaikan/menghentikan sesi dan tool anaknya dengan normal. Bila kematian proses tidak dapat dipastikan atau state rusak, perlu diagnosis operator; jangan menghapus direktori koordinasi atau memakai force release.
+
+## State lama dan Taste Code Desktop
+
+- `.agents/.runtime/` dan `workspace-lock.mjs status/read/recover` adalah mekanisme lama; hook aktif tidak membacanya. Status CLI lama diberi `mode: "legacy"` dan petunjuk ke status aktif. Sisa `owner` lama bukan bukti workspace sedang sibuk dan bukan alasan menolak build/desain.
+- Jangan menjalankan recovery, menghapus state lama, atau mengganti session ID hanya agar Design mode berjalan. Periksa status aktif dan penolakan hook yang benar terlebih dahulu.
+- Setelah instruksi/registrasi hook berubah, selesaikan atau hentikan tool dengan normal, lalu buka sesi baru di Taste Code/Claude/Codex dan tinjau `/hooks` jika didukung. Sesi lama dapat membawa instruksi/registrasi sebelumnya. Jangan melaporkan hook Taste Code aktif hanya berdasarkan file konfigurasi; perlu bukti runtime.
 
 ## Batas dan referensi
 
