@@ -7,12 +7,8 @@
 @media(min-width:900px){.account-recovery .recovery-layout{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,2fr);align-items:start;gap:20px}.account-recovery .recovery-layout>*{min-width:0}}
 
 .msa-core summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-core .grid>section{min-width:0}
-.msa-events .secondary{background:white;color:#175c96}.msa-events summary{display:flex;align-items:center;min-height:44px;cursor:pointer}.msa-events .grid>*,.msa-events .event-layout>*{min-width:0}.msa-events dd{margin-left:0;margin-bottom:12px;overflow-wrap:anywhere}.msa-events dt{font-weight:600}.msa-events .draft-badge{font-weight:600;color:#175c96}.msa-events .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(min-width:900px){.msa-events .event-layout{display:grid;grid-template-columns:minmax(220px,2fr) minmax(0,3fr);gap:24px;align-items:start}}
-.msa-events .calendar-card{margin:12px 0;padding:16px}.msa-events .calendar-card h4{font-size:1.1rem;margin:8px 0;overflow-wrap:anywhere}.msa-events .calendar-card p{margin:8px 0}.msa-events [data-status=cancelled]{color:#8a2530}.msa-events .calendar-day{min-width:0}.msa-events #calendar-confirm form{border:0;margin:0;padding:0}.msa-events #calendar-confirm p{overflow-wrap:anywhere}@media(min-width:900px){.msa-events .calendar-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}.msa-events .calendar-days .calendar-day{display:flex;flex-wrap:wrap;align-content:start;gap:0 16px}.msa-events .calendar-days .calendar-day>h3{flex-basis:100%}.msa-events .calendar-days .calendar-card{flex:1 1 260px;min-width:0}.msa-events #calendar-list:not(.calendar-days) .calendar-day{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.msa-events #calendar-list:not(.calendar-days) .calendar-day>h3{grid-column:1/-1}}
 
-.msa-events #calendar-filter-details>summary{color:#175c96;text-decoration:underline}.msa-events #calendar-filter-details>summary::after{content:"+";margin-left:8px}.msa-events #calendar-filter-details[open]>summary::after{content:"−"}
 
-.msa-events #dashboard-content>section{min-width:0}.msa-events #dashboard-workspace>button{margin-right:4px}.msa-events.dashboard-active #dashboard-show{display:none}.msa-events.dashboard-active h1{margin-bottom:8px}.msa-events.dashboard-active #event-intro{margin:8px 0}.msa-events #dashboard-title{margin:16px 0}.msa-events #recurrence-dates{padding-left:24px}@media(min-width:900px){.msa-events #dashboard-content{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}}
 
 body[data-msa-portal] main.intake{max-width:680px}body[data-msa-portal] main.intake a:not(.ui-btn),body[data-msa-portal] main.intake summary{display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}#portal-modules{display:grid;gap:12px}#portal-modules a{padding:16px;border:1px solid #8198ab;border-radius:8px;background:white;color:#175c96}
 
@@ -37,3 +33,129 @@ body[data-msa-portal] a.btn{display:inline-flex;align-items:center;min-height:44
 :is(.identity-review,.account-recovery) dialog{color:inherit;overflow-wrap:anywhere}
 @media(max-width:480px){:is(.identity-review,.account-recovery) .review-toolbar>div{display:flex;flex-wrap:wrap;gap:8px}:is(.identity-review,.account-recovery) .review-toolbar button{margin:0}}
 .identity-review .review-history summary::after,.account-device-card summary::after{content:"+";margin-left:8px}.identity-review .review-history[open] summary::after,.account-device-card details[open] summary::after{content:"−"}
+
+/* U6a: halaman pelayanan, daftar, detail, form dan kalender (token C10: ui/msa-tokens.css, ui/msa-components.css) */
+.msa-events.ui-root{background:var(--surface-200);color:var(--ink);font:var(--type-body)}
+.msa-events main{max-width:1000px;padding:var(--space-5) var(--space-4)}
+.msa-events h2,.msa-events h3{overflow-wrap:anywhere}
+body[data-msa-portal].msa-events #event-brand{display:none}
+.msa-events #event-heading{margin:var(--space-2) 0}
+.msa-events #event-intro{color:var(--ink-muted);margin:0 0 var(--space-3)}
+.msa-events #feedback{white-space:pre-wrap;margin:var(--space-3) 0}
+.msa-events #feedback:not(:empty){padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);background:var(--blue-pale)}
+.msa-events .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.msa-events .grid>*,.msa-events .event-layout>*{min-width:0}
+.msa-events .event-account-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+
+/* Label di atas kolom, kolom kapsul */
+.msa-events label{display:block;margin:var(--space-4) 0 var(--space-2);padding-left:var(--space-4);font:var(--type-caption);color:var(--ink)}
+.msa-events :is(#event-login,#event-form,#event-filters){padding:var(--space-5);background:var(--surface-100);border-radius:var(--radius-xl);box-shadow:var(--shadow-card);margin:var(--space-4) 0}
+.msa-events #event-login{max-width:480px}
+.msa-events #event-login h2,.msa-events :is(#event-form,#event-filters) h2{margin:0 0 var(--space-2)}
+.msa-events :is(#event-login,#event-form,#event-filters) .ui-btn{margin-top:var(--space-4)}
+.msa-events #event-form .ui-btn--lg{margin-top:var(--space-5)}
+.msa-events #event-cancel{display:flex;margin:var(--space-2) auto 0}
+.msa-events :is(#pic-help,#calendar-export-help,#event-organization>p){font:var(--type-caption);color:var(--ink-muted);padding-left:var(--space-4);margin:var(--space-2) 0 0}
+.msa-events #draft-state{margin-left:0}
+.msa-events #draft-org[readonly]{background:var(--surface-200)}
+.msa-events #event-conflict:not([hidden]),.msa-events :is(#calendar-operation-feedback,#recurrence-feedback):not(:empty){margin:var(--space-3) 0;padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);background:var(--surface-200);box-shadow:inset 0 0 0 2px var(--primary)}
+.msa-events summary:not(.ui-chip){display:flex;align-items:center;min-height:var(--control);cursor:pointer;font:var(--type-button);color:var(--primary)}
+.msa-events #draft-optional,.msa-events #recurrence-controls{margin-top:var(--space-4);padding:var(--space-2) var(--space-4) var(--space-4);border-radius:var(--radius-lg);background:var(--surface-200)}
+.msa-events #recurrence-controls[hidden]{display:none}
+.msa-events #recurrence-dates{padding-left:var(--space-5)}
+
+/* Tab tampilan */
+.msa-events #calendar-nav{margin:var(--space-4) 0;background:var(--surface-100)}
+.msa-events .ui-tab{margin:0}
+.msa-events :is(.ui-chip,.ui-tab,.calendar-week__day){font-size:16px;line-height:22px}
+.msa-events .ui-tab[aria-pressed="true"]{background:var(--accent-yellow);color:var(--on-accent)}
+.msa-events.dashboard-active #dashboard-show{display:none}
+
+/* Beranda pelayanan */
+.msa-events #dashboard-title{margin:var(--space-4) 0 var(--space-2)}
+.msa-events #dashboard-result{color:var(--ink-muted);margin:0 0 var(--space-4)}
+.msa-events #dashboard-content{display:grid;gap:var(--space-5)}
+.msa-events #dashboard-content>section{min-width:0;display:flex;flex-direction:column;gap:var(--space-3)}
+.msa-events #dashboard-content h3{margin:0}
+.msa-events details>article{margin-top:var(--space-3)}
+.msa-events .msa-empty{margin:0;padding:var(--space-4);border-radius:var(--radius-lg);background:var(--blue-pale);color:var(--ink)}
+@media(min-width:900px){.msa-events #dashboard-content{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}}
+
+/* Daftar, detail dan form (jalur Kelola pelayanan) */
+.msa-events #event-organization{margin-top:var(--space-4)}
+.msa-events #event-list{display:flex;flex-direction:column;gap:var(--space-3)}
+.msa-events :is(#event-detail,#calendar-detail){padding:var(--space-5);background:var(--surface-100);border-radius:var(--radius-xl);box-shadow:var(--shadow-card);margin:var(--space-4) 0}
+.msa-events :is(#event-detail,#calendar-detail) h2{margin:var(--space-3) 0 var(--space-4)}
+.msa-events :is(#event-detail,#calendar-detail) dl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:var(--space-2) var(--space-4);margin:0 0 var(--space-4)}
+.msa-events :is(#event-detail,#calendar-detail) dt{font:var(--type-caption);color:var(--ink-muted)}
+.msa-events :is(#event-detail,#calendar-detail) dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.msa-events :is(#event-detail,#calendar-detail)>.ui-btn{margin:var(--space-2) var(--space-2) 0 0}
+.msa-events #calendar-publish{margin-bottom:var(--space-2)}
+.msa-events #calendar-export-form{margin-top:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);background:var(--surface-200)}
+.msa-events #calendar-export-form .ui-btn{margin:var(--space-3) var(--space-2) 0 0}
+.msa-events #calendar-export-title{font:var(--type-title);margin:var(--space-5) 0 var(--space-2)}
+.msa-events .calendar-back{margin-left:calc(var(--space-3) * -1)}
+.msa-events #event-detail details{margin-top:var(--space-3)}
+@media(min-width:900px){
+ .msa-events .event-layout{display:grid;grid-template-columns:minmax(0,3fr) minmax(220px,2fr);gap:var(--space-5);align-items:start}
+ .msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden]))){display:none}
+ .msa-events .event-inspector:not(:has(#event-form:not([hidden]),#event-detail:not([hidden])))+#event-list{grid-column:1/-1}
+}
+@media(max-width:480px){
+ .msa-events :is(#event-form,#event-login,#event-filters,#event-detail,#calendar-detail){padding:var(--space-4)}
+ .msa-events :is(#event-detail,#calendar-detail) dl{grid-template-columns:1fr;gap:2px}
+ .msa-events :is(#event-detail,#calendar-detail) dd{margin-bottom:var(--space-3)}
+}
+
+/* Kalender: navigasi rentang, strip pekan, chip filter + sheet, agenda */
+.msa-events .calendar-date-nav{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin:var(--space-3) 0}
+.msa-events .calendar-date-nav #calendar-today{grid-column:1/-1;order:3}
+.msa-events #calendar-range{margin:var(--space-4) 0 0}
+.msa-events .calendar-week{max-width:560px;gap:0;justify-content:space-between;margin:var(--space-3) calc(var(--space-1) * -1)}
+.msa-events .calendar-week li{flex:1 0 48px;min-width:0}
+.msa-events .calendar-week__day{display:flex;flex-direction:column;align-items:center;gap:var(--space-1);width:100%;min-height:64px;margin:0;padding:var(--space-1) 0;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--ink);font:700 16px/20px var(--font-body);cursor:pointer}
+.msa-events .calendar-week__day .ui-week__dot{width:36px;height:36px;font:var(--type-button);font-size:15px}
+.msa-events .calendar-week__day[aria-current="date"] .ui-week__dot{box-shadow:0 0 0 3px var(--surface-200),0 0 0 5px var(--ink)}
+.msa-events .calendar-filterbar{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;margin:var(--space-3) 0}
+.msa-events .calendar-filterbar .ui-chip-row{flex:1 1 auto;min-width:0}
+.msa-events #calendar-filter-details{order:-1}
+.msa-events .ui-chip{margin:0;max-width:100%;text-align:left}
+.msa-events summary.ui-chip{list-style:none}
+.msa-events summary.ui-chip::-webkit-details-marker{display:none}
+.msa-events #calendar-filters{padding:var(--space-5);background:var(--surface-100)}
+.msa-events #calendar-filters h3{margin:0 0 var(--space-2)}
+.msa-events #calendar-filters .ui-btn{margin-top:var(--space-5)}
+.msa-events #calendar-result{margin:var(--space-2) 0 var(--space-4)}
+.msa-events .calendar-day{min-width:0;display:flex;flex-direction:column;gap:var(--space-3);margin:var(--space-5) 0}
+.msa-events .calendar-day>h3{margin:0;scroll-margin-top:var(--space-4)}
+@media(max-width:899px){
+ .msa-events #calendar-filter-details[open]::before{content:"";position:fixed;inset:0;z-index:30;background:rgba(35,31,32,.45)}
+ .msa-events #calendar-filters{position:fixed;left:0;right:0;bottom:0;z-index:31;width:100%;max-width:560px;max-height:90dvh;overflow:auto;margin:0 auto;padding:var(--space-5) var(--space-5) calc(var(--space-5) + var(--safe-bottom));border-radius:var(--radius-xl) var(--radius-xl) 0 0}
+}
+@media(min-width:900px){
+ .msa-events #calendar-filter-details{flex-basis:100%;order:2}
+ .msa-events #calendar-filter-details>summary{display:none}
+ .msa-events #calendar-filters{margin-top:var(--space-2);border-radius:var(--radius-xl);box-shadow:var(--shadow-card)}
+ .msa-events .calendar-date-nav{display:flex}
+ .msa-events .calendar-date-nav #calendar-today{order:0;grid-column:auto}
+ .msa-events .calendar-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--space-4)}
+ .msa-events #calendar-list:not(.calendar-days) .calendar-day{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .msa-events #calendar-list:not(.calendar-days) .calendar-day>h3{grid-column:1/-1}
+}
+
+/* Dialog konfirmasi */
+.msa-events dialog{width:min(560px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:var(--space-5);border:0;border-radius:var(--radius-xl);background:var(--surface-100);color:var(--ink);box-shadow:var(--shadow-float)}
+.msa-events dialog::backdrop{background:rgba(35,31,32,.45)}
+.msa-events dialog form{padding:0;border:0;margin:0;box-shadow:none}
+.msa-events dialog .ui-btn{display:flex;width:100%;margin:var(--space-3) 0 0}
+@media(prefers-reduced-motion:reduce){.msa-events *{scroll-behavior:auto!important;transition:none!important}}
+
+/* U6a: beranda pelayanan ringkas agar kartu pertama muat di layar ponsel */
+.msa-events.dashboard-active #event-brand{display:none}
+.msa-events .event-account-actions{margin:0}
+.msa-events #dashboard-workspace{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--space-2)}
+.msa-events #dashboard-workspace>:is(h2,#dashboard-result,#dashboard-content){flex:1 1 100%}
+.msa-events #dashboard-title{margin:var(--space-2) 0 0}
+.msa-events #dashboard-result{margin:0 0 var(--space-2)}
+.msa-events #dashboard-content{margin-top:var(--space-2)}
+.msa-events #dashboard-content .msa-empty{padding:var(--space-2) var(--space-4);font:var(--type-caption);background:transparent;color:var(--ink-muted);box-shadow:inset 0 0 0 1.5px var(--line)}

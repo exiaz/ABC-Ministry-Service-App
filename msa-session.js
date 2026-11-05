@@ -144,3 +144,15 @@ export async function mountMsaShell(profile,options={}){
   document.body.prepend(...[skip,shell,banner].filter(Boolean));document.body.classList.add('msa-shell-active');
   createAllowed=stored(createKey);renderCreate();updateMsaNavigation();
 }
+
+// Komponen tampilan bersama beranda, daftar pelayanan dan kalender (U6a). Hanya membangun markup dari data yang sudah dikirim API.
+export const uiEsc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const uiIcon=name=>'<svg class="ui-icon" aria-hidden="true"><use href="'+spriteHref+name+'"/></svg>';
+const statusView={draft:['Draf','file-pen'],published:['Terbit','circle-check'],cancelled:['Dibatalkan','circle-x']};
+export const statusBadge=(status,extra='')=>{const [label,name]=statusView[status]??statusView.draft;return '<span class="ui-badge ui-badge--'+uiEsc(status)+' draft-badge" data-status="'+uiEsc(status)+'">'+uiIcon(name)+uiEsc(label)+uiEsc(extra)+'</span>';};
+// Kartu boarding-pass. `action` adalah HTML tombol/tautan tepercaya milik pemanggil; seluruh kartu menjadi area klik lewat CSS.
+export function serviceCardHtml(e,{action='',className=''}={}){
+  const day=new Date(e.startDate+'T12:00:00Z'),part=o=>day.toLocaleDateString('id-ID',{timeZone:'UTC',...o}),status=e.status==='cancelled'||e.status==='draft'?' ui-service-card--'+e.status:'';
+  const org=[e.organizationName,e.programName].filter(Boolean).map(uiEsc).join(' · ');
+  return '<article class="ui-service-card'+status+(className?' '+className:'')+'"><span class="ui-service-card__stub" aria-hidden="true">'+uiEsc(part({weekday:'short'}))+'<strong>'+uiEsc(part({day:'numeric'}))+'</strong>'+uiEsc(part({month:'short'}))+'</span><div class="ui-service-card__body"><div class="ui-service-card__top"><span class="ui-service-card__org">'+(org||'&nbsp;')+'</span>'+statusBadge(e.status)+'</div><h4 class="ui-service-card__title">'+uiEsc(e.name)+'</h4><p class="ui-service-card__meta">'+uiIcon('calendar')+uiEsc(part({weekday:'long',day:'numeric',month:'long'}))+' · '+uiEsc(e.startTime)+' '+uiEsc(e.timezone)+'</p><p class="ui-service-card__meta">'+uiIcon('map-pin')+uiEsc(e.venue)+'</p>'+(action?'<div class="ui-service-card__action">'+action+'</div>':'')+'</div></article>';
+}

@@ -1,3 +1,26 @@
-.account-device-list{font-size:16px;min-width:0}.account-device-list p{overflow-wrap:anywhere;line-height:1.6}.account-device-list button,.account-device-list summary{min-height:44px;font-size:16px}.account-device-list summary{display:flex;align-items:center;cursor:pointer;text-decoration:underline}.account-device-card{border:1px solid #cbdce8;border-radius:12px;padding:16px;margin:16px 0;background:#fff}.account-device-list h3{font-size:18px}.account-device-list dialog{box-sizing:border-box;max-width:min(540px,calc(100% - 32px));padding:24px;border:1px solid #a3b3c9;border-radius:16px;color:#17364f}.account-device-list textarea{box-sizing:border-box;display:block;width:100%;min-height:88px;font:inherit;font-size:16px;padding:12px;margin:10px 0;border:1px solid #a3b3c9;border-radius:8px}.account-device-list .device-dialog-actions{display:flex;flex-wrap:wrap;gap:12px}.account-device-list :focus-visible{outline:3px solid #175c96;outline-offset:3px}.account-device-list .danger{color:#a91830;background:#fff0f0;border:1px solid #db9da6}
-.account-device-list .device-state{background:#edf3ff;color:#173d71;padding:3px 9px;border-radius:6px;font-size:14px;font-weight:650}.account-device-card{border-color:var(--msa-line,#cbdce8)}.account-device-card h3{margin:0}.account-device-card p{margin:8px 0}.account-device-card details{border-top:1px solid var(--msa-line,#cbdce8);margin:12px 0}.account-device-card summary{font-weight:650}.account-device-confirm form{border:0;padding:0;margin:0}.account-device-confirm textarea{width:100%;min-height:100px}.account-device-confirm [data-device-result]:empty{display:none}
-.account-device-card summary::after{content:"+";margin-left:8px}.account-device-card details[open] summary::after{content:"−"}
+/* Perangkat akun (dipakai halaman Mentor dan Tinjauan identitas). Token C10 dengan cadangan nilai agar aman di halaman tanpa .ui-root. */
+.account-device-list{font:var(--type-body,16px/1.5 system-ui,sans-serif);min-width:0;color:var(--ink,#231f20)}
+.account-device-list p{overflow-wrap:anywhere;margin:var(--space-2,8px) 0}
+.account-device-list h2,.account-device-list h3{font:var(--type-title,700 20px/24px system-ui);margin:var(--space-3,12px) 0}
+.account-device-list .btn,.account-device-list button,.account-device-list summary{min-height:var(--control,48px);font:var(--type-button,800 17px/24px system-ui)}
+.account-device-list .btn,.account-device-list button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 var(--space-5,24px);border:2px solid var(--primary,#c81e1e);border-radius:var(--radius-pill,999px);background:var(--surface-100,#fff);color:var(--primary,#c81e1e);cursor:pointer;text-decoration:none}
+.account-device-list .btn:disabled,.account-device-list button:disabled{background:var(--disabled-bg,#e6ddd2);color:var(--disabled-ink,#5c5350);border-color:transparent;cursor:not-allowed}
+.account-device-list summary{display:flex;align-items:center;cursor:pointer;color:var(--primary,#c81e1e)}
+.account-device-card{margin:var(--space-3,12px) 0;padding:var(--space-4,16px) var(--space-5,24px);border:0;border-radius:var(--radius-lg,28px);background:var(--surface-100,#fff);box-shadow:var(--shadow-card,0 1px 2px rgba(35,31,32,.06),0 6px 18px rgba(35,31,32,.06))}
+.account-device-card h3{margin:0}
+.account-device-card p{margin:var(--space-2,8px) 0}
+.account-device-card details{border-top:1px solid var(--line,#e6ddd2);margin:var(--space-3,12px) 0}
+.account-device-card summary::after{content:"+";margin-left:8px}
+.account-device-card details[open] summary::after{content:"−"}
+/* Status: teks + bentuk; warna hanya pendukung */
+.account-device-list .device-state{display:inline-flex;align-items:center;min-height:28px;padding:2px var(--space-3,12px);border-radius:var(--radius-pill,999px);background:var(--blue-pale,#dae9f6);color:var(--ink,#231f20);font:var(--type-label,800 12px/16px system-ui);letter-spacing:0}
+.account-device-list .danger{background:var(--primary,#c81e1e);color:var(--on-primary,#fff);border-color:var(--primary,#c81e1e)}
+.account-device-list dialog{box-sizing:border-box;width:min(540px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:var(--space-5,24px);border:0;border-radius:var(--radius-xl,36px);background:var(--surface-100,#fff);color:var(--ink,#231f20);box-shadow:var(--shadow-float,0 8px 24px rgba(35,31,32,.18))}
+.account-device-list dialog::backdrop{background:rgba(35,31,32,.45)}
+.account-device-list textarea{box-sizing:border-box;display:block;width:100%;min-height:96px;font:var(--type-body,16px/1.5 system-ui);padding:var(--space-3,12px) var(--space-5,24px);margin:var(--space-3,12px) 0;border:1.5px solid var(--control-border,#857a76);border-radius:var(--radius-lg,28px);background:var(--surface-100,#fff);color:var(--ink,#231f20)}
+.account-device-list .device-dialog-actions{display:flex;flex-direction:column;gap:var(--space-2,8px)}
+.account-device-list .device-dialog-actions button{width:100%}
+.account-device-list :focus-visible{outline:3px solid var(--focus-ring,#1d5f99);outline-offset:3px}
+.account-device-confirm form{border:0;padding:0;margin:0}
+.account-device-confirm [data-device-result]:empty{display:none}
+@media(min-width:900px){.account-device-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) auto;gap:var(--space-1,4px) var(--space-5,24px);align-items:center}.account-device-card h3,.account-device-card>p:first-of-type{grid-column:1}.account-device-card>p:nth-of-type(2){grid-column:2;grid-row:1/3}.account-device-card>details{grid-column:1/3;margin:var(--space-2,8px) 0 0}.account-device-card>button{grid-column:3;grid-row:1/3;margin:0}}

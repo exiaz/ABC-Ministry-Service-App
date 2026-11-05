@@ -8,3 +8,34 @@
 @media(min-width:651px){.settings-nav label[for=slot],.settings-nav #slot{display:none}}@media(max-width:650px){.slot-navigation{display:none}}
 
 #visual-main #save-result{width:min(420px,calc(100vw - 32px));box-sizing:border-box;padding:24px;max-height:90dvh;overflow:auto;border:1px solid #dce1df;border-radius:16px;color:#182b42;background:#fff}#save-result::backdrop{background:#182b4280}#save-result h2{margin:0 0 12px}#save-result p{margin:0 0 20px}#save-result-close{float:right}
+
+/* U6b: Visual Studio memakai token C10 (menimpa warna dan bentuk lama; tata letak dan id tidak berubah) */
+body.ui-root #visual-main{color:var(--ink);font-family:var(--font-body)}
+body.ui-root #visual-main h1{font:var(--type-greeting);letter-spacing:0}
+body.ui-root #visual-main :is(h2,h3){font-family:var(--font-display);font-weight:700;letter-spacing:0}
+body.ui-root #visual-main h2{font-size:22px}
+body.ui-root #visual-main h3{font-size:18px}
+body.ui-root #visual-main p{font-size:14px}
+body.ui-root #visual-main .studio-eyebrow{font:var(--type-label);letter-spacing:var(--label-tracking);color:var(--accent-3-text)}
+body.ui-root .studio-badge{background:var(--accent-yellow);color:var(--on-accent);font:var(--type-label);letter-spacing:0;border-radius:var(--radius-pill)}
+body.ui-root .studio-layout{border:0;border-radius:var(--radius-xl);overflow:hidden;background:var(--surface-100);box-shadow:var(--shadow-card)}
+body.ui-root .settings-nav{background:var(--blue-pale)}
+body.ui-root #visual-main button{min-height:var(--control);padding:0 var(--space-5);border:2px solid var(--primary);border-radius:var(--radius-pill);background:var(--surface-100);color:var(--primary);font:var(--type-button);font-size:16px}
+body.ui-root #visual-main button:hover{background:var(--surface-200)}
+body.ui-root #visual-main .quiet{background:var(--blue-pale);color:var(--ink);border-color:transparent}
+body.ui-root #visual-main .slot-navigation button{border:0;background:transparent;color:var(--ink);font-size:15px;justify-content:flex-start}
+body.ui-root #visual-main .slot-navigation button[aria-pressed=true]{background:var(--accent-yellow);color:var(--on-accent);box-shadow:none}
+body.ui-root #visual-main #publish{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+body.ui-root #visual-main #publish:hover{background:var(--primary-hover)}
+body.ui-root #visual-main button:disabled{background:var(--disabled-bg);color:var(--disabled-ink);border-color:transparent;opacity:1;cursor:not-allowed}
+body.ui-root #visual-main :is(select,input:not([type=checkbox]):not([type=range]):not([type=file])){min-height:var(--control);padding:0 var(--space-5);border:1.5px solid var(--control-border);border-radius:var(--radius-pill);background:var(--surface-100);color:var(--ink);font:var(--type-body)}
+body.ui-root #visual-main textarea{padding:var(--space-3) var(--space-5);border:1.5px solid var(--control-border);border-radius:var(--radius-lg);background:var(--surface-100);color:var(--ink);font:var(--type-body)}
+body.ui-root #visual-main label{font:var(--type-caption);padding-left:var(--space-2)}
+body.ui-root #visual-main input[type=range]{accent-color:var(--primary)}
+body.ui-root #visual-main .image-edit,body.ui-root .image-box,body.ui-root #crop-stage{border-radius:var(--radius-lg)}
+body.ui-root .preview-panel{background:var(--blue-pale);border-radius:var(--radius-xl)}
+body.ui-root .preview-wrap{border-radius:var(--radius-lg)}
+body.ui-root #visual-main :is(#save-result,#image-editor){border:0;border-radius:var(--radius-xl);background:var(--surface-100);color:var(--ink);box-shadow:var(--shadow-float)}
+body.ui-root :is(#save-result,#image-editor)::backdrop{background:rgba(35,31,32,.45)}
+body.ui-root #feedback:not(:empty){background:var(--blue-pale);border-radius:var(--radius-lg);color:var(--ink)}
+body.ui-root :focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
