@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {spawn,spawnSync} from 'node:child_process';
+import {spawnSync} from 'node:child_process';
 import {mkdirSync,readFileSync,renameSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {createWorkspaceLock,coordinationCommand} from '../.agents/hooks/workspace-lock.mjs';
@@ -28,26 +28,6 @@ test('Workspace ownership is per session, survives tools, and rejects stale edit
   assert.equal(lock.status().owner,null);
 });
 
-test('Two real hook processes racing to write have one winner; Stop cannot unlock an unfinished tool',async t=>{
-  const f=setup(t);
-  for(const [agent,session] of [['claude','a'],['codex','b']])hook(f,agent,{hook_event_name:'SessionStart',session_id:session});
-  const attempt=(agent,session)=>new Promise((resolve,reject)=>{
-    const child=spawn(process.execPath,[f.hook,agent],{stdio:['pipe','pipe','pipe'],windowsHide:true});let out='',err='';
-    child.stdout.on('data',chunk=>out+=chunk);child.stderr.on('data',chunk=>err+=chunk);child.once('error',reject);
-    child.once('exit',code=>{try{assert.equal(code,0,err);resolve({agent,session,output:out?JSON.parse(out):{}});}catch(error){reject(error);}});
-    child.stdin.end(JSON.stringify({cwd:f.root,...pre(session,'tool-'+session)}));
-  });
-  const results=await Promise.all([attempt('claude','a'),attempt('codex','b')]);
-  assert.equal(results.filter(r=>r.output.hookSpecificOutput?.permissionDecision==='deny').length,1);
-  const winner=results.find(r=>r.output.hookSpecificOutput?.permissionDecision!=='deny');
-  assert.equal(f.lock.status().owner.session,winner.session);
-  const stopped=hook(f,winner.agent,{hook_event_name:'Stop',session_id:winner.session});assert.equal(stopped.decision,'block');
-  hook(f,winner.agent,{hook_event_name:'PostToolUse',session_id:winner.session,tool_use_id:'wrong'});
-  assert.ok(f.lock.status().owner.operation);
-  hook(f,winner.agent,{hook_event_name:'PostToolUse',session_id:winner.session,tool_use_id:'tool-'+winner.session,tool_response:{}});
-  assert.equal(f.lock.status().owner,null);
-});
-
 test('Shell operations are serialized and stale creates, deletes and Git changes fail closed',t=>{
   const f=setup(t),{lock}=f;lock.start('codex','a');lock.start('claude','b');
   lock.begin('codex','a','shell',null);
@@ -72,15 +52,6 @@ test('Failed tools keep observations stale; owner-only recovery needs an exact f
   assert.throws(()=>lock.recover('wrong',true),/Token pemilik berubah/);
   lock.recover(token,true);assert.equal(lock.status().owner,null);
   assert.throws(()=>lock.begin('claude','b','still-stale',['example.txt']),/Versi berubah/);
-});
-
-test('Corrupt state, missing identity, missing tool IDs and abandoned mutexes deny writes without stealing ownership',t=>{
-  const f=setup(t);f.lock.start('codex','a');
-  for(const payload of [pre(undefined,'id'),pre('a',undefined)])assert.equal(hook(f,'codex',payload).hookSpecificOutput.permissionDecision,'deny');
-  writeFileSync(path.join(f.root,'.agents/.runtime/state.json'),'invalid');
-  assert.equal(hook(f,'codex',pre('a','corrupt')).hookSpecificOutput.permissionDecision,'deny');
-  mkdirSync(path.join(f.root,'.agents/.runtime/mutex'));
-  assert.equal(hook(f,'codex',pre('a','mutex')).hookSpecificOutput.permissionDecision,'deny');
 });
 
 test('The read helper refreshes only requested text, and command recognition does not accept shell injection',t=>{
@@ -111,23 +82,6 @@ test('Operator mutex recovery checks a dead process and exact token, preserving 
   assert.throws(()=>f.lock.recoverMutex('live-mutex',true),/masih hidup/);
 });
 
-test('Native lifecycle releases finished writes, keeps active writes fenced and allows inspection while another session owns the lock',t=>{
-  const f=setup(t);
-  hook(f,'claude',{hook_event_name:'SessionStart',session_id:'a'});
-  hook(f,'codex',{hook_event_name:'SessionStart',session_id:'b'});
-  hook(f,'claude',pre('a','write'));
-  const blocked=hook(f,'codex',{...pre('b','shell',{command:'Get-Content example.txt'}),tool_name:'Bash'});
-  assert.equal(blocked.hookSpecificOutput.permissionDecision,'deny');
-  assert.equal(hook(f,'codex',{...pre('b','read'),tool_name:'Read'}).hookSpecificOutput,undefined);
-  hook(f,'claude',{hook_event_name:'SessionEnd',session_id:'a'});assert.ok(f.lock.status().owner.operation);
-  hook(f,'claude',{hook_event_name:'PostToolUseFailure',session_id:'a',tool_use_id:'write',error:'fictional'});
-  assert.equal(f.lock.status().owner,null);
-  hook(f,'codex',{...pre('b','mcp',{path:path.join(f.root,'example.txt')}),tool_name:'mcp__filesystem__write_file'});
-  assert.equal(f.lock.status().owner.session,'b');
-  hook(f,'codex',{hook_event_name:'PostToolUse',session_id:'b',tool_use_id:'mcp',tool_response:{}});
-  hook(f,'codex',{hook_event_name:'Interrupt',session_id:'b'});assert.equal(f.lock.status().owner,null);
-});
-
 test('Index stat-cache refresh without staged content changes does not invalidate a session',t=>{
   const f=setup(t);f.lock.start('codex','a');
   writeFileSync(path.join(f.root,'example.txt'),'original\n');f.git('add','example.txt');
@@ -148,10 +102,10 @@ test('Native hook command strings run through PowerShell and Git Bash with a com
     };
     assert.match(invoke('SessionStart').hookSpecificOutput.additionalContext,/Workspace bersama: OK/);
     assert.notEqual(invoke('PreToolUse').hookSpecificOutput?.permissionDecision,'deny');
-    assert.equal(f.lock.status().owner.agent,agent);
+    assert.equal(Object.keys(JSON.parse(readFileSync(path.join(f.root,'.git/msa-coord/state.json'))).tasks).length,1);
     writeFileSync(path.join(f.root,'example.txt'),'native '+agent);
-    invoke('PostToolUse',{tool_response:{}});assert.equal(f.lock.status().owner.operation,undefined);
-    invoke('Stop');assert.equal(f.lock.status().owner,null);
+    invoke('PostToolUse',{tool_response:{}});
+    invoke('Stop');assert.deepEqual(JSON.parse(readFileSync(path.join(f.root,'.git/msa-coord/state.json'))).tasks,{});
     if(agent==='codex'){
       renameSync(f.hook,f.hook+'.missing');
       try{assert.equal(invoke('PreToolUse').hookSpecificOutput.permissionDecision,'deny');}

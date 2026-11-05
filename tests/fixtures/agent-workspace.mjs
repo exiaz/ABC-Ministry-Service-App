@@ -13,7 +13,7 @@ export function agentWorkspace(t){
     assert.ok(path.basename(root).startsWith('msa-agent-lock-'));
     rmSync(root,{recursive:true,force:true});
   });
-  for(const file of ['.agents/hooks/collab-guard.mjs','.agents/hooks/workspace-lock.mjs','.claude/hooks/collab-guard.mjs','.claude/settings.json','.codex/hooks.json','AGENTS.md','CLAUDE.md','.gitignore']){
+  for(const file of ['.agents/hooks/collab-guard.mjs','.agents/hooks/workspace-lock.mjs','.agents/hooks/coord.mjs','.agents/hooks/policy.mjs','.claude/hooks/collab-guard.mjs','.claude/settings.json','.codex/hooks.json','AGENTS.md','CLAUDE.md','.gitignore']){
     mkdirSync(path.dirname(path.join(root,file)),{recursive:true});copyFileSync(path.join(source,file),path.join(root,file));
   }
   mkdirSync(path.join(root,'backend'));

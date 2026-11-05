@@ -1,0 +1,18 @@
+{
+  "msa-collab-guard": {
+    "SessionStart": [
+      {"type": "command", "command": "node ./.agents/hooks/collab-guard.mjs antigravity SessionStart", "timeout": 15}
+    ],
+    "PreToolUse": [
+      {"matcher": "run_command|write_to_file|replace_file_content|multi_replace_file_content|invoke_subagent",
+       "hooks": [{"type": "command", "command": "node ./.agents/hooks/collab-guard.mjs antigravity PreToolUse", "timeout": 15}]}
+    ],
+    "PostToolUse": [
+      {"matcher": "run_command",
+       "hooks": [{"type": "command", "command": "node ./.agents/hooks/collab-guard.mjs antigravity PostToolUse", "timeout": 15}]}
+    ],
+    "Stop": [
+      {"type": "command", "command": "node ./.agents/hooks/collab-guard.mjs antigravity Stop", "timeout": 15}
+    ]
+  }
+}
