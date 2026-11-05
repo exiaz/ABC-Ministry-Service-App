@@ -1,3 +1,7 @@
+# Cache alat desain lokal (impeccable, tasteskill)
+.impeccable/
+.taste/
+
 # Logs
 logs
 *.log
