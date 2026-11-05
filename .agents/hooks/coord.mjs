@@ -2,7 +2,7 @@
 // Transaksi: mutex mkdir atomik + tulis temp lalu rename. Kedaluwarsa hanya jika lease habis DAN pid mati.
 import {execFileSync} from 'node:child_process';
 import {appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync} from 'node:fs';
-import {randomUUID} from 'node:crypto';
+import {createHash, randomUUID} from 'node:crypto';
 import path from 'node:path';
 import {canonical, within} from './workspace-lock.mjs';
 
@@ -10,6 +10,7 @@ export const LEASE_MS = 10 * 60 * 1000;
 const alive = pid => { if (!Number.isSafeInteger(pid) || pid <= 0) return false; try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 export class CoordError extends Error { constructor(code, message) { super(message); this.code = code; } }
+export const sessionTaskId = (agent, session) => `${agent}-${createHash('sha256').update(String(session)).digest('hex').slice(0, 10)}`;
 
 export function commonDir(cwd) {
   const out = execFileSync('git', ['rev-parse', '--git-common-dir'], {cwd, encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'ignore']}).trim();
@@ -29,7 +30,7 @@ export function createCoord(cwd) {
       catch (e) {
         if (e.code !== 'EEXIST') throw e;
         let owner = NaN; try { owner = Number(readFileSync(path.join(mutex, 'owner'), 'utf8')); } catch {}
-        if (!alive(owner)) { rmSync(mutex, {recursive: true, force: true}); continue; } // pemilik mati: mutex tertinggal
+        if (Number.isSafeInteger(owner) && owner > 0 && !alive(owner)) { rmSync(mutex, {recursive: true, force: true}); continue; } // jangan ambil mutex yang pemiliknya belum diketahui
         sleep(20);
       }
     }
@@ -40,6 +41,7 @@ export function createCoord(cwd) {
     try {
       let state = {version: 2, tasks: {}};
       if (existsSync(stateFile)) { state = JSON.parse(readFileSync(stateFile, 'utf8')); if (state.version !== 2) throw new CoordError('STATE_VERSION', 'State koordinasi tidak kompatibel.'); }
+      state.sessions ??= {};
       reap(state);
       const result = run(state), tmp = path.join(dir, randomUUID() + '.tmp');
       writeFileSync(tmp, JSON.stringify(state)); renameSync(tmp, stateFile);
@@ -48,7 +50,7 @@ export function createCoord(cwd) {
   }
   function reap(state) {
     const now = Date.now();
-    for (const [id, t] of Object.entries(state.tasks)) if (t.leaseUntil < now && !alive(t.pid)) { delete state.tasks[id]; audit('reaped', {task: id}); }
+    for (const [id, t] of Object.entries(state.tasks)) if (t.leaseUntil < now && !alive(t.pid) && !children(state, id).length) { delete state.tasks[id]; audit('reaped', {task: id}); }
   }
   const children = (state, id) => Object.values(state.tasks).filter(t => t.parent === id);
   const conflict = (state, id, worktree, scopes) => {
@@ -60,12 +62,34 @@ export function createCoord(cwd) {
     return null;
   };
   const touch = (t, pid) => { t.leaseUntil = Date.now() + LEASE_MS; if (pid) t.pid = pid; };
+  const authorizeParent = (state, identity) => {
+    const {session, agent, parent, worktree} = identity ?? {};
+    if (!session || !agent) throw new CoordError('PARENT_IDENTITY', 'Identitas sesi native pemanggil diperlukan.');
+    const s = state.sessions[sessionTaskId(agent, session)];
+    if (!s || s.session !== session || s.agent !== agent) throw new CoordError('PARENT_UNKNOWN', 'Sesi induk tidak terdaftar oleh hook native.');
+    if (s.leaseUntil <= Date.now()) throw new CoordError('PARENT_EXPIRED', 'Sesi induk sudah kedaluwarsa; jalankan tool melalui sesi native yang aktif.');
+    if (s.delegated || s.worktree !== worktree) throw new CoordError('PARENT_UNAUTHORIZED', 'Sesi ini tidak berwenang mendelegasikan dari workspace tersebut.');
+    if (parent != null && parent !== s.session && parent !== s.taskId) throw new CoordError('PARENT_MISMATCH', '--parent tidak cocok dengan sesi native pemanggil.');
+    return s.taskId;
+  };
   return {
     dir,
     audit,
-    // Buka tugas eksplisit (dipakai wrapper delegasi). fixed=true: penulisan dibatasi pada scopes.
-    open({id, parent = null, agent, role = 'worker', mode = 'write', worktree, scopes = [], pid = process.pid, baseline = null, fixed = false}) {
+    session({session, agent, worktree, delegated = false}) {
+      if (typeof session !== 'string' || !/^[A-Za-z0-9._:-]+$/.test(session)) throw new CoordError('MISSING_ID', 'session_id native tidak valid.');
       return tx(state => {
+        const taskId = sessionTaskId(agent, session);
+        state.sessions[taskId] = {session, taskId, agent, worktree, delegated, leaseUntil: Date.now() + LEASE_MS};
+        return state.sessions[taskId];
+      });
+    },
+    endSession(agent, session) { return tx(state => { delete state.sessions[sessionTaskId(agent, session)]; }); },
+    parent(identity) { return tx(state => authorizeParent(state, identity)); },
+    // Buka tugas eksplisit (dipakai wrapper delegasi). fixed=true: penulisan dibatasi pada scopes.
+    open({id, parent = null, parentIdentity, agent, role = 'worker', mode = 'write', worktree, scopes = [], pid = process.pid, baseline = null, fixed = false}) {
+      return tx(state => {
+        if (parent !== null && authorizeParent(state, parentIdentity) !== parent) throw new CoordError('PARENT_MISMATCH', 'Pemilik tugas induk tidak cocok.');
+        if (parent === id) throw new CoordError('PARENT_MISMATCH', 'ID tugas anak harus berbeda dari induk.');
         if (state.tasks[id]) throw new CoordError('TASK_EXISTS', `Tugas ${id} sudah ada.`);
         if (mode === 'write') { const c = conflict(state, id, worktree, scopes); if (c) throw new CoordError('SCOPE_CONFLICT', `Lingkup ${c.wanted} bertabrakan dengan tugas ${c.task} (${c.scope}) di worktree yang sama.`); }
         state.tasks[id] = {id, parent, agent, role, mode, worktree, scopes: mode === 'write' ? scopes : [], ephemeral: {}, fixed, baseline, pid, leaseUntil: 0, created: new Date().toISOString()};
@@ -88,14 +112,14 @@ export function createCoord(cwd) {
         return t;
       });
     },
-    unclaim(id, ephemeralId) { return tx(state => { const t = state.tasks[id]; if (t && t.ephemeral[ephemeralId]) { delete t.ephemeral[ephemeralId]; touch(t); } }); },
+    unclaim(id, ephemeralId) { return tx(state => { const t = state.tasks[id]; if (t && t.ephemeral[ephemeralId]) { delete t.ephemeral[ephemeralId]; touch(t); audit('unclaim', {task: id, toolId: ephemeralId}); } }); },
     renew(id, pid) { return tx(state => { const t = state.tasks[id]; if (t) touch(t, pid); return !!t; }); },
     // Lepas tugas; ditolak selama ada anak aktif yang masih membutuhkan lingkupnya.
     release(id, {force = false} = {}) {
       return tx(state => {
-        if (!state.tasks[id]) return {released: true};
         const live = children(state, id).map(c => c.id);
         if (live.length && !force) { audit('release-refused', {task: id, children: live}); return {released: false, reason: 'ACTIVE_CHILDREN', children: live}; }
+        if (!state.tasks[id]) return {released: true};
         delete state.tasks[id]; audit('release', {task: id}); return {released: true};
       });
     },

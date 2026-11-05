@@ -64,6 +64,16 @@
         "matcher": ".*"
       }
     ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/collab-guard.mjs\" claude"
+          }
+        ]
+      }
+    ],
     "PermissionDenied": [
       {
         "hooks": [

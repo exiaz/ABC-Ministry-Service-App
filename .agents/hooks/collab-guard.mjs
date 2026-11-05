@@ -2,12 +2,11 @@
 // Adapter tunggal Claude / Codex / Antigravity -> kebijakan bersama (policy.mjs) + koordinasi tugas (coord.mjs).
 // Bukan pengganti sandbox atau otorisasi aplikasi. Argumen: <agen> [event] (event wajib untuk antigravity).
 import {execFileSync} from 'node:child_process';
-import {createHash} from 'node:crypto';
-import {writeSync} from 'node:fs';
+import {appendFileSync, writeSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {canonical, within} from './workspace-lock.mjs';
-import {createCoord} from './coord.mjs';
+import {createCoord, sessionTaskId} from './coord.mjs';
 import {classifyShell} from './policy.mjs';
 
 const agent = process.argv[2];
@@ -40,7 +39,7 @@ const AG_WRITE = new Set(['write_to_file', 'replace_file_content', 'multi_replac
 const command = SHELL.has(n.tool) ? String(n.args.command ?? n.args.cmd ?? n.args.CommandLine ?? '') : null;
 
 const env = process.env, delegated = env.MSA_DELEGATED === '1', readOnly = env.MSA_MODE === 'read';
-const taskId = env.MSA_TASK_ID || `${agent}-${createHash('sha256').update(String(n.session)).digest('hex').slice(0, 10)}`;
+const taskId = delegated ? env.MSA_TASK_ID : sessionTaskId(agent, n.session);
 const meta = {agent, parent: env.MSA_PARENT_ID || null, pid: delegated ? Number(env.MSA_WORKER_PID) || process.ppid : process.ppid};
 const top = git(n.cwd, 'rev-parse', '--show-toplevel'), branch = top && git(top, 'branch', '--show-current');
 const problem = !top ? 'Root Git tidak dapat diverifikasi.' : canonical(top) !== root ? 'Gunakan workspace aktif ' + workspace : !branch ? 'Detached HEAD: pulihkan branch lewat pengguna.' : null;
@@ -48,6 +47,7 @@ const problem = !top ? 'Root Git tidak dapat diverifikasi.' : canonical(top) !==
 const emit = (extra) => out(JSON.stringify({hookSpecificOutput: {hookEventName: n.event, ...extra}}));
 const deny = (code, reason) => {
   const text = `[collab-guard:${code}] ${reason}`;
+  if (!problem) createCoord(top).audit('deny', {agent, session: n.session, task: taskId, toolId: n.toolId, code});
   out(ag ? JSON.stringify({decision: 'deny', reason: text}) : JSON.stringify({hookSpecificOutput: {hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: text}}));
   process.exit(0);
 };
@@ -56,17 +56,31 @@ const finish = () => process.exit(0);
 const needIds = () => { if (typeof n.session !== 'string' || !n.session || typeof n.toolId !== 'string' || !n.toolId || n.toolId.endsWith(':undefined')) deny('MISSING_ID', 'session_id/tool_use_id diperlukan sebelum penulisan.'); };
 
 try {
+  if (!problem && n.session) {
+    const coord = createCoord(top);
+    coord.audit('hook', {agent, session: n.session, hook: n.event, tool: n.tool, toolId: n.toolId, task: taskId});
+    if (['SessionStart', 'PreToolUse'].includes(n.event)) coord.session({session: n.session, agent, worktree: root, delegated});
+  }
   if (n.event === 'SessionStart') {
+    if (!problem && agent === 'claude' && env.CLAUDE_ENV_FILE && n.session) {
+      appendFileSync(env.CLAUDE_ENV_FILE, `\nexport MSA_NATIVE_SESSION_ID='${n.session}'\nexport MSA_NATIVE_AGENT='claude'\n`);
+    }
     const note = delegated ? `Pekerja terdelegasi: tugas=${taskId}, mode=${env.MSA_MODE}, tidak boleh mendelegasikan lagi.` : 'Workspace bersama: OK. Koordinasi per tugas aktif; operasi baca tidak pernah diblokir.';
     if (ag) out('{}'); else emit({additionalContext: `[collab-guard] agen=${agent} session_id=${n.session || '(tidak ada)'} workspace=${workspace} branch=${branch || '(tidak terverifikasi)'}\n${problem || note}\nBaca AGENTS.md.`});
     finish();
+  }
+  if (n.event === 'PostToolBatch') {
+    // PermissionDenied hanya untuk auto mode; batch juga selesai setelah deny rule/dontAsk.
+    if (!problem) for (const call of input.tool_calls ?? []) if (typeof call.tool_use_id === 'string') createCoord(top).unclaim(taskId, call.tool_use_id);
+    out('{}'); finish();
   }
   if (['PostToolUse', 'PostToolUseFailure', 'PermissionDenied'].includes(n.event)) {
     if (command !== null && !problem && ['write', 'delegate'].includes(classifyShell(command, ctx))) createCoord(top).unclaim(taskId, n.toolId);
     out('{}'); finish();
   }
   if (['Stop', 'SessionEnd', 'Interrupt'].includes(n.event)) {
-    if (!env.MSA_TASK_ID && !problem) { const r = createCoord(top).release(taskId); if (!r.released) createCoord(top).audit('stop-kept', {task: taskId, children: r.children}); }
+    if (n.event === 'SessionEnd' && !problem) createCoord(top).endSession(agent, n.session);
+    if (!delegated && !problem) { const r = createCoord(top).release(taskId); if (!r.released) createCoord(top).audit('stop-kept', {task: taskId, children: r.children}); }
     out('{}'); finish();
   }
   if (n.event !== 'PreToolUse') finish();

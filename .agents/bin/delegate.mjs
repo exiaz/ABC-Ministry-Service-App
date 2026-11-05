@@ -24,7 +24,16 @@ if (!['read', 'write'].includes(mode)) die('BAD_ARGS', '--mode harus read atau w
 const prompt = opt['prompt-file'] ? readFileSync(path.resolve(opt['prompt-file']), 'utf8') : opt.prompt;
 if (!prompt) die('BAD_ARGS', 'Berikan --prompt-file atau --prompt.');
 const taskId = (opt.task ?? `${to}-${Date.now().toString(36)}`).replace(/[^A-Za-z0-9._-]/g, '-');
-const parent = opt.parent ?? (process.env.MSA_TASK_ID || null);
+const coord = createCoord(workspace);
+const parentIdentity = {
+  session: process.env.MSA_NATIVE_SESSION_ID || process.env.CODEX_THREAD_ID || process.env.CODEX_SESSION_ID,
+  agent: process.env.MSA_NATIVE_AGENT || ((process.env.CODEX_THREAD_ID || process.env.CODEX_SESSION_ID) ? 'codex' : null),
+  parent: opt.parent,
+  worktree: canonical(workspace),
+};
+let parent;
+try { parent = coord.parent(parentIdentity); }
+catch (e) { die(e.code ?? 'COORD', e.message); }
 const scopes = mode === 'write' ? (opt.scope ?? '.').split(',').map(s => s.trim().replace(/\\/g, '/').replace(/\/$/, '')).filter(Boolean) : [];
 const timeout = Number(opt.timeout ?? 900) * 1000;
 
@@ -51,7 +60,7 @@ function fallback(name) {
   return [hit && path.join(pkgs, hit, 'claude.exe'), path.join(roaming, 'npm', `${name}.cmd`)].find(p => p && existsSync(p)) ?? null;
 }
 // Sandbox Codex berjalan sebagai pengguna lain: ingat jalur CLI yang ditemukan di lingkungan normal (cache di git common dir).
-const cacheFile = path.join(createCoord(workspace).dir, 'cli.json');
+const cacheFile = path.join(coord.dir, 'cli.json');
 let cache = {}; try { cache = JSON.parse(readFileSync(cacheFile, 'utf8')); } catch {}
 const cli = process.env[`MSA_${to.toUpperCase()}_CLI`] || (to === 'antigravity' ? locate('agy') || locate('antigravity-cli') : locate(to) || fallback(to) || (existsSync(cache[to] ?? '') ? cache[to] : null));
 if (cli && cache[to] !== cli && to !== 'antigravity') { cache[to] = cli; try { writeFileSync(cacheFile, JSON.stringify(cache)); } catch {} }
@@ -60,7 +69,6 @@ const ver = run(cli, ['--version'], {timeout: 20000});
 if (ver.status !== 0) die('CLI_UNUSABLE', `${to} --version gagal.`, {stderr: String(ver.stderr).slice(0, 300)});
 if (to === 'antigravity' && !process.env.MSA_ANTIGRAVITY_ARGS) die('CLI_UNVERIFIED', 'Flag non-interaktif Antigravity CLI belum terverifikasi; set MSA_ANTIGRAVITY_ARGS (array JSON, prompt lewat stdin).');
 
-const coord = createCoord(workspace);
 const reportDir = path.join(coord.dir, 'reports'); mkdirSync(reportDir, {recursive: true});
 const out = path.join(reportDir, `${taskId}.last.txt`);
 let cwd = workspace, branch = null;
@@ -87,19 +95,21 @@ else args = JSON.parse(process.env.MSA_ANTIGRAVITY_ARGS);
 if (opt.dry) { process.stdout.write(JSON.stringify({status: 'dry-run', taskId, parent, to, mode, cli, version: String(ver.stdout).trim().split('\n')[0], cwd, branch, args, scopes}, null, 2) + '\n'); process.exit(0); }
 
 const wtKey = canonical(cwd);
-try { coord.open({id: taskId, parent, agent: to, role, mode, worktree: wtKey, scopes: mode === 'write' ? scopes : [], fixed: mode === 'write', pid: process.pid, baseline: git(workspace, 'rev-parse', 'HEAD').stdout.trim()}); }
+try { coord.open({id: taskId, parent, parentIdentity, agent: to, role, mode, worktree: wtKey, scopes: mode === 'write' ? scopes : [], fixed: mode === 'write', pid: process.pid, baseline: git(workspace, 'rev-parse', 'HEAD').stdout.trim()}); }
 catch (e) { die(e.code ?? 'COORD', e.message); }
 const warnings = coord.list().filter(t => t.id !== taskId && t.mode === 'write' && mode === 'write' && t.worktree !== wtKey && t.scopes.some(a => scopes.some(b => a === '.' || b === '.' || a === b || a.startsWith(b + '/') || b.startsWith(a + '/')))).map(t => `Lingkup beririsan dengan tugas ${t.id} (worktree lain): integrasi perlu tinjauan konflik.`);
 
 const env = {...process.env, MSA_TASK_ID: taskId, MSA_PARENT_ID: parent ?? '', MSA_DELEGATED: '1', MSA_DEPTH: '1', MSA_MODE: mode, MSA_ROLE: role, MSA_WORKTREE: cwd, MSA_SCOPE: scopes.join(','), MSA_WORKER_PID: String(process.pid)};
+for (const key of ['MSA_NATIVE_SESSION_ID', 'MSA_NATIVE_AGENT', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID', 'CLAUDE_ENV_FILE']) delete env[key];
 const started = Date.now();
-const r = run(cli, args, {cwd, env, input: full, timeout});
+let r, released;
+try { r = run(cli, args, {cwd, env, input: full, timeout}); }
+finally { released = coord.release(taskId); }
 const log = path.join(reportDir, `${taskId}.log`);
 writeFileSync(log, `# stdout\n${r.stdout ?? ''}\n# stderr\n${r.stderr ?? ''}\n`);
 let summary = to === 'codex' && existsSync(out) ? readFileSync(out, 'utf8') : String(r.stdout ?? '');
 summary = summary.trim().slice(-1800);
 const changed = mode === 'write' ? git(cwd, 'status', '--short').stdout.split('\n').filter(Boolean).filter(l => !/\s\.(agents|codex|claude)\//.test(l)) : [];
-const released = coord.release(taskId, {force: true});
 process.stdout.write(JSON.stringify({
   status: r.status === 0 ? 'ok' : (r.error?.code === 'ETIMEDOUT' ? 'timeout' : 'failed'), taskId, parent, agent: to, mode, role, exitCode: r.status, seconds: Math.round((Date.now() - started) / 1000),
   worktree: mode === 'write' ? cwd : null, branch, changedFiles: changed, summary, warnings, transcript: log, released: released.released,

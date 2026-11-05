@@ -67,7 +67,11 @@ test('Native registrations use one shared handler per event, with no inactive Be
       assert.equal(commands.length,1);assert.match(commands[0],/\.agents\/hooks\/collab-guard\.mjs/);
     }
     assert.doesNotMatch(JSON.stringify(config),/bd codex-hook|\.claude\/hooks/);
-    if(file.startsWith('.claude/'))assert.equal(config.hooks.PreToolUse[0].hooks[0].onFailure,'block');
+    if(file.startsWith('.claude/')){
+      assert.equal(config.hooks.PreToolUse[0].hooks[0].onFailure,'block');
+      assert.equal(config.hooks.PostToolBatch.flatMap(group=>group.hooks).length,1);
+      assert.match(config.hooks.PostToolBatch[0].hooks[0].command,/\.agents\/hooks\/collab-guard\.mjs/);
+    }
     else assert.match(config.hooks.PreToolUse[0].hooks[0].commandWindows,/permissionDecision/);
   }
   assert.equal(readFileSync(path.join(root,'CLAUDE.md'),'utf8').trim(),'@AGENTS.md');
