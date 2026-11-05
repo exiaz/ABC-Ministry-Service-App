@@ -72,14 +72,14 @@ test('Pilot reuse requires matching portal mode, source signature and ports; inc
     status=matching;await assert.rejects(runPilot({base:{},address,unified:true,verifyApps:async()=>{throw Error('unhealthy');},open:async()=>assert.fail('Unhealthy instance must not open a browser')}),/unhealthy/);
   }finally{await new Promise(resolve=>controller.close(resolve));}
 });
-test('Pilot mentor root is gated personal login while regular mentor root and launchers remain legacy',async()=>{
+test('Pilot mentor root is gated personal login while regular mentor root is gone and launchers avoid the old demo',async()=>{
   const prior={...process.env},env=pilotEnvironment({});Object.assign(process.env,env);
   const options={mentorOrigin:'http://127.0.0.1:4276',adminOrigin:'http://127.0.0.1:4277'};
   const pilot=await listen(wrapPilotServer(createPrototypeServer({mentorMode:true}),{...options,mentor:true}),0),regular=await listen(createPrototypeServer({mentorMode:true}),0);
   try{
     const read=async(server,route='/')=>{const r=await fetch('http://127.0.0.1:'+server.address().port+route);return {status:r.status,body:await r.text()};};
     assert.match((await read(pilot)).body,/id="account-login"/);assert.match((await read(pilot)).body,/PILOT LOKAL/);
-    assert.match((await read(regular)).body,/id="pairing-root"/);assert.doesNotMatch((await read(regular)).body,/pilot-nav/);
+    assert.equal((await read(regular)).status,404);
     assert.match((await read(pilot,'/pilot.html')).body,/momor1n/);assert.equal((await read(regular,'/pilot.html')).status,404);
     delete process.env.ABC_MSA_A2_4B;assert.doesNotMatch((await read(pilot)).body,/Lupa kata sandi/);assert.equal((await read(pilot,'/account-recovery.html')).status,404);process.env.ABC_MSA_A2_4B='1';
     delete process.env.ABC_MSA_A2_3;assert.equal((await read(pilot)).status,404);

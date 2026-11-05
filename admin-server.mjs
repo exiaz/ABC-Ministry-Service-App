@@ -17,7 +17,7 @@ assets.set('/admin-activation.js','admin-activation.js');
 assets.set('/admin-accounts.js','admin-accounts.js');
 assets.set('/admin-calendar.js','admin-calendar.js');
 assets.set('/admin-backup.js','admin-backup.js');
-assets.set('/a1.html','a1.html');
+assets.set('/msa-users.html','msa-users.html');
 assets.set('/msa-users.js','msa-users.js');
 assets.set('/msa-brand.js','msa-brand.js');
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])assets.set('/'+file,file);
@@ -78,7 +78,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
         adminAuthentication.a1.registration.enabled();
       }
       if(url.pathname.startsWith('/api/a1/')||url.pathname.startsWith('/api/a2-2/')||url.pathname.startsWith('/api/a2-4/')||url.pathname.startsWith('/api/a2-4b/')||url.pathname.startsWith('/api/a2-4c/')||url.pathname.startsWith('/api/stage8/')||url.pathname.startsWith('/api/stage9a/')||url.pathname.startsWith('/api/stage9b1/')||url.pathname.startsWith('/api/stage9b2/')||url.pathname.startsWith('/api/visual/')){api.emit('request',req,res);return;}
-      if(['/a1.html','/msa-users.js'].includes(url.pathname)){
+      if(['/msa-users.html','/msa-users.js'].includes(url.pathname)){
         if(!adminAuthentication?.a1||url.search||!['GET','HEAD'].includes(req.method)){send(404,'Tidak ditemukan.');return;}
       }
       if(apiPaths.has(url.pathname)||/^\/api\/admin\/backup-assignments\/[a-f0-9]{64}\/close$/.test(url.pathname)||/^\/api\/admin\/accounts(?:\/[A-Za-z0-9_-]{1,128})?$/.test(url.pathname)||/^\/api\/admin\/devices\/[A-Za-z0-9_-]{1,128}(?:\/revoke)?$/.test(url.pathname)||/^\/api\/admin\/pairing-codes\/[a-f0-9]{64}\/revoke$/.test(url.pathname)){api.emit('request',req,res);return;}
@@ -94,7 +94,7 @@ export function createAdminServer({adminAuthentication,pairing,portal=false}){
       if(portal&&file.endsWith('.html')&&file!=='msa-portal.html')content=content.toString().replace('</main>','<p><a class="btn" href="/">Beranda MSA</a></p></main>');
       if(file==='account-recovery.html')content=content.toString('utf8').replace('__RECOVERY_API__','');
       if(usernamePilot)content=content.toString('utf8').replace('data-admin-mode="authenticated-local"','data-admin-mode="authenticated-local" data-username-pilot="true"');
-      if(adminAuthentication?.a1?.recovery&&['admin.html','identity-review.html','a1.html'].includes(file))content=content.toString('utf8').replace('</main>','<p><a class="btn" href="/account-recovery.html">Lupa kata sandi? / Tinjau pemulihan</a></p></main>');
+      if(adminAuthentication?.a1?.recovery&&['admin.html','identity-review.html','msa-users.html'].includes(file))content=content.toString('utf8').replace('</main>','<p><a class="btn" href="/account-recovery.html">Lupa kata sandi? / Tinjau pemulihan</a></p></main>');
       const type=file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.woff2')?'font/woff2':file.endsWith('.png')?'image/png':file.endsWith('.jpg')?'image/jpeg':file.endsWith('.json')?'application/json; charset=utf-8':'image/svg+xml';
       res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-ABC-Mode':'authenticated-admin-emulator','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; "+(file==='visual-studio.html'?"img-src 'self' blob:; ":'')+"script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"});
       res.end(req.method==='HEAD'?undefined:content);

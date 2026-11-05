@@ -38,7 +38,7 @@ Pada mode terpadu, gunakan origin dari launcher, secara default `http://127.0.0.
 |---|---|
 | `/msa-events.html` | Beranda pelayanan; `#kalender` untuk kalender dan `#baru` untuk buat sesuai izin |
 | `/msa-core.html` | Organisasi/program/keanggotaan yang berizin |
-| `/a1.html` | Daftar pengguna bagi pengelola akun berwenang |
+| `/msa-users.html` | Daftar pengguna bagi pengelola akun berwenang |
 | `/identity-review.html` | Antrean tinjauan identitas sesuai kewenangan/delegasi |
 | `/account-recovery.html` | Antrean reviewer berwenang; permintaan recovery publik tetap terpisah |
 | `/migration-readiness.html` | Laporan kesiapan baca saja khusus Superadmin |
@@ -102,7 +102,7 @@ Pada halaman Mentor, periksa nama dan penugasan utama sebelum memasukkan kode. J
 | Pendaftaran relawan | `http://127.0.0.1:4277/register.html` |
 | Tinjauan identitas | `http://127.0.0.1:4277/identity-review.html` |
 | Admin / penerbitan kode aktivasi | `http://127.0.0.1:4277/username.html` |
-| Pengelolaan akun uji / penangguhan | `http://127.0.0.1:4277/a1.html` (sesi portal) |
+| Pengelolaan akun uji / penangguhan | `http://127.0.0.1:4277/msa-users.html` (sesi portal) |
 
 **Isolasi:** pilot membuat Auth/Firestore Emulator miliknya sendiri pada port **9299/8280**, Hub **4480**, logging **4580**, websocket **9250**, API **4275**, Admin **4277**, Mentor **4276**. Semua listener hanya `127.0.0.1`. Namespace baru **`test-auth-pilot-<UUID>`** dibuat setiap startup; A1, username pilot, A2.2, A2.3, A2.4A, A2.4B dan A2.4C hanya diaktifkan di proses pilot. Konfigurasi cloud/produksi ditolak, dan setiap konflik port membatalkan startup tanpa mengambil alih proses lain. IPC Start/Stop terpisah dari demo reguler; klik Start kedua membuka kembali portal pada instance yang aktif. Stop hanya menutup server dan emulator yang dimiliki pilot.
 
@@ -189,7 +189,7 @@ Gunakan **Start MSA.cmd** yang sama. Fitur baru hanya aktif dalam pilot fiktif/e
 
 - **Mentor:** setelah login, pilih **Perangkat saya**. Daftar menampilkan perangkat yang sudah tertaut dan statusnya. Untuk mencabut satu perangkat, pilih **Cabut akses perangkat**, isi alasan dan konfirmasikan. Batal tidak mengubah akses. Pilih **Kembali** untuk kembali ke absensi. Histori absensi tetap tersimpan.
 - **Superadmin/PIC:** buka **Tinjau identitas**, masuk, pilih akun, lalu **Lihat perangkat akun** pada detailnya. Superadmin dapat meninjau akun; PIC hanya untuk akun yang didelegasikan, cakupan yang sama dan izin baca/cabut yang masih sah. Daftar perangkat lama memberi label **Belum tertaut · perlu rekonsiliasi** untuk perangkat yang belum diketahui pemilik akunnya; jangan menganggap suspension akun sudah mencakup perangkat tersebut. Perangkat tertaut dicabut melalui detail akun agar alasan dan revisi dicatat.
-- **Suspend/reactivate:** Superadmin memakai halaman pengelolaan akun A1 (`http://127.0.0.1:4277/a1.html`), memilih akun → jenis perubahan **Status akun** → **Ditangguhkan/Aktif**, mengisi alasan dan menyetujui ringkasan. Sesi lama tidak berlaku lagi. PIC tidak memperoleh hak baru untuk mengubah status akun.
+- **Suspend/reactivate:** Superadmin memakai halaman pengelolaan akun A1 (`http://127.0.0.1:4277/msa-users.html`), memilih akun → jenis perubahan **Status akun** → **Ditangguhkan/Aktif**, mengisi alasan dan menyetujui ringkasan. Sesi lama tidak berlaku lagi. PIC tidak memperoleh hak baru untuk mengubah status akun.
 - **Memakai perangkat lagi:** sesudah akun aktif dan penugasan diperiksa, login baru, minta kode baru kepada PIC, lakukan aktivasi Stage 4, lalu konfirmasikan **Gunakan perangkat ini**. Izin/deviceId lama tidak dipulihkan atau dipindahkan, dan backup lama tidak disalin. Jika revisi sudah berubah, muat ulang data lalu tinjau kembali sebelum mengirim pengajuan baru.
 
 Uji terarah: `npm.cmd run test:msa-a2-4a`. Regresi penuh: `npm.cmd run test:stage6`. Alur Auth Pilot: `node --test tests/auth-pilot-browser.mjs`. Semuanya hanya memakai data fiktif dan emulator terisolasi; hasil aktual serta dependensi A2.4B ada di PROJECT_STATUS.md dan MSA_ACCOUNT_ARCHITECTURE.md.
@@ -228,7 +228,7 @@ Dalam portal terpadu, Superadmin yang berwenang dapat membuka **Pengguna & izin 
 
 Login Admin/PIC dan aktivasi Mentor di bawah tetap berlaku. A1 mati secara default; tidak ada registrasi umum, migrasi akun atau perubahan password/perangkat lama. Pengujian terpisah tersedia melalui `npm.cmd run test:msa-a1`: runner membuat Auth/Firestore Emulator, namespace dan akun fiktif sementara, memeriksa broker/role serta membuka Chrome headless untuk verifikasi, kemudian menutup emulator tes. Hasil lengkap regresi tetap melalui `npm.cmd run test:stage6`.
 
-Untuk pengembangan terisolasi, flag server `ABC_MSA_A1=1` membuka `/a1.html` pada server Admin emulator yang telah dikonfigurasi. Superadmin lama juga mendapat tautan **Pengelolaan pengguna MSA · Uji A1** dari Akun PIC; halaman meminta autentikasi sendiri, tidak menyalin token melalui URL/storage. Pilihan login username hanya menerima akun uji A1 yang telah direview melalui fixture trusted. Tidak ada form untuk mendaftarkan, memverifikasi atau menautkan orang nyata. Gunakan namespace/data fiktif khusus, bukan snapshot operasional. Menonaktifkan flag dan restart menutup halaman/endpoint A1 serta mengakhiri sesi A1. Kontrak, keterbatasan provisioning, role/scope, suspension dan migrasi ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal); hasil aktual di [PROJECT_STATUS.md](PROJECT_STATUS.md).
+Untuk pengembangan terisolasi, flag server `ABC_MSA_A1=1` membuka `/msa-users.html` pada server Admin emulator yang telah dikonfigurasi. Superadmin lama juga mendapat tautan **Pengelolaan pengguna MSA · Uji A1** dari Akun PIC; halaman meminta autentikasi sendiri, tidak menyalin token melalui URL/storage. Pilihan login username hanya menerima akun uji A1 yang telah direview melalui fixture trusted. Tidak ada form untuk mendaftarkan, memverifikasi atau menautkan orang nyata. Gunakan namespace/data fiktif khusus, bukan snapshot operasional. Menonaktifkan flag dan restart menutup halaman/endpoint A1 serta mengakhiri sesi A1. Kontrak, keterbatasan provisioning, role/scope, suspension dan migrasi ada di [MSA_ACCOUNT_ARCHITECTURE.md](MSA_ACCOUNT_ARCHITECTURE.md#auth-a1--kontrak-implementasi-lokal); hasil aktual di [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 ## Kompatibilitas demo legacy — operator dan regresi
 
@@ -748,7 +748,7 @@ Mentor tetap dikelola melalui **Admin → Kelompok & mentor → Ubah penugasan**
 
 Lihat [MASTER_BRIEF.md](MASTER_BRIEF.md) untuk aturan dan batasan; [QA.md](QA.md) untuk hasil pengujian. Jalankan `node --test tests/*.test.mjs` (atau `npm test` bila npm tersedia) untuk seluruh pemeriksaan konfigurasi, pelestarian data, dan struktur ekspor.
 
-Pemeriksaan kode: `npm run check` atau `node tests/check.mjs`. Aplikasi buildless JavaScript, tanpa compiler TypeScript. QA browser opsional: `node tests/browser.mjs`, memerlukan Playwright yang sudah tersedia serta Chrome (dapat diatur melalui CHROME_PATH). Skrip memakai profil browser terisolasi dan server sementara port 4174, tanpa mengubah data browser pengguna.
+Pemeriksaan kode: `npm run check` atau `node tests/check.mjs`. Aplikasi buildless JavaScript, tanpa compiler TypeScript. Tes browser PWA lama dihapus bersama PWA-nya; tes browser MSA ada di `tests/msa-*-browser.mjs` dan dijalankan lewat `node tests/stage3.mjs`.
 
 Jika port 4173 sedang dipakai server versi lama, mulai ulang server tersebut untuk menyajikan modul baru atau pilih port lain melalui variabel lingkungan PORT. Data localStorage berbeda antarport/origin, sehingga gunakan origin lama untuk melanjutkan data lama. Tidak perlu mengatur ulang demo untuk migrasi.
 

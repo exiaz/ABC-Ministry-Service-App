@@ -9,8 +9,8 @@ import {visualPublicRoute} from './backend/msa-visual-public.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||4173);
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.md':'text/plain; charset=utf-8','.woff2':'font/woff2','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
-const allowed=new Set(['index.html','app.js','data.js','student-data.js','birthdays.js','birthday-ui.js','xlsx-reader.js','student-import.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','reports.js','mentor-config.js','assignments.js','assignment-ui.js','xlsx.js','styles.css','sw.js','icon.svg','manifest.webmanifest','assets/abc-movement-logo.png']);
-// Legacy fictional prototype only. The protected roster API runs separately.
+// Hanya modul yang diimpor halaman terlayani (login Mentor, pratinjau absen); PWA lama sudah dihapus.
+const allowed=new Set(['data.js','student-data.js','dates.js','group-config.js','service-config.js','scheduling.js','service-ui.js','mentor-config.js','assignments.js','styles.css','icon.svg','assets/abc-movement-logo.png']);
 allowed.add('msa-brand.js');
 allowed.add('msa-session.js');
 // Pratinjau mandiri dengan data fiktif; tidak terhubung ke API absensi.
@@ -20,9 +20,9 @@ for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-admin.css
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
 export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
-  const assets=new Set([...allowed,'pairing-client.js','pairing-ui.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
+  const assets=new Set([...allowed,'pairing-client.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
   return http.createServer(async(req,res)=>{try{
-    const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'index.html';
+    const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'';
     if(await visualPublicRoute(req,res,url,mentorMode?visual:undefined))return;
     const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
     const personal=recovery||['mentor-account.html','mentor-account.js','mentor-session-schedule.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
@@ -32,8 +32,7 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
       if(!['GET','HEAD'].includes(req.method)||url.search){res.writeHead(404);res.end('Tidak ditemukan');return;}
     }
     if(!assets.has(name)&&!personal){res.writeHead(404);res.end('Tidak ditemukan');return;}
-    let body;try{body=await readFile(path.join(root,mentorMode&&name==='index.html'?'mentor.html':name));}catch(e){if(e.code==='ENOENT'){res.writeHead(404);res.end('Tidak ditemukan');return;}throw e;}
-    if(mentorMode&&name==='index.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
+    let body;try{body=await readFile(path.join(root,name));}catch(e){if(e.code==='ENOENT'){res.writeHead(404);res.end('Tidak ditemukan');return;}throw e;}
     if(personal&&name==='mentor-account.html')body=body.toString('utf8').replace('__API_ORIGIN__',apiOrigin);
     if(personal&&name==='mentor-account.html'&&process.env.ABC_MSA_SESSION_1A==='1')body=body.toString('utf8').replace('<body class="mentor-account">','<body class="mentor-account" data-mentor-session="1">').replace('id="account-login" class="panel"','id="account-login" class="panel" hidden').replace('id="account-session-check" class="panel" hidden','id="account-session-check" class="panel"').replace('<!--MENTOR_SESSION_OPTION-->','<label id="account-remember-option" class="account-remember"><input id="account-remember" type="checkbox" aria-describedby="account-remember-help"> Tetap masuk di perangkat ini</label><p id="account-remember-help" class="muted">Jangan pilih di perangkat bersama; sesi sementara berlaku maksimal 30 menit.</p>');
     if(name==='account-recovery.html')body=body.toString('utf8').replace('content="__RECOVERY_API__"','content="'+apiOrigin+'"');

@@ -35,7 +35,7 @@ export function createPortalSessions(authentication,{now=Date.now}={}){
     const probe=async(fn,module)=>{try{const result=await fn();if(result!==false)modules.push(module);}catch(e){if(![401,403].includes(e.status))throw e;}};
     if(a1.events)await probe(async()=>{const r=await a1.events.catalog(a);return !!r.organizations.length;},{href:'/msa-events.html',label:'Beranda pelayanan & kalender'});
     if(a1.core)await probe(async()=>{const r=await a1.core.catalog(a);return r.platform||!!r.organizations.length;},{href:'/msa-core.html',label:'Organisasi, program & keanggotaan'});
-    await probe(()=>a1.accounts.list(a,{}),{href:'/a1.html',label:'Pengguna & izin akun'});
+    await probe(()=>a1.accounts.list(a,{}),{href:'/msa-users.html',label:'Pengguna & izin akun'});
     if(a1.registration)await probe(async()=>{const r=await a1.registration.queue(a);return r.superadmin||!!r.accounts.length;},{href:'/identity-review.html',label:'Tinjau identitas & perangkat akun'});
     if(a1.recovery)await probe(async()=>{const r=await a1.recovery.queue(a);return r.superadmin||!!r.requests.length;},{href:'/account-recovery.html',label:'Tinjau pemulihan akun'});
     if(a1.migration)await probe(()=>a1.migration.inspect(a),{href:'/migration-readiness.html',label:'Kesiapan migrasi (baca saja)'});

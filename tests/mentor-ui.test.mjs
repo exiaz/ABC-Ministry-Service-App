@@ -22,9 +22,8 @@ test('Mentor CORS is explicit, loopback-only, scoped to pairing/roster/attendanc
     for(const [method,Origin,header] of [['DELETE',origin,'content-type'],[methods[0],'http://127.0.0.1:4173','content-type'],[methods[0],origin,'x-admin']]){const response=await fetch(base+route,{method:'OPTIONS',headers:{Origin,'Access-Control-Request-Method':method,'Access-Control-Request-Headers':header}});assert.equal(response.status,403);assert.equal(response.headers.get('access-control-allow-origin'),null);}
   }
 });
-test('Paired mentor shell and legacy demo remain separate; neither frontend serves the API or backend',async t=>{
+test('Root PWA lama sudah dihapus; mentor dan demo tidak menyajikan API atau backend',async t=>{
   const paired=await start(t,createPrototypeServer({mentorMode:true})),legacy=await start(t,createPrototypeServer());
-  const page=await fetch(paired);assert.equal(page.headers.get('x-abc-mode'),'paired-local-fictional-roster');assert.match(await page.text(),/data-mentor-mode="paired-local"/);
-  assert.doesNotMatch(await (await fetch(legacy)).text(),/data-mentor-mode="paired-local"/);
+  for(const base of [paired,legacy])assert.equal((await fetch(base)).status,404);
   for(const base of [paired,legacy])for(const route of ['/api/admin/pairing-codes','/api/pairing/redeem','/backend/admin-auth.mjs','/tests/emulator/fixture.mjs'])assert.equal((await fetch(base+route)).status,404);
 });

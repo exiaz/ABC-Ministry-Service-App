@@ -31,7 +31,7 @@ Laporkan secara ringkas dalam bahasa Indonesia (isi lengkapnya ditulis ke berkas
 
 - Frontend: HTML, CSS, dan ES modules vanilla; tanpa framework, bundler, CDN, atau build step. Tanpa dependensi npm baru kecuali disetujui pengguna.
 - Server lokal: Node.js (`server.mjs`, `mentor-server.mjs`, `admin-server.mjs`, `local-*.mjs`) dengan `backend/`, Firebase Admin, `firestore.rules`, dan emulator lokal.
-- Halaman aktif memakai `msa-*.html/js` serta `msa-shell.css`/`msa-visual.css`; halaman legacy (`index.html`, `admin.html`, `mentor.html`, `a1.html`, `styles.css`) di luar lingkup kecuali disebut eksplisit.
+- Halaman aktif memakai `msa-*.html/js` serta `msa-shell.css`/`msa-visual.css`; halaman legacy (`admin.html`, `styles.css`; PWA lama sudah dihapus) di luar lingkup kecuali disebut eksplisit.
 - Jangan berasumsi stack di luar ini. Baca kode sebelum menyarankan pola baru.
 
 ## Prinsip desain dan UX

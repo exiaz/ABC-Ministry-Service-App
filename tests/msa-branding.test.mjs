@@ -6,12 +6,9 @@ import {usernameFields} from '../username-login.js';
 import {createAdminClient} from '../admin-client.js';
 
 test('MSA identity preserves app installation ID, program labels and original logo reference',()=>{
-  const manifest=JSON.parse(readFileSync('manifest.webmanifest','utf8'));
-  assert.equal(manifest.id,'./');assert.equal(manifest.start_url,'./');assert.equal(manifest.scope,'./');assert.equal(manifest.short_name,'ABC MSA');assert.match(manifest.name,/Ministry Service App/);
   assert.match(msaBrand(),/assets\/abc-movement-logo.png/);assert.match(msaBrand(),/MINISTRY<br>SERVICE APP/);
-  for(const file of ['admin.html','mentor.html','index.html','a1.html'])assert.match(readFileSync(file,'utf8'),/<title>ABC \| Ministry Service App/);
-  for(const programFile of ['reports.js','app.js'])assert.match(readFileSync(programFile,'utf8'),/GOES TO SCHOOL|Goes to School/);
-  assert.match(readFileSync('sw.js','utf8'),/msa-brand.js/);
+  for(const file of ['admin.html','msa-users.html'])assert.match(readFileSync(file,'utf8'),/<title>ABC \| Ministry Service App/);
+  for(const programFile of ['reports.js'])assert.match(readFileSync(programFile,'utf8'),/GOES TO SCHOOL|Goes to School/);
 });
 test('Reusable username fields and Admin pilot use username broker, opaque admission and server policy',async()=>{
   assert.match(usernameFields(),/autocomplete="username"/);assert.doesNotMatch(usernameFields(),/type="email"/);assert.throws(()=>usernameFields({nameId:'bad"id'}));

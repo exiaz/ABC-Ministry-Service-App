@@ -44,7 +44,7 @@ export async function resumeMsaSession(ready,{redirect=true}={}){
 export const msaRoleLabel=role=>({superadmin:'Superadmin',admin:'Admin',pic:'Admin',volunteer:'Mentor / Volunteer'}[role]??'Akun pelayanan');
 // Kerangka bersama halaman portal: sidebar terang (desktop), navigasi bawah + FAB (ponsel), menu akun, banner pilot.
 const spriteHref='/assets/icons/ui-sprite.svg#ui-i-',createKey='msa-can-create',bannerKey='msa-pilot-banner-closed';
-const navIcons={'/':'house','/msa-events.html':'clipboard-check','/msa-events.html#kalender':'calendar-days','/msa-core.html':'school','/a1.html':'users','/identity-review.html':'user','/account-recovery.html':'history','/migration-readiness.html':'list-checks','/visual-studio.html':'file-pen','/username.html':'layout-dashboard'};
+const navIcons={'/':'house','/msa-events.html':'clipboard-check','/msa-events.html#kalender':'calendar-days','/msa-core.html':'school','/msa-users.html':'users','/identity-review.html':'user','/account-recovery.html':'history','/migration-readiness.html':'list-checks','/visual-studio.html':'file-pen','/username.html':'layout-dashboard'};
 let navigationMedia,navigationMediaChange,shellCleanup,shellToken=0,createAllowed=false;
 const stored=(key,value)=>{try{if(value===undefined)return sessionStorage.getItem(key)==='1';value?sessionStorage.setItem(key,'1'):sessionStorage.removeItem(key);}catch{/* Hanya petunjuk tampilan; server tetap memeriksa izin. */}return false;};
 function icon(name,small){
@@ -130,7 +130,7 @@ export async function mountMsaShell(profile,options={}){
   const menu=document.createElement('details');menu.id='modul';menu.className='msa-nav-menu';
   const summary=document.createElement('summary'),summaryIcon=document.createElement('span'),summaryText=document.createElement('span');summary.className='ui-nav__item';summaryIcon.className='ui-nav__icon msa-nav-icon';summaryIcon.setAttribute('aria-hidden','true');summaryIcon.append(icon('layout-dashboard'));summaryText.textContent='Modul';summary.append(summaryIcon,summaryText);menu.append(summary);
   const panel=document.createElement('div');panel.className='msa-nav-panel';menu.append(panel);
-  const groups=[['Ruang kerja',['/msa-core.html','/username.html']],['Pengelolaan',['/a1.html','/identity-review.html','/account-recovery.html','/migration-readiness.html','/visual-studio.html']]];
+  const groups=[['Ruang kerja',['/msa-core.html','/username.html']],['Pengelolaan',['/msa-users.html','/identity-review.html','/account-recovery.html','/migration-readiness.html','/visual-studio.html']]];
   const remaining=profile.modules.filter(m=>m.href!=='/msa-events.html');menu.hidden=remaining.length===0;
   for(const [title,paths] of groups){const items=remaining.filter(m=>paths.includes(m.href));if(!items.length)continue;const group=document.createElement('div'),heading=document.createElement('p');group.className='msa-nav-group';heading.textContent=title;group.append(heading);items.forEach(item=>add(group,item));panel.append(group);}
   const other=remaining.filter(m=>!groups.some(([,paths])=>paths.includes(m.href)));if(other.length){const group=document.createElement('div');group.className='msa-nav-group';other.forEach(item=>add(group,item));panel.append(group);}

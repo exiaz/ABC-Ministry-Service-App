@@ -21,7 +21,7 @@ Jangan membaca `README.md` utuh, log `.emulator-data/`, atau `node_modules/`. Pa
 3. **Teks yang dipakai assertion tes** boleh diubah hanya bila tes yang sama diperbarui di bagian kerja yang sama dan dicatat (lama → baru).
 4. **Perubahan server statis** (`server.mjs` atau daftar file yang diizinkan) hanya sebatas mengizinkan berkas CSS/font/ikon baru. Tidak mengubah header keamanan, CORS, atau rute API.
 5. **Kejujuran data:** tidak menampilkan angka, grafik, atau fitur yang tidak didukung API. Komponen grafik C10 hanya dibuat di galeri U2 sampai ada endpoint agregat yang disetujui. Menu "Riwayat" Mentor hanya dipasang bila rutenya sudah ada; jika belum, hilangkan dan catat.
-6. **Halaman legacy** (`index.html`, `admin.html`, `mentor.html`, `a1.html` dengan `styles.css`) di luar lingkup kecuali disebut eksplisit.
+6. **Halaman legacy** (`admin.html` dengan `styles.css`; sedang dimigrasikan, lihat PLAN-migrasi-admin.md) di luar lingkup kecuali disebut eksplisit.
 7. Tidak menambah dependensi npm, framework, CDN, atau build step. Tetap vanilla HTML/CSS/ES modules.
 8. Tidak commit, push, atau deploy.
 

@@ -11,7 +11,7 @@ test('A1 Chrome real emulator: scoped promotion/revoke confirmations, search, re
   try{
     const page=await browser.newPage({viewport:{width:390,height:844},locale:'id-ID'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
     const login=async(name,password,mode='legacy')=>{await page.locator('#msa-mode').selectOption(mode);await page.locator('#msa-name').fill(name);await page.locator('#msa-password').fill(password);await page.locator('#msa-login-form button').click();};
-    await page.goto(f.base+'/a1.html');assert.equal(await page.locator('#msa-management').isVisible(),false);
+    await page.goto(f.base+'/msa-users.html');assert.equal(await page.locator('#msa-management').isVisible(),false);
     const denied=await page.evaluate(async()=>{localStorage.setItem('role','superadmin');return (await fetch('/api/a1/accounts')).status;});assert.equal(denied,401);
     await login(f.email,f.password);await page.waitForSelector('[data-user]');assert.equal(await page.locator('#msa-password').inputValue(),'');
     await page.locator('[data-user]').click();assert.equal(await page.locator('#msa-detail').evaluate(n=>n===document.activeElement),true);await page.locator('#msa-org').selectOption('org-a');await page.locator('#msa-program').selectOption('program-org-a');await page.locator('#msa-reason').fill('Penugasan PIC fiktif melalui antarmuka');

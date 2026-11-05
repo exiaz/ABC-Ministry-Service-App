@@ -115,14 +115,10 @@ test('Unconfigured startup denies all access; internal errors do not leak data o
   assert.equal(invalid.status,500);assert.deepEqual(await invalid.json(),{error:'Roster tidak dapat dibaca.'});
 });
 
-test('Legacy frontend remains fictional and insecure, and cannot serve backend modules or API fixtures',async t=>{
+test('PWA ABC Attendance lama sudah dihapus dan server prototipe tidak menyajikan modul backend atau fixture API',async t=>{
   const base=await start(t,createPrototypeServer());
-  const home=await fetch(base+'/');assert.equal(home.status,200);assert.equal(home.headers.get('x-abc-mode'),'fictional-prototype');
   const data=await fetch(base+'/data.js');assert.equal(data.status,200);assert.match(await data.text(),/Alya Putri/);
-  const app=await (await fetch(base+'/app.js')).text();
-  assert.match(app,/localStorage\.getItem/);assert.match(app,/ABC2026/);assert.match(app,/studentPrivateProfiles/);
-  assert.equal((await fetch(base+'/sw.js')).status,200);
-  for(const target of [route(scope),'/backend/access-control.mjs','/backend/roster.mjs','/tests/fixtures/roster.mjs','/.env','/.git/config']){
+  for(const target of ['/','/index.html','/app.js','/sw.js','/manifest.webmanifest','/mentor.html',route(scope),'/backend/access-control.mjs','/backend/roster.mjs','/tests/fixtures/roster.mjs','/.env','/.git/config']){
     assert.equal((await fetch(base+target)).status,404,target);
   }
 });

@@ -99,7 +99,7 @@ test('A1 last Superadmin, self mutation, concurrent removal, rate limit persiste
   const disabled=await createLocalAdminAuthentication(),server=createAdminServer({adminAuthentication:disabled});server.listen(0,'127.0.0.1');await once(server,'listening');
   try{
     assert.equal(disabled.a1,undefined);const base='http://127.0.0.1:'+server.address().port;
-    for(const path of ['/a1.html','/msa-users.js','/api/a1/login'])assert.equal((await fetch(base+path)).status,404);
+    for(const path of ['/msa-users.html','/msa-users.js','/api/a1/login'])assert.equal((await fetch(base+path)).status,404);
   }finally{await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});await disabled.close();}
   assert.equal((await f.request('/api/a1/accounts')).status,500); // live flag removal fails closed
 });

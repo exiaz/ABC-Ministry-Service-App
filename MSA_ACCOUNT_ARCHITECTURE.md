@@ -328,7 +328,7 @@ Batas A2.1: belum ada public claim, approval/linking Mentor, inheritance, recove
 
 ## AUTH A1 — kontrak implementasi lokal
 
-Lingkup A1 yang diminta pengguna mengizinkan broker/registry dan pengelolaan role untuk akun uji terisolasi. Tidak mengubah login utama email/password atau akun/perangkat lama. `ABC_MSA_A1=1` hanya dikenali oleh instance autentikasi yang sudah lolos seluruh gate Auth/Firestore Emulator, project `demo-abc-attendance`, loopback dan larangan konfigurasi produksi. Tanpa flag, endpoint `/api/a1/*`, halaman `/a1.html` dan skripnya tidak tersedia. Menonaktifkan flag saat proses berjalan menolak operasi; restart diperlukan untuk mengubah ketersediaan modul.
+Lingkup A1 yang diminta pengguna mengizinkan broker/registry dan pengelolaan role untuk akun uji terisolasi. Tidak mengubah login utama email/password atau akun/perangkat lama. `ABC_MSA_A1=1` hanya dikenali oleh instance autentikasi yang sudah lolos seluruh gate Auth/Firestore Emulator, project `demo-abc-attendance`, loopback dan larangan konfigurasi produksi. Tanpa flag, endpoint `/api/a1/*`, halaman `/msa-users.html` dan skripnya tidak tersedia. Menonaktifkan flag saat proses berjalan menolak operasi; restart diperlukan untuk mengubah ketersediaan modul.
 
 ### Akun, identitas dan username — IMPLEMENTED A1
 
@@ -366,7 +366,7 @@ Mutasi hanya oleh Superadmin aktif (legacy atau A1), diperiksa ulang dalam trans
 ### HTTP, UI dan batas aktivasi
 
 - Registry/list/search (`username`/nama + filter state/role), perubahan role/status dan audit hanya untuk Superadmin. Route `/api/a1/session` hanya profil sesi sendiri; tidak mengekspos alias atau nomor penuh. HTTP same-origin loopback, allowlist field, JSON maksimal 4 KiB, timeout baca 5 detik, cache no-store dan origin/host gate. Firestore browser tetap deny-all, termasuk registry baru. Klaim browser/localStorage, raw ID token dan direct Firebase signup tidak mengotorisasi A1.
-- `/a1.html` adalah bagian pengguna terpisah yang memakai desain ABC/CSS yang ada. Superadmin lama mendapat tautan dari Akun PIC hanya ketika flag aktif; login utama tetap. Halaman uji mendukung login username akun fiktif, daftar/filter, profil terpisah dari kontrol izin, indikator role/organisasi, alasan wajib, dialog konfirmasi keyboard dan audit. Aliases tersembunyi. Tidak ada kontrol registrasi/approval/recovery palsu.
+- `/msa-users.html` adalah bagian pengguna terpisah yang memakai desain ABC/CSS yang ada. Superadmin lama mendapat tautan dari Akun PIC hanya ketika flag aktif; login utama tetap. Halaman uji mendukung login username akun fiktif, daftar/filter, profil terpisah dari kontrol izin, indikator role/organisasi, alasan wajib, dialog konfirmasi keyboard dan audit. Aliases tersembunyi. Tidak ada kontrol registrasi/approval/recovery palsu.
 - Status suspended/disabled A1 menolak semua sesi A1. Tidak menyatakan suspension global perangkat legacy sudah selesai: tidak ada akun uji yang ditautkan ke perangkat/mentor lama. Adapter legacy/device dan gate suspension atomik di jalur tersebut tetap prasyarat migrasi. Tidak memperluas scope atau role Admin lama, tidak mengganti UID/PIC/kode/proof/TTL/backup/riwayat.
 - Batas uji registry: 200 akun, 100 organisasi katalog dan 100 audit terbaru. Pagination, produksi, public registration, onboarding/linking, password recovery, cutover dan Stage 7 tidak diimplementasikan A1.
 
