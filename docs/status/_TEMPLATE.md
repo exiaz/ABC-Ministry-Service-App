@@ -26,9 +26,16 @@ Satu sampai tiga kalimat: apa yang berubah dan mengapa.
 ## Risiko dan pertanyaan terbuka
 - ...
 
+## Serah terima
+- Penulis tugas dan status giliran: <aktif / diserahkan kepada agen pengguna tunjuk>.
+- Baseline commit: <hash>; lingkup/path tugas: <daftar>.
+- Perubahan lokal milik tugas lain yang dipertahankan: <daftar> / tidak ada.
+- Pekerjaan tersisa, kebutuhan lintas area, atau konflik yang belum terselesaikan: <daftar> / tidak ada.
+- Agen penerima membaca ulang status, diff dan isi berkas terbaru sesuai `AGENTS.md` sebelum mulai menulis.
+
 ## Untuk peninjau
 - Fokus yang diminta: <mis. otorisasi, integritas absensi, regresi UI 360 px>
-- Diff: `git diff development...<branch>`
+- Diff: `git diff <baseline-commit> -- <path-tugas>`; sebutkan berkas untracked yang juga perlu dibaca. Jangan berpindah branch untuk review.
 
 ## Jawaban atas tinjauan
 Diisi penulis setelah membaca `docs/reviews/<berkas>.md` (dari `docs/reviews/<berkas>.md` di workspace bersama).

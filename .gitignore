@@ -146,6 +146,25 @@ firebase-debug.log*
 # Worktree buatan Claude Code
 .claude/worktrees/
 
-# Local agent permissions and generated design hook cache
+# Local agent permissions (never shared)
 .claude/settings.local.json
-.impeccable/hook.cache.json
+
+# Shared hook state is local, never a source or credential store.
+/.agents/.runtime/
+
+# Versioned design sources are listed explicitly; other tool output stays local.
+# Keep this list aligned with AGENTS.md. Do not ignore these folders wholesale.
+/.impeccable/*
+!/.impeccable/config.json
+/.taste/*
+!/.taste/assets.json
+!/.taste/brand.json
+!/.taste/brief.json
+!/.taste/page.json
+!/.taste/review.json
+!/.taste/app-kit/
+/.taste/app-kit/*
+!/.taste/app-kit/LICENSE
+!/.taste/app-kit/app-screens.md
+!/.taste/app-kit/app.css
+!/.taste/app-kit/charts.js

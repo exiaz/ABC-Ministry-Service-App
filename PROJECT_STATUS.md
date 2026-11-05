@@ -1,5 +1,13 @@
 # ABC Attendance — status revisi
 
+## 5 November 2026 — Lock otomatis dan koordinasi sesi agent
+
+**IMPLEMENTED / TESTED pada hook lokal dan fixture Windows.** Lock workspace per sesi, penolakan stale edit, lifecycle pelepasan setelah tool selesai, dan pemulihan operator bertoken ditambahkan. Skill koordinasi dibagi oleh Claude/Codex; state runtime diabaikan Git. Unit 249/249, native tambahan 3/3 dan pemeriksaan sintaks/import 249 berkas lulus. Aktivasi/trust pada dua sesi AI interaktif baru belum diuji; tinjau `/hooks` sebelum pemakaian. Batas dan bukti: [laporan workspace lock](docs/status/2026-11-05-codex-workspace-lock.md). Produksi aplikasi: NO-GO.
+
+## 5 November 2026 — Kebijakan ignore dan aturan agent bersama
+
+**IMPLEMENTED / TESTED untuk kebijakan Git dan regresi hook.** Sumber desain/lisensi tetap tracked; hasil alat lokal diabaikan melalui daftar pengecualian eksplisit. `AGENTS.md`, workflow Claude dan template serah terima diselaraskan untuk satu penulis aktif. Tes ignore/hook 6/6 dan pemeriksaan sintaks/import 247 berkas lulus; validator resmi skill belum berjalan karena PyYAML tidak tersedia. Bukti dan batas: [laporan kebijakan agent](docs/status/2026-11-05-codex-agent-ignore-policy.md). Tidak ada file lock otomatis; produksi tetap NO-GO.
+
 ## 5 November 2026 — Konsolidasi workspace Claude dan Codex
 
 **IMPLEMENTED untuk integrasi non-destruktif; cleanup destruktif ditunda.** Workspace aktif tunggal `abc-ministry-service-app`; API XLSX pilot, absensi P1, fixture regresi dan pratinjau fiktif digabungkan tanpa mengubah branch/index atau sumber. Hook bersama di `.agents/hooks/`, `CLAUDE.md` mengimpor `AGENTS.md`. Cache v17. Verifikasi dan batas aktual: [laporan konsolidasi](docs/status/2026-11-05-codex-workspace-consolidation.md). Produksi: NO-GO.

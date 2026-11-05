@@ -2,24 +2,69 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/collab-guard.mjs\" codex",
-            "statusMessage": "Checking shared workspace"
+            "statusMessage": "Coordinating workspace lock"
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "apply_patch|Edit|Write|Bash|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "msa_hook_root=$(git rev-parse --show-toplevel) && msa_hook_output=$(node \"$msa_hook_root/.agents/hooks/collab-guard.mjs\" codex); msa_hook_exit=$?; if [ \"$msa_hook_exit\" -eq 0 ]; then printf '%s' \"$msa_hook_output\"; else printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Workspace guard could not start or failed. Stop writes and repair the hook.\"}}'; fi",
+            "statusMessage": "Coordinating workspace lock",
+            "commandWindows": "try { $msaHookRoot = git rev-parse --show-toplevel; if ($LASTEXITCODE -ne 0) { throw \"Git root unavailable\" }; $msaHookOutput = & node \"$msaHookRoot/.agents/hooks/collab-guard.mjs\" codex; if ($LASTEXITCODE -ne 0) { throw \"Guard failed\" }; [Console]::Out.Write(($msaHookOutput -join \"`n\")) } catch { [Console]::Out.Write('{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Workspace guard could not start or failed. Stop writes and repair the hook.\"}}') }"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "PostToolUse": [
+      {
         "hooks": [
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/collab-guard.mjs\" codex",
-            "statusMessage": "Checking shared workspace"
+            "statusMessage": "Coordinating workspace lock"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/collab-guard.mjs\" codex",
+            "statusMessage": "Coordinating workspace lock"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/collab-guard.mjs\" codex",
+            "statusMessage": "Coordinating workspace lock"
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/collab-guard.mjs\" codex",
+            "statusMessage": "Coordinating workspace lock"
           }
         ]
       }

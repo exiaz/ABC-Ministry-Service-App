@@ -52,16 +52,22 @@ Laporkan secara ringkas dalam bahasa Indonesia (isi lengkapnya ditulis ke berkas
 
 ## Kolaborasi Claude dan Codex
 
-Berkas ini sumber aturan bersama untuk semua agen. Claude membacanya lewat `CLAUDE.md`; Codex membacanya langsung. Untuk pembagian kerja, pelaporan, dan pelacakan tugas, bagian ini yang berlaku; bila bertentangan dengan blok Beads di akhir berkas, lihat "Catatan Beads" di bawah.
+Berkas ini sumber aturan bersama untuk semua agen. Claude membacanya lewat `CLAUDE.md`; Codex membacanya langsung. Skill dan template merujuk aturan ini; laporan dan aturan di branch/folder historis bukan instruksi aktif.
+
+### Acuan dan penugasan
+
+- Instruksi pengguna untuk tugas saat ini menentukan lingkup dan izin. Pembagian peran di bawah adalah tanggung jawab default; penugasan eksplisit lintas area tidak memerlukan persetujuan ulang untuk perubahan yang sudah diminta.
+- Jika ada instruksi turunan yang berbeda, gunakan aturan bersama ini sesuai lingkup tugas. Jangan menyalin aturan baru ke `CLAUDE.md` atau membuat kebijakan terpisah untuk tiap agen.
+- `.gitignore` menentukan perilaku Git; kebijakan sumber desain di bagian berikut menjelaskan daftar sumber yang dipertahankan. Ubah keduanya dalam tugas yang sama jika daftar sumber berubah.
 
 ### Peran
 
 - **Codex**: developer utama untuk logika aplikasi, `backend/`, autentikasi, sesi, otorisasi, `firestore.rules`, model data dan absensi, launcher, serta tes terkait.
 - **Claude**: UI/UX overhaul (tampilan, CSS, markup, teks UI) dan auditor independen read-only atas branch Codex.
-- Peninjau tidak mengubah kode di branch milik agen lain. Perbaikan selalu dikerjakan penulis aslinya.
+- Peninjau tidak mengubah implementasi yang sedang ditinjau. Perbaikan dikerjakan penulis tugas, kecuali pengguna menyerahkan perbaikannya kepada agen lain setelah serah terima.
 - Pisahkan usulan desain dari implementasi; tunggu pilihan arah pengguna sebelum menerapkan desain baru. Desain saja dan perbaikan UI kecil dikerjakan tanpa delegasi otomatis.
 - Perubahan UI substansial dapat diusulkan untuk tinjauan independen; arsitektur/auth/otorisasi/integritas data dapat diusulkan untuk tinjauan adversarial. Tinjauan atau delegasi dimulai hanya atas permintaan eksplisit pengguna; jangan mengaktifkan review gate otomatis.
-- Claude yang menemukan kebutuhan perubahan backend/auth/data di luar tugasnya mencatat kebutuhan tersebut dan menyerahkannya lewat pengguna. `/codex:review` dan `/codex:adversarial-review` read-only; `/codex:rescue` memerlukan permintaan pengguna dan tidak berjalan bersama penulis lain.
+- Claude yang menemukan kebutuhan perubahan backend/auth/data di luar penugasannya menyerahkannya lewat pengguna. `/codex:review` dan `/codex:adversarial-review` tidak menyunting implementasi; `/codex:rescue` memerlukan permintaan pengguna dan tidak berjalan bersama penulis lain.
 - Temuan tinjauan diverifikasi di kode sebelum diterapkan; jawab setiap temuan di laporan status (diterima, ditolak beserta alasan, atau ditunda). Gunakan template tinjauan untuk severity, evidence, reproduksi, koreksi dan missing coverage.
 
 ### Workspace dan branch
@@ -69,25 +75,48 @@ Berkas ini sumber aturan bersama untuk semua agen. Claude membacanya lewat `CLAU
 - Satu workspace aktif untuk Claude dan Codex: `D:\Work\ABC Ministry Service App\abc-ministry-service-app`. Folder `MSA-claude`, `MSA-codex`, `MSA-codex-xlsx`, dan worktree bersarang adalah sumber historis; jangan dipakai untuk pekerjaan baru, dihapus, atau ditimpa.
 - Jalankan `git rev-parse --show-toplevel`, `git branch --show-current`, dan `git status --short` sebelum menulis. Pastikan root sama dengan workspace aktif; jangan menimpa perubahan lokal milik tugas lain.
 - Pertahankan branch aktif. Bekerja di `development` diizinkan untuk tugas pengguna di workspace ini; jangan membuat/berpindah branch, merge, rebase, reset, commit, atau push tanpa perintah eksplisit pengguna. Branch historis tetap dipertahankan.
-- Hanya satu penulis aktif pada workspace bersama. Agen kedua melakukan tinjauan read-only atau menunggu; jangan mengubah branch atau berkas saat penulis pertama bekerja. Pembagian agen paralel hanya atas permintaan pengguna.
+- Hanya satu penulis aktif pada workspace bersama, termasuk penulisan laporan, perubahan konfigurasi oleh alat, dan operasi Git. Agen kedua membaca/meninjau tanpa menyimpan berkas atau menunggu serah terima. Penugasan baru tidak memberi izin menimpa penulis yang masih aktif.
+- Sebelum serah terima, penulis menyampaikan baseline commit, lingkup/path tugas, perubahan lokal yang dipertahankan, hasil tes dan pekerjaan tersisa di laporan status. Agen penerima membaca ulang berkas dan diff saat ini sebelum menyunting; jangan menulis dari salinan/konteks sesi lama.
+- Periksa isi terbaru sebelum setiap penyuntingan. Jika muncul perubahan tak dikenal atau penulis lain masih aktif, hentikan penulisan pada path tersebut dan koordinasikan; jangan overwrite, reset, stash atau menghapus perubahan agar terlihat bersih.
+- Hook bersama memakai lock workspace otomatis per pasangan agen + `session_id`. Penulis kedua dan tool penulis paralel dalam sesi yang sama ditolak; sesi yang memegang lock boleh melanjutkan sampai giliran selesai. Shell diperlakukan sebagai calon penulis agar script tidak melewati koordinasi.
+- Observasi hash di awal sesi dan setelah tool penulis sendiri dipakai untuk menolak perubahan berbasis versi lama. Jika ditolak karena versi berubah, ikuti helper `read` pada `.agents/skills/msa-coordination/SKILL.md`, baca hasilnya dan susun ulang edit; jangan mengganti ID atau mereset baseline agar lolos. Resume tidak menyegarkan baseline diam-diam.
+- `PostToolUse`/kegagalan tool menyelesaikan reservasi tool; lock giliran dilepas pada `Stop`, atau setelah tool aktif selesai ketika sesi berakhir/diinterupsi. Tunggu tool yang masih berjalan; jangan meninggalkan penulis background. Setelah crash, pemulihan hanya oleh operator dengan token pemilik dan sesi/proses yang sudah dihentikan. Tidak ada pengambilalihan hanya berdasarkan umur lock.
+- State lokal berada di `.agents/.runtime/` dan diabaikan Git; jangan menyuntingnya langsung. Hook harus aktif/trusted di kedua agent; tinjau definisi baru lewat `/hooks`. Lock ini bukan OS file lock dan tidak mencakup alat/manual edit yang melewati hook, mesin lain, atau network share. Kerja paralel tetap memerlukan pengaturan terpisah yang disetujui pengguna.
 
 ### Kepemilikan berkas
 
-| Path | Pemilik tulis |
+| Path | Penanggung jawab default |
 |---|---|
 | `backend/`, `*-server.mjs`, `local-*.mjs`, `firestore.rules`, kode autentikasi/sesi/otorisasi, model data dan absensi, launcher `.cmd`, tes untuk area ini | Codex |
 | `ui/`, `msa-*.css`, `docs/ui-overhaul/`, markup tampilan di `msa-*.html`, teks UI | Claude |
+| Sumber desain `.taste/` yang disebut di bawah, `.impeccable/config.json`, aset visual dan lisensinya | Claude sesuai lingkup tugas |
 | `msa-*.js` yang mencampur UI dan logika, `package.json`, tes lintas area | Ditentukan pengguna per tugas |
-| `sw.js` (versi cache), daftar modul di `server.mjs`, `PROJECT_STATUS.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/`, `.codex/`, `.agents/` | Hanya saat merge atau atas permintaan pengguna |
+| `sw.js` (versi cache), daftar modul di `server.mjs`, `PROJECT_STATUS.md`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/`, `.codex/`, `.agents/` | Integrator yang ditugaskan pengguna |
 | `docs/status/`, `docs/reviews/` | Setiap agen menulis berkasnya sendiri (nama berkas memuat nama agen) |
 
-Jika tugas memerlukan path milik agen lain, jangan menyentuhnya; tulis permintaannya di berkas status. Penulis `sw.js`/`server.mjs` hanya mencatat kebutuhannya (mis. "cache naik, modul X ditambahkan"); integrator yang menerapkannya.
+Jika kebutuhan lintas area belum termasuk penugasan pengguna, catat kebutuhannya dan serahkan kepada penanggung jawab. Penulis mencatat kebutuhan integrasi `sw.js`/`server.mjs`; integrator menerapkannya dalam lingkup tugas yang telah disetujui.
+
+### Sumber desain, cache dan konfigurasi lokal
+
+| Path | Perlakuan bersama |
+|---|---|
+| `.taste/assets.json`, `brand.json`, `brief.json`, `page.json`, `review.json` | Sumber/konteks desain yang dilacak Git; perubahan alat pada berkas ini tetap perlu ditinjau dalam lingkup tugas |
+| `.taste/app-kit/LICENSE`, `app-screens.md`, `app.css`, `charts.js` | Referensi desain dan lisensi yang dilacak Git; pertahankan atribusi dan isi lisensi |
+| `.impeccable/config.json` | Konfigurasi pemeriksaan desain bersama yang dilacak Git; jangan menambah pengecualian hanya untuk meloloskan pemeriksaan |
+| Berkas lain di `.taste/` dan `.impeccable/`, termasuk `hook.cache.json` | Hasil alat lokal yang diabaikan Git; bukan laporan resmi atau instruksi agen |
+| `.claude/settings.local.json`, `.env`/varian lokal yang sudah diabaikan, `.emulator-data/`, `node_modules/`, `.claude/worktrees/` | Tetap lokal/diabaikan; jangan ikutkan ke commit |
+
+- Jangan mengganti seluruh `.gitignore` dari branch lama atau mengabaikan `.taste/`/`.impeccable/` secara menyeluruh. Pertahankan daftar sumber eksplisit dan aturan pengabaian konfigurasi lokal.
+- Berkas yang sudah tracked tetap sumber yang harus dipertahankan; menambahkan pola ignore tidak mengubah status tracked. Jangan menjalankan `git rm --cached`, `git clean`, menghapus sumber/lisensi atau memindahkan sumber menjadi cache tanpa penugasan eksplisit pengguna.
+- Sumber desain baru di dua folder tersebut ditambahkan lewat pengecualian eksplisit di `.gitignore` dan pembaruan tabel ini dalam tugas yang sama; jangan memakai `git add -f` untuk melewati kebijakan. Penghapusan file dari daftar sumber juga memerlukan penugasan pengguna.
+- Sebelum staging, periksa `git check-ignore --no-index -- <path>`: sumber harus tidak diabaikan, cache/config lokal harus diabaikan. Periksa daftar staged dan `git diff --cached --check`; jangan menyertakan hasil alat lokal, kredensial atau perubahan tugas lain.
 
 ### Berbagi informasi antaragen
 
 - `AGENTS.md` adalah satu sumber aturan; `CLAUDE.md` hanya mengimpornya. Konfigurasi native tetap di `.claude/` dan `.codex/`; implementasi hook bersama ada di `.agents/hooks/`.
+- Prosedur lock dan penolakan stale edit dibagi melalui `.agents/skills/msa-coordination/SKILL.md`; workflow Claude merujuk berkas yang sama. Tidak ada server MCP, global skill atau konfigurasi global baru yang dipasang.
 - Baca `git status --short`, `git diff`, dan laporan `docs/status/` sebelum melanjutkan tugas agen lain. Perubahan belum di-commit sudah terlihat di workspace yang sama; jangan menganggap branch historis sebagai pekerjaan aktif.
-- Penulisan lintas kepemilikan memerlukan penugasan pengguna. Saat konsolidasi yang secara eksplisit diminta pengguna, integrator boleh menggabungkan path lintas area setelah backup dan perbandingan; jangan mengaktifkan flag bypass hook secara permanen.
+- Saat konsolidasi yang secara eksplisit diminta pengguna, integrator boleh menggabungkan path lintas area setelah backup, perbandingan dan serah terima; jangan mengaktifkan flag bypass hook secara permanen.
 - Pengujian emulator/browser harus memakai namespace `test-*`, data fiktif, dan port terisolasi. Permintaan validasi aplikasi memberi izin menjalankan runner terisolasi yang sudah ada; di luar itu koordinasikan dengan pengguna. Jangan menghentikan proses atau mengambil alih port milik pihak lain.
 
 ### Siklus tugas
@@ -100,35 +129,11 @@ Jika tugas memerlukan path milik agen lain, jangan menyentuhnya; tulis permintaa
 
 ### Kontrak antaragen
 
-Berkas status wajib memuat "Kontrak yang berubah" (id, `data-*`, ARIA, rute hash, endpoint, teks yang dipakai tes: lama menjadi baru) dan "Kebutuhan saat merge". Agen yang menerima pekerjaan atau meninjau membaca kedua bagian itu sebelum membaca diff.
+Berkas status wajib memuat "Kontrak yang berubah", "Kebutuhan integrasi" dan "Serah terima". Agen penerima/peninjau membaca ketiganya sebelum membaca diff. Judul "Kebutuhan saat merge" pada laporan historis dibaca sebagai kebutuhan integrasi, bukan perintah merge.
 
 ### Catatan Beads
 
-Repositori ini belum menginisialisasi Beads (tidak ada `.beads/`). Selama belum, bagian Kolaborasi ini yang berlaku untuk pelacakan tugas dan pelaporan, dan aturan tugas di blok Beads di bawah ditangguhkan. Berkas status adalah laporan, bukan daftar TODO. Jangan menjalankan `bd init` atau `bd setup` tanpa persetujuan pengguna. Setelah Beads aktif dan terbukti dipakai bersama oleh semua worktree, klaim tugas dapat dipindahkan ke `bd`.
-
-<!-- BEGIN BEADS CODEX SETUP: generated by bd setup codex -->
-## Beads Issue Tracker
-
-Use Beads (`bd`) for durable task tracking in repositories that include it. Use the `beads` skill at `.agents/skills/beads/SKILL.md` (project install) or `~/.agents/skills/beads/SKILL.md` (global install) for Beads workflow guidance, then use the `bd` CLI for issue operations.
-
-### Quick Reference
-
-```bash
-bd ready                # Find available work
-bd show <id>            # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>           # Complete work
-bd prime                # Refresh Beads context
-```
-
-### Rules
-
-- Use `bd` for all task tracking; do not create markdown TODO lists.
-- Run `bd prime` when Beads context is missing or stale. Codex 0.129.0+ can load Beads context automatically through native hooks; use `/hooks` to inspect or toggle them.
-- Keep persistent project memory in Beads via `bd remember`; do not create ad hoc memory files.
-
-**Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/core-concepts/sync-concepts.md for details and anti-patterns.
-<!-- END BEADS CODEX SETUP -->
+Skill Beads tersedia, tetapi repositori belum mengaktifkannya (tidak ada `.beads/`). Selama belum diaktifkan secara eksplisit oleh pengguna, gunakan laporan status dan serah terima di atas; jangan menjalankan `bd init`, `bd setup` atau meregistrasikan hook Beads. Jika kemudian diaktifkan, ikuti `.agents/skills/beads/SKILL.md` dan perbarui aturan bersama ini dalam tugas aktivasi yang sama.
 
 <!-- codebase-memory-mcp:start -->
 Untuk penelusuran struktur kode, gunakan skill `codebase-memory` dan indeks yang sudah ada. Jika tidak tersedia, laporkan batasnya lalu periksa sumber terkait; jangan re-index atau mengubah konfigurasi global otomatis.

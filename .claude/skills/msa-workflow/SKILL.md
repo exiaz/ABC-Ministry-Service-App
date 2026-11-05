@@ -5,27 +5,25 @@ description: Menentukan alur kerja Claude + Codex untuk permintaan MSA (desain s
 
 # Alur kerja MSA: Claude + Codex
 
-Baca `AGENTS.md` (aturan bersama) dan, untuk UI overhaul, `docs/ui-overhaul/BRIEF.md`. Jalankan pemeriksaan workspace bersama, branch dan perubahan lokal dari `AGENTS.md`; hanya satu penulis aktif. Klasifikasikan permintaan **sebelum** bertindak.
+Baca `AGENTS.md` di root workspace aktif sebagai satu-satunya acuan penugasan, kepemilikan, Git, sumber desain/cache dan serah terima. Jangan mengambil aturan dari worktree historis atau menyalin kebijakan sendiri ke `CLAUDE.md`. Untuk UI overhaul, baca juga `docs/ui-overhaul/BRIEF.md`.
+
+Untuk lock otomatis, penolakan versi lama dan serah terima sesi, ikuti `.agents/skills/msa-coordination/SKILL.md` di workspace yang sama. Jangan menghapus lock atau menjalankan pemulihan operator sebagai agen.
 
 ## 1. Klasifikasi
 
 1. **Desain saja**: eksplorasi, mockup, kritik, perbandingan opsi. Hasil berupa keluaran visual/usulan. Jangan ubah berkas aplikasi. Tanpa Codex.
 2. **Implementasi kecil**: satu berkas/CSS/teks/bug sederhana tanpa efek perilaku. Kerjakan dan jalankan tes relevan. Tanpa Codex.
 3. **Perubahan substansial**: banyak berkas, logika baru, atau perubahan perilaku. Implementasi, tes, lalu sarankan `/codex:review`.
-4. **Sensitif**: arsitektur, autentikasi, sesi, otorisasi, `firestore.rules`, privasi siswa, absensi/riwayat. Ini wilayah Codex: jangan diimplementasikan Claude. Catat di berkas status dan serahkan lewat pengguna; bila perubahan sudah ada, rekomendasikan `/codex:adversarial-review` (dan `/codex:review`).
-5. **Audit branch Codex**: baca diff tugas dan berkas status di workspace bersama, tulis laporan `docs/reviews/` tanpa berpindah branch. Read-only.
+4. **Sensitif**: arsitektur, autentikasi, sesi, otorisasi, `firestore.rules`, privasi siswa, absensi/riwayat. Ikuti penanggung jawab dan penugasan pengguna di `AGENTS.md`; kebutuhan di luar tugas diserahkan lewat pengguna. Bila perubahan sudah ada, rekomendasikan `/codex:adversarial-review`.
+5. **Audit implementasi Codex**: baca baseline, diff dan laporan tugas di workspace bersama; jangan menyunting implementasi. Sampaikan temuan langsung selama penulis lain aktif; simpan laporan hanya setelah giliran tulis diserahkan.
 
 Bila ragu antara dua kelas, pilih yang lebih ringan; tanya pengguna hanya jika risikonya tinggi.
 
-## 2. Langkah
+## 2. Pelaksanaan
 
-1. Nyatakan klasifikasi dalam satu kalimat.
-2. Pisahkan usulan desain dari implementasi: tunggu persetujuan arah sebelum menulis kode dari usulan.
-3. Periksa `git status` agar perubahan yang belum di-commit tidak tertimpa, dan pastikan tidak ada penulis lain pada workspace yang sama.
-4. Implementasikan minimal dan terarah; pertahankan hook (`id`, `data-*`, ARIA, rute hash).
-5. Jalankan `npm.cmd run check`, `npm.cmd test`, dan suite area yang relevan.
-6. Untuk kelas 3-4, usulkan perintah tinjauan. Tinjauan Codex read-only; jangan beri Codex akses tulis pada berkas yang sedang Claude sunting.
-7. Saat temuan Codex datang: verifikasi tiap temuan di kode, terapkan hanya yang terbukti, laporkan yang ditolak beserta alasannya.
+Nyatakan klasifikasi, lalu ikuti siklus tugas dan serah terima di `AGENTS.md`. Klasifikasi tidak memberi izin menulis saat agen lain masih aktif atau memperluas penugasan pengguna. Usulan arah desain baru memerlukan pilihan pengguna; perubahan yang sudah ditugaskan tidak perlu persetujuan ulang.
+
+Untuk sumber desain dan hasil alat, gunakan tabel sumber desain serta aturan `.gitignore` di `AGENTS.md`; jangan menganggap seluruh `.taste/` atau `.impeccable/` sebagai cache.
 
 ## 3. Pemicu Codex
 
@@ -34,4 +32,4 @@ Bila ragu antara dua kelas, pilih yang lebih ringan; tanya pengguna hanya jika r
 
 ## 4. Laporan
 
-Tulis `docs/status/<tanggal>-claude-<tugas>.md` dari template (termasuk "Kontrak yang berubah" dan "Kebutuhan saat merge"), lalu laporkan ringkas dalam bahasa Indonesia: perubahan, tes yang dijalankan beserta hasil, temuan tinjauan (diterima/ditolak), risiko tersisa, langkah berikutnya, dan usulan Summary/Description commit. Jangan commit, merge, push, atau deploy tanpa persetujuan.
+Gunakan `docs/status/_TEMPLATE.md` dan, untuk review, `docs/reviews/_TEMPLATE.md`. Ketentuan izin, pelaporan dan serah terima mengikuti `AGENTS.md`.
