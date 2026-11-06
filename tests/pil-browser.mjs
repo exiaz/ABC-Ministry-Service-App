@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createPrototypeServer} from '../server.mjs';
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.ABC_PLAYWRIGHT_MODULE||'C:/Users/HYPE AMD/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
@@ -67,5 +67,57 @@ try{
  results.digits=await page.evaluate(()=>{const s=document.createElement('span');s.style.cssText='position:absolute;display:inline-block;font-size:28px;';document.body.append(s);const out={};for(const f of ['Nunito Sans','Baloo 2']){s.style.fontFamily='"'+f+'"';out[f]={};for(const variant of ['normal','tabular-nums']){s.style.fontVariantNumeric=variant;out[f][variant]=[...'0123456789'].map(d=>{s.textContent=d;return s.getBoundingClientRect().width});}}s.remove();return out;});
  assert(Math.max(...results.digits['Baloo 2']['tabular-nums'])-Math.min(...results.digits['Baloo 2']['tabular-nums'])<.1);assert(new Set(results.digits['Baloo 2'].normal).size>1);
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.btn').first().evaluate(e=>getComputedStyle(e).transitionDuration),'0s');results.interactions.push('Reduced motion');assert.deepEqual(errors,[]);
+
+ // The production static allowlist is unchanged; expose only these gallery fixtures in this test.
+ for(const file of ['ui-gallery.html','ui/ui-gallery.css','ui/ui-gallery.js'])await page.route(base+'/'+file,async route=>route.fulfill({body:await readFile(new URL('../'+file,import.meta.url)),contentType:file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'text/javascript'}));
+ results.gallery=[];
+ for(const width of [360,390,768,1365]){
+  await page.setViewportSize({width,height:900});await page.goto(base+'/ui-gallery.html');await page.evaluate(()=>document.fonts.ready);
+  assert.equal(await page.locator('h1').count(),1);
+  const audit=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,small:[...document.querySelectorAll('button,a,input,select')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.height&&(r.width<47.9||r.height<47.9)}).map(e=>({text:e.textContent.trim(),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height}))}));
+  assert.equal(audit.overflow,false,JSON.stringify({width,audit}));assert.deepEqual(audit.small,[],JSON.stringify({width,audit}));
+  assert.equal(await page.locator('h1').innerText(),'Galeri komponen Pil');
+  assert(await page.locator('.ui-btn--primary,.ui-btn--lg').evaluateAll(nodes=>nodes.every(e=>!e.getClientRects().length||e.getBoundingClientRect().height>=60)),`${width}: primary buttons >=60`);
+  assert(await page.getByRole('button',{name:'Mulai absensi',exact:true}).evaluate(e=>e.getBoundingClientRect().height>=60),`${width}: Mulai absensi >=60`);
+  assert(await page.locator('.ui-badge--unmarked').evaluateAll(nodes=>nodes.every(e=>e.getBoundingClientRect().width<e.parentElement.getBoundingClientRect().width)),`${width}: badge fits its content`);
+  assert(await page.locator('.ui-nav-demo').evaluateAll(nodes=>nodes.every(e=>{
+   const nav=e.getBoundingClientRect(),container=e.parentElement.getBoundingClientRect();
+   return nav.left>=container.left&&nav.right<=container.right+1&&nav.top>=container.top&&nav.bottom<=container.bottom+1&&[...e.children].every(item=>{const r=item.getBoundingClientRect();return r.left>=nav.left&&r.right<=nav.right+1;});
+  })),`${width}: example navigation stays inside container`);
+  assert.deepEqual(await page.locator('.ui-stat--dark').evaluate(e=>{const c=getComputedStyle(e);return [c.backgroundColor,c.color]}),['rgb(35, 31, 32)','rgb(255, 255, 255)']);
+  for(const [token,size,line,weight] of [['hero',48,52,800],['greeting',32,36,800],['screen',28,32,800],['subtitle',24,28,700],['title',20,24,700],['row',16,20,600],['button',16,20,800],['caption',14,20,600],['label',12,16,700],['body',16,24,400]]){
+   assert.deepEqual(await page.locator('[data-type-token="'+token+'"]').evaluate(e=>{const c=getComputedStyle(e);return [parseFloat(c.fontSize),parseFloat(c.lineHeight),Number(c.fontWeight)]}),[size,line,weight],`${width}: ${token}`);
+  }
+  results.assertions+=16;
+  for(const bg of ['white','red','dark']){
+   const target=page.locator('[data-focus-sample="'+bg+'"]');await target.focus();
+   assert.deepEqual(await target.evaluate(e=>{const c=getComputedStyle(e);return [c.outlineColor,c.outlineWidth,c.outlineOffset,c.boxShadow.includes('rgb(255, 255, 255)')];}),['rgb(29, 95, 153)','3px','2px',true]);
+   await page.screenshot({path:'.emulator-data/pil-build/gallery-focus-'+bg+'-'+width+'.png'});
+  }
+  const disabled=page.locator('.ui-gallery-controls .ui-btn:is(:disabled,[aria-disabled="true"])');
+  assert(await disabled.evaluateAll(nodes=>nodes.every(e=>{const c=getComputedStyle(e);return c.backgroundColor==='rgb(246, 246, 246)'&&c.color==='rgb(92, 83, 80)'})));
+  assert(await page.locator('.ui-service-card').evaluateAll(nodes=>nodes.every(e=>e.getBoundingClientRect().height>=104)));
+  await page.locator('[data-sheet-open]').click();
+  const close=page.locator('[data-sheet-close]');await close.last().focus();await page.keyboard.press('Tab');assert(await close.first().evaluate(e=>e===document.activeElement));await page.keyboard.press('Escape');assert(await page.locator('#gallery-sheet').isHidden());assert(await page.locator('[data-sheet-open]').evaluate(e=>e===document.activeElement));
+  await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:'.emulator-data/pil-build/gallery-'+width+'.png',fullPage:true});
+  assert.equal(await page.locator('.ui-input').first().evaluate(e=>getComputedStyle(e).height),'56px');
+  assert.equal(await page.locator('.ui-tab[aria-selected="true"]').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(35, 31, 32)');
+  assert.equal(await page.locator('.ui-check').first().evaluate(e=>e.getBoundingClientRect().width),48);
+  assert.equal(await page.locator('.ui-sheet__grip').evaluate(e=>getComputedStyle(e).width),'40px');
+  results.assertions+=4;
+  results.gallery.push({width,overflow:false,targets:48,focusSurfaces:3,disabledGray:true});results.assertions+=11;
+ }
+ await page.goto(base+'/#/absensi');await page.locator('.btn.primary:disabled').waitFor();
+ assert.equal(await page.locator('.btn.primary:disabled').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(246, 246, 246)');results.assertions++;
+ const prototypeDisabled=await page.evaluate(()=>{
+  const nodes=[];
+  for(const variant of ['primary','dark','yellow'])for(const aria of [false,true]){
+   const b=document.createElement('button');b.className='btn '+variant;
+   if(aria)b.setAttribute('aria-disabled','true');else b.disabled=true;
+   b.textContent='Contoh nonaktif';document.body.append(b);nodes.push(b);
+  }
+  const values=nodes.map(b=>{const c=getComputedStyle(b);return [c.backgroundColor,c.color]});nodes.forEach(b=>b.remove());return values;
+ });
+ assert(prototypeDisabled.every(([bg,ink])=>bg==='rgb(246, 246, 246)'&&ink==='rgb(92, 83, 80)'));results.assertions++;
  await writeFile('.emulator-data/pil-build/results.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));
 }finally{await browser?.close();await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}

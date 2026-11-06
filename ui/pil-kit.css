@@ -13,7 +13,8 @@
   --active:#F8ED32;
   --border:#E8EAEC;
   --rule:#F0F1F2;
-  --control:#868485;
+  --control-border:#857a76;--control:var(--control-border);
+  --disabled-bg:var(--raised);--disabled-ink:var(--muted);--focus-ring:var(--chart-1);
   --text:#231F20;
   --muted:#5C5350;
   --accent:#C81E1E;
@@ -51,7 +52,7 @@ ul[class], ol[class] { padding: 0; list-style: none; }
 img, svg, video, canvas { display: block; max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline:3px solid var(--focus-ring);outline-offset:2px;box-shadow:0 0 0 2px #fff; }
 .num, table, .kpi-value { font-variant-numeric: tabular-nums; }
 
 /* ---------- shell: sidebar + canvas ---------- */
@@ -193,3 +194,5 @@ td .sub { display: block; font-size: var(--fs-small); color: var(--muted); }
 
 /* an empty message spans the block it stands in, never one squeezed column */
 .rows .empty, .grid > .empty, li > .empty { grid-column: 1 / -1; width: 100%; }
+
+.btn:is(:disabled,[aria-disabled="true"]),.btn:is(:disabled,[aria-disabled="true"]):hover{background:var(--disabled-bg);color:var(--disabled-ink);border-color:var(--control);opacity:1;filter:none;transform:none;cursor:not-allowed}

@@ -12,14 +12,47 @@
 .ui-swatch strong{display:block;font:var(--type-caption);font-weight:800}
 .ui-shapes{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);align-items:center}
 .ui-shape{display:grid;place-items:center;min-height:56px;font:var(--type-button);margin:0;padding:var(--space-3)}
-.ui-type-sample{display:grid;grid-template-columns:150px 1fr;gap:var(--space-3);align-items:baseline;border-top:1px solid var(--line);padding-top:var(--space-2)}
+.ui-type-sample{display:grid;grid-template-columns:1fr;gap:var(--space-3);align-items:baseline;border-top:1px solid var(--line);padding-top:var(--space-2)}
 .ui-nav-demo{position:static;width:100%;height:auto;min-height:calc(var(--nav-height) + var(--fab-lift));padding-top:calc(var(--fab-lift) + var(--space-1));flex-direction:row;align-items:flex-start;border-radius:var(--radius-lg);background:var(--surface-100);box-shadow:var(--shadow-card);gap:0}
 .ui-nav-demo .ui-nav__item{flex:1;flex-direction:column;width:auto;padding:0;border-radius:0;background:transparent;font-size:12px;justify-content:flex-start}
 .ui-nav-demo .ui-nav__icon{width:56px;height:32px;border-radius:var(--radius-pill);background:none}
 .ui-nav-demo .ui-nav__item[aria-current="page"]{background:transparent}
 .ui-nav-demo .ui-nav__item[aria-current="page"] .ui-nav__icon{background:var(--accent-yellow)}
 .ui-nav-demo .ui-nav__item--fab{order:0;margin-top:calc(var(--fab-lift) * -1);background:transparent}
-.ui-nav-demo .ui-nav__item--fab .ui-nav__icon{width:var(--fab-size);height:var(--fab-size);border-radius:var(--radius-round);background:var(--accent-yellow);box-shadow:var(--shadow-float)}
+.ui-nav-demo .ui-nav__item--fab .ui-nav__icon{width:var(--fab-size);height:var(--fab-size);border-radius:var(--radius-round);background:var(--ink);color:var(--surface-100);box-shadow:none}
 .ui-nav-wrap{background:var(--surface-200);border-radius:var(--radius-lg);padding:var(--space-3)}
 .ui-dolist{display:grid;gap:var(--space-2);margin:0;padding-left:var(--space-5)}
 .ui-gallery-note{font:var(--type-caption);color:var(--ink-muted);margin:0}
+
+.ui-gallery main{padding-inline:var(--pad-screen)}
+.ui-gallery .ui-card{padding:var(--pad-card)}
+.ui-gallery-states{display:grid;gap:var(--gap-card);margin-top:24px}
+.ui-gallery-surface{display:grid;gap:16px;min-width:0;padding:24px;border-radius:40px;background:var(--surface-100);color:var(--ink)}
+.ui-gallery-surface--red{background:var(--primary);color:var(--on-primary)}
+.ui-gallery-surface--dark{background:var(--ink);color:var(--surface-100)}
+.ui-gallery-controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.ui-gallery-controls>p{width:100%;margin:0}
+.ui-gallery-pressed{background:var(--primary-hover)}
+.ui-gallery .ui-nav-demo{width:max-content;max-width:100%;padding:var(--space-2);min-height:var(--nav-height);align-items:center;justify-content:flex-start;gap:var(--space-1);overflow:visible}
+.ui-gallery .ui-nav-demo .ui-nav__item{flex:0 1 auto;min-width:var(--control);min-height:var(--fab-size)}
+.ui-gallery .ui-nav-demo .ui-nav__icon{width:48px}
+.ui-gallery .ui-nav-demo .ui-nav__item--fab{margin:0}
+.ui-gallery .ui-nav-demo .ui-nav__item--fab .ui-nav__icon{width:56px}
+.ui-gallery .ui-nav-wrap{padding:0}
+.ui-gallery .ui-card:has(.ui-nav-demo){padding-inline:0}
+.ui-gallery .ui-card:has(.ui-nav-demo)>:is(h2,p){padding-inline:16px}
+.ui-gallery .ui-search .ui-field__label{display:block;margin-bottom:8px}
+.ui-gallery .ui-search .ui-icon{top:28px}
+.ui-gallery .ui-swatch strong{overflow-wrap:anywhere}
+.ui-gallery .ui-spinner{width:24px;height:24px}
+@media(min-width:1100px){.ui-gallery-states{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.ui-gallery-badges{display:flex;flex-wrap:wrap;gap:8px}
+.ui-gallery-surface .ui-field__label,.ui-gallery-surface .ui-field__error{color:inherit}
+.ui-gallery-surface .ui-search .ui-icon{top:0}
+.ui-gallery-surface .ui-badge{align-self:flex-start}
+.ui-gallery-surface .ui-banner{flex-wrap:wrap}
+.ui-gallery-surface .ui-banner__text{min-width:100px}
+.ui-gallery-surface .ui-service-card__title{display:block}
+
+.ui-gallery .ui-nav-demo .ui-nav__item--fab{font-size:0;line-height:0;gap:0}

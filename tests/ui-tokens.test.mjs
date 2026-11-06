@@ -61,3 +61,11 @@ test('Berkas aset ada dan diizinkan server statis tanpa mengubah header keamanan
   const sprite=readFileSync(new URL('../assets/icons/ui-sprite.svg',import.meta.url),'utf8'),html=readFileSync(new URL('../ui-gallery.html',import.meta.url),'utf8');
   for(const id of new Set([...html.matchAll(/ui-sprite\.svg#(ui-i-[\w-]+)/g)].map(m=>m[1])))assert.ok(sprite.includes('id="'+id+'"'),id);
 });
+
+test('Pil: token tipografi, jarak dan fokus dua warna memenuhi D0',()=>{
+ for(const value of ['--type-hero:800 48px/52px var(--font-display)','--type-subtitle:700 24px/28px var(--font-display)','--type-row:600 16px/20px var(--font-body)','--type-body:400 16px/24px var(--font-body)','--gap-row:8px','--gap-card:10px','--pad-card:16px','--pad-screen:24px'])assert.ok(tokens.includes(value),value);
+ for(const [a,b] of [['focus-ring','surface-100'],['surface-100','primary'],['surface-100','ink']]){
+  const contrast=ratio(token(a),token(b));assert.ok(contrast>=3,a+'/'+b);console.log(a+'/'+b+': '+contrast.toFixed(2)+':1');
+ }
+ assert.match(components,/outline:3px solid var\(--focus-ring\);outline-offset:2px;box-shadow:0 0 0 2px #fff/);
+});
