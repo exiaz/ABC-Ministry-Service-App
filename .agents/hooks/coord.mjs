@@ -19,7 +19,12 @@ export function commonDir(cwd) {
 }
 
 // Dua lingkup bertabrakan bila salah satunya awalan path yang lain ('.' = seluruh worktree).
-export const overlaps = (a, b) => a === '.' || b === '.' || a === b || a.startsWith(b + '/') || b.startsWith(a + '/');
+const scopeContains = (scope, target) => {
+  // Samakan aturan huruf dengan canonical(), termasuk scope lama yang sudah tersimpan.
+  if (process.platform === 'win32') { scope = scope.toLowerCase(); target = target.toLowerCase(); }
+  return scope === '.' || within(target, scope);
+};
+export const overlaps = (a, b) => scopeContains(a, b) || scopeContains(b, a);
 
 export function createCoord(cwd) {
   const dir = path.join(commonDir(cwd), 'msa-coord'), stateFile = path.join(dir, 'state.json'), mutex = path.join(dir, 'mutex'), auditFile = path.join(dir, 'audit.log');
@@ -106,7 +111,7 @@ export function createCoord(cwd) {
         if (t.mode !== 'write') throw new CoordError('READ_ONLY_TASK', `Tugas ${id} bersifat read-only.`);
         // Shell tak dikenal pada tugas bertingkup tetap: worktree terisolasi menjadi batasnya, bukan daftar path.
         if (t.fixed && shell) { touch(t, meta.pid); return t; }
-        if (t.fixed) { const bad = paths.filter(p => !t.scopes.some(s => s === '.' || p === s || p.startsWith(s + '/'))); if (bad.length) throw new CoordError('OUT_OF_SCOPE', `Di luar lingkup tugas ${id}: ${bad.slice(0, 5).join(', ')}`); }
+        if (t.fixed) { const bad = paths.filter(p => !t.scopes.some(s => scopeContains(s, p))); if (bad.length) throw new CoordError('OUT_OF_SCOPE', `Di luar lingkup tugas ${id}: ${bad.slice(0, 5).join(', ')}`); }
         else { const c = conflict(state, id, worktree, paths); if (c) throw new CoordError('SCOPE_CONFLICT', `Path ${c.wanted} dimiliki tugas ${c.task} (${c.scope}) di worktree yang sama. Tunggu, pakai worktree terpisah, atau minta pengguna.`); }
         if (!t.fixed) { if (ephemeralId) t.ephemeral[ephemeralId] = paths; else for (const p of paths) if (!t.scopes.includes(p)) t.scopes.push(p); }
         touch(t, meta.pid); audit('claim', {task: id, paths, ephemeral: !!ephemeralId});

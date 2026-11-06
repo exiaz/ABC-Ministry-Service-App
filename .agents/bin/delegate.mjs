@@ -7,7 +7,7 @@ import {cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync}
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {canonical} from '../hooks/workspace-lock.mjs';
-import {createCoord} from '../hooks/coord.mjs';
+import {createCoord, overlaps} from '../hooks/coord.mjs';
 
 const workspace = path.resolve(fileURLToPath(new URL('../../', import.meta.url))); // tanpa "\" akhir: merusak kutipan cmd
 const die = (code, message, extra = {}) => { process.stdout.write(JSON.stringify({status: 'error', code, message, ...extra}, null, 2) + '\n'); process.exit(1); };
@@ -97,7 +97,7 @@ if (opt.dry) { process.stdout.write(JSON.stringify({status: 'dry-run', taskId, p
 const wtKey = canonical(cwd);
 try { coord.open({id: taskId, parent, parentIdentity, agent: to, role, mode, worktree: wtKey, scopes: mode === 'write' ? scopes : [], fixed: mode === 'write', pid: process.pid, baseline: git(workspace, 'rev-parse', 'HEAD').stdout.trim()}); }
 catch (e) { die(e.code ?? 'COORD', e.message); }
-const warnings = coord.list().filter(t => t.id !== taskId && t.mode === 'write' && mode === 'write' && t.worktree !== wtKey && t.scopes.some(a => scopes.some(b => a === '.' || b === '.' || a === b || a.startsWith(b + '/') || b.startsWith(a + '/')))).map(t => `Lingkup beririsan dengan tugas ${t.id} (worktree lain): integrasi perlu tinjauan konflik.`);
+const warnings = coord.list().filter(t => t.id !== taskId && t.mode === 'write' && mode === 'write' && t.worktree !== wtKey && t.scopes.some(a => scopes.some(b => overlaps(a, b)))).map(t => `Lingkup beririsan dengan tugas ${t.id} (worktree lain): integrasi perlu tinjauan konflik.`);
 
 const env = {...process.env, MSA_TASK_ID: taskId, MSA_PARENT_ID: parent ?? '', MSA_DELEGATED: '1', MSA_DEPTH: '1', MSA_MODE: mode, MSA_ROLE: role, MSA_WORKTREE: cwd, MSA_SCOPE: scopes.join(','), MSA_WORKER_PID: String(process.pid)};
 for (const key of ['MSA_NATIVE_SESSION_ID', 'MSA_NATIVE_AGENT', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID', 'CLAUDE_ENV_FILE']) delete env[key];

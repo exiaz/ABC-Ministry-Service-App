@@ -6,6 +6,7 @@ import {cpSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, exi
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createCoord, canonical, overlaps} from '../.agents/hooks/coord.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, '..', '.agents');
@@ -32,6 +33,34 @@ const post = (session, id, tool, input) => hook('claude', {hook_event_name: 'Pos
 const sh = (session, command, opts) => pre(session, 'Bash', {command}, opts);
 const stop = session => hook('claude', {hook_event_name: 'Stop', session_id: session, cwd: repo});
 const file = p => path.join(repo, p);
+
+test('scope comparisons follow platform case rules and keep directory boundaries', () => {
+  assert.equal(overlaps('docs/BRIEF.md', 'docs/brief.md'), process.platform === 'win32');
+  assert.equal(overlaps('docs/UI', 'docs/ui/brief.md'), process.platform === 'win32');
+  assert.equal(overlaps('docs/ui/brief.md', 'docs/UI'), process.platform === 'win32');
+  assert.equal(overlaps('docs/ui', 'docs/ui-other/brief.md'), false);
+  assert.equal(overlaps('.', 'docs/BRIEF.md'), true);
+});
+
+test('Windows fixed scopes accept mixed-case paths without losing conflict protection', {skip: process.platform !== 'win32'}, () => {
+  const coord = createCoord(repo), worktree = canonical(repo);
+  for (const agent of ['codex', 'claude']) {
+    const task = 'case-' + agent, env = {MSA_DELEGATED: '1', MSA_TASK_ID: task, MSA_MODE: 'write'};
+    for (const scope of ['docs/UI/BRIEF.md', 'docs/UI']) {
+      coord.open({id: task, agent, worktree, scopes: [scope], fixed: true});
+      try {
+        const edit = target => hook(agent, {hook_event_name: 'PreToolUse', session_id: task, cwd: repo, tool_name: 'apply_patch', tool_use_id: 'case-edit', tool_input: {command: '*** Update File: ' + target}}, {env});
+        assert.equal(edit('docs/ui/BRIEF.md').denied, false);
+        assert.match(edit('docs/ui-other/BRIEF.md').reason, /OUT_OF_SCOPE/);
+        assert.match(edit('docs/ui/BRIEF.md.bak').reason, scope.endsWith('.md') ? /OUT_OF_SCOPE/ : /^$/);
+        assert.throws(() => coord.open({id: 'case-conflict', agent: 'other', worktree, scopes: ['docs/ui/brief.md']}), {code: 'SCOPE_CONFLICT'});
+        const conflict = pre('case-other', 'Write', {file_path: file('docs/ui/brief.md')});
+        assert.equal(conflict.denied, true);
+        assert.match(conflict.reason, /SCOPE_CONFLICT/);
+      } finally { coord.release(task); stop('case-other'); }
+    }
+  }
+});
 
 test('1. git status/diff/log tetap lolos saat agen lain memegang tugas penulis', () => {
   assert.equal(pre('A1', 'Write', {file_path: file('a.txt')}).denied, false);
