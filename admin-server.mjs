@@ -20,6 +20,7 @@ assets.set('/admin-backup.js','admin-backup.js');
 assets.set('/msa-users.html','msa-users.html');
 assets.set('/msa-users.js','msa-users.js');
 assets.set('/msa-brand.js','msa-brand.js');
+assets.set('/assets/msa-auth-documentation.png','assets/msa-auth-documentation.png');
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])assets.set('/'+file,file);
 assets.set('/username-login.js','username-login.js');
 assets.set('/msa-session.js','msa-session.js');

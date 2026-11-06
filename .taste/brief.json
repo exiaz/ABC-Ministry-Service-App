@@ -1,50 +1,50 @@
 {
-  "originalRequest": "Ini adalah versi  mockup UI/UX terbaru. Tolong review, berikan apa saja yg harus diperbaiki. Gunakan internet jika perlu untuk membuat referensi. Kemudian susun laporannya pada saya. Goal anda adalah menilai apakah perubahan ini dapat membuat UI/UX lebih bagus, modern, dan easy to use",
-  "subject": "Review mockup UI/UX terbaru ABC Ministry Service App (MSA).",
+  "originalRequest": "Gunakan mockup terbaru di D:\\Work\\ABC Ministry Service App\\abc-ministry-service-app\\mockup ui_ux. Kita tinggalkan C10",
+  "subject": "Pembaruan UI/UX aplikasi ABC Ministry Service App mengikuti mockup lokal terbaru.",
   "pageType": "dashboard",
-  "scope": "Audit visual dan kegunaan antarmuka operasional yang sudah ada, dengan rekomendasi perbaikan terurut. Tahap ini hanya menyusun brief, tanpa mengubah implementasi.",
-  "primaryGoal": "Menilai kejelasan, konsistensi, kesan modern, dan kemudahan menyelesaikan tugas pelayanan; menghasilkan laporan berbasis bukti yang membedakan masalah terkonfirmasi dari risiko yang belum diuji.",
-  "audience": "Mentor, Volunteer, admin, dan superadmin yang menjalankan kegiatan pelayanan, terutama melalui ponsel.",
-  "offer": "Antarmuka operasional pelayanan ABC untuk membantu pengguna mengakses pekerjaan sesuai peran dan menyelesaikan tugas rutin dengan cepat serta mencegah kesalahan.",
-  "primaryAction": "Membaca laporan prioritas perbaikan dan menentukan perubahan UI/UX yang layak diterapkan.",
-  "creativeControl": "Kebebasan memberikan kritik dan rekomendasi terarah berdasarkan kegunaan serta konsistensi merek. Tidak ada kewenangan untuk menerapkan desain baru dalam briefing ini.",
+  "scope": "Menggunakan empat PDF dalam folder mockup ui_ux sebagai sumber desain untuk Welcome, sign-in, beranda Admin, Dashboard Mentor, dan absensi. Menggantikan acuan C10 serta arah ledger sebelumnya, bukan melanjutkan pembangunan ruang Tinjauan UI/UX.",
+  "primaryGoal": "Menerjemahkan mockup pengguna menjadi antarmuka MSA yang setia pada referensi, responsif, aksesibel, dan kompatibel dengan fungsi aplikasi yang ada.",
+  "audience": "Mentor, Admin, dan Superadmin ABC MSA.",
+  "offer": "Antarmuka pelayanan berdasarkan desain pengguna, dengan alur masuk, konteks pelayanan, dan pengerjaan absensi yang jelas.",
+  "primaryAction": "Masuk ke aplikasi dan membuka tindakan utama sesuai peran, terutama absensi pada sesi yang diizinkan.",
+  "creativeControl": "Kesetiaan terhadap mockup menjadi prioritas. Kebebasan terbatas pada adaptasi responsif, aksesibilitas, dan penyambungan fungsi yang sudah tersedia, tanpa memilih arah visual pengganti secara bebas.",
   "requiredContent": [
-    "Cakupan dan bukti review: identifikasi versi mockup, layar yang diperiksa, sumber visual, serta batas pengujian.",
-    "Navigasi dan orientasi: evaluasi portal dan halaman msa-core.html, msa-events.html, serta msa-users.html sesuai fungsi yang tersedia, termasuk kejelasan menu, posisi pengguna, dan akses tindakan utama.",
-    "Alur tugas utama: evaluasi masuk, pemilihan konteks pelayanan, dan absensi Mentor bila tersedia pada mockup; periksa jumlah langkah, kejelasan pilihan, konfirmasi, serta pencegahan kesalahan.",
-    "Tampilan operasional admin: evaluasi hierarki informasi, daftar pengguna dan kegiatan, pencarian, filter, serta tindakan pengelolaan yang benar-benar tersedia.",
-    "Kualitas visual: evaluasi tipografi, warna, kepadatan informasi, jarak, ikon, komponen, dan konsistensi terhadap sumber desain ABC.",
-    "Responsivitas dan aksesibilitas: evaluasi lebar 360, 390, 768, dan 1365 piksel, kontras, label, fokus keyboard, target sentuh, serta konten di sekitar navigasi dan keyboard.",
-    "Keadaan dan interaksi: evaluasi loading, kosong, gagal, berhasil, nonaktif, serta transisi filter, tab, navigasi, dan drawer bila tersedia; hormati prefers-reduced-motion.",
-    "Laporan rekomendasi: setiap temuan memuat layar atau komponen, bukti, dampak pengguna, tingkat prioritas, dan perbaikan konkret; simpulkan kekuatan desain dan batas penilaian apakah versi baru lebih baik."
+    "Panduan visual: ekstrak aturan komponen, warna, tipografi, dan bentuk dari mockup ui_ux/D0 · Panduan gaya Pil (guideline).pdf.",
+    "Sign-in dan beranda Admin desktop: ikuti referensi mockup ui_ux/ABC Ministry Service App · Mockup UI-Dekstop sign-in, homepage admin.pdf, termasuk susunan navigasi, formulir, informasi, dan tindakan yang benar-benar ditampilkan.",
+    "Welcome, sign-in, dan absensi: ikuti referensi mockup ui_ux/ABC Ministry Service App · Mockup UI-Welcome, Sign-in, absensi.pdf untuk struktur layar dan hubungan antarkomponen.",
+    "Dashboard Mentor: ikuti referensi mockup ui_ux/ABC Ministry Service App · Mockup UI-Dashboard Mentor.pdf untuk konteks pelayanan, navigasi, serta akses menuju pekerjaan Mentor.",
+    "Keadaan interaksi: lengkapi loading, kosong, error, sukses, fokus, selected, dan disabled untuk kontrol yang tersedia tanpa mengarang fitur.",
+    "Adaptasi perangkat: pertahankan hierarki referensi pada desktop dan mobile, dengan transisi berguna untuk navigasi, filter, tab, dan drawer bila tersedia."
   ],
   "constraints": [
-    "Tidak membangun, menyunting, atau menghasilkan implementasi pada tahap briefing.",
-    "Tidak menggunakan internet atau skill desain eksternal pada tahap briefing ini.",
-    "Review tidak memberi izin implementasi redesign.",
-    "Pertahankan kontrak aplikasi, autentikasi, otorisasi, privasi siswa, histori absensi, ID, dan hook yang dipakai JavaScript atau tes.",
-    "Gunakan bahasa Indonesia untuk laporan dan teks UI; pertahankan istilah Volunteer.",
-    "Jangan menyimpulkan peningkatan terukur tanpa perbandingan atau pengujian pengguna.",
-    "Jangan menambahkan fitur, data, grafik, atau klaim yang belum didukung aplikasi.",
-    "Halaman legacy berada di luar lingkup kecuali diperlukan sebagai pembanding yang jelas."
+    "Empat PDF dalam folder yang ditentukan pengguna menjadi sumber desain utama; keberadaan berkas telah diverifikasi.",
+    "C10 tidak lagi menentukan warna, tipografi, radius, komponen, atau komposisi desain baru.",
+    "Tidak menghapus atau menimpa berkas C10, aset historis, maupun pekerjaan lokal yang tidak terkait.",
+    "Jangan mewarisi arah Achromatic ledger atau tampilan ruang tinjauan sebagai desain aplikasi.",
+    "Periksa isi visual setiap PDF sebelum menetapkan keputusan Brand dan Page Blueprint; nama berkas saja tidak membuktikan detail tampilannya.",
+    "Jika panduan D0 dan mockup layar berbeda, pertahankan komposisi layar spesifik serta catat perbedaannya; aksesibilitas dan keamanan tetap wajib.",
+    "Pertahankan arsitektur vanilla HTML/CSS/JavaScript ES modules dan pipeline proyek tanpa dependensi baru.",
+    "Pertahankan API, hook DOM, rute operasional, autentikasi, otorisasi server, privasi siswa, serta histori absensi.",
+    "Seluruh teks UI berbahasa Indonesia, target sentuh minimal 48px, kontras AA, label terlihat, dan status tidak bergantung pada warna.",
+    "Motion hanya untuk feedback atau perubahan keadaan; hormati prefers-reduced-motion.",
+    "Fase ini hanya menyusun brief, tanpa menyunting atau mengimplementasikan berkas."
   ],
   "brandInputs": [
-    "Sumber docs/ui-overhaul/BRIEF.md menunjuk C10-lembar-komponen.pdf sebagai acuan visual proyek; PDF belum ditinjau secara visual pada tahap ini.",
-    "Token terdokumentasi dalam docs/ui-overhaul/BRIEF.md: kanvas krem #fff8d6, permukaan putih, teks #231f20, merah utama #c81e1e, kuning #f8ed32, dan biru #64a4d9.",
-    "Tipografi terdokumentasi dalam docs/ui-overhaul/BRIEF.md: Baloo 2 untuk judul dan Nunito Sans untuk isi, dengan font lokal.",
-    "Gaya komponen terdokumentasi: kontrol kapsul, kartu membulat, navigasi terang, penanda aktif kuning, ikon bergaya Lucide, dan status memakai ikon serta teks.",
-    "Warna logo terdokumentasi #ee2525; bentuk dan berkas logo aktual belum diperiksa."
+    "Nama produk existing: ABC Ministry Service App, disingkat ABC MSA.",
+    "Logo existing terverifikasi: assets/abc-movement-logo.png. Pertahankan bentuk, warna, dan proporsi aslinya.",
+    "Warna raster logo yang diperiksa: merah #EE2525, kuning #F8ED32, dan biru #64A4D9. Ini adalah warna logo, bukan keputusan otomatis untuk seluruh antarmuka.",
+    "Nunito Sans dan Baloo 2 tersedia sebagai font lokal proyek. Pemakaian desain baru harus ditentukan dari PDF terbaru, bukan diwarisi karena pernah digunakan C10.",
+    "Identitas visual baru diekstrak dari panduan D0 dan tiga PDF layar dalam mockup ui_ux."
   ],
   "assumptions": [
-    "Mockup yang dimaksud diasumsikan berada pada antarmuka MSA di workspace aktif karena tidak ada lampiran atau URL khusus pada permintaan.",
-    "Permintaan terbaru adalah review dan laporan; instruksi implementasi overhaul dalam brief historis tidak menjadi lingkup tugas ini.",
-    "Karena ini antarmuka operasional, review mengikuti layar dan tugas nyata tanpa struktur bagian pemasaran.",
-    "Penilaian lebih baik dibanding versi sebelumnya hanya dibuat bila versi pembanding tersedia; tanpa pembanding, laporan menilai kualitas versi sekarang.",
-    "Token yang ditemukan adalah acuan terdokumentasi, belum merupakan bukti bahwa seluruh layar terbaru telah menerapkannya."
+    "Pengguna menetapkan isi folder mockup ui_ux sebagai mockup terbaru yang harus digunakan.",
+    "Empat berkas yang sebelumnya hanya diketahui melalui katalog kini ditemukan di lokasi proyek yang disebutkan pengguna; keterbatasan lokasi sumber sebelumnya sudah teratasi.",
+    "Isi visual PDF belum diperiksa pada langkah klasifikasi ini, sehingga detail warna, font, dan komposisinya belum dinyatakan terverifikasi.",
+    "Cakupan layar awal mengikuti nama dan tujuan PDF yang ditemukan; fitur tambahan tidak diasumsikan tersedia.",
+    "Penggantian acuan visual tidak otomatis memberi izin mengubah backend atau menghapus implementasi lama."
   ],
   "unresolved": [
-    "Identitas versi mockup terbaru dan kesesuaiannya dengan halaman aktif perlu diverifikasi saat audit.",
-    "Tampilan browser, interaksi nyata, dan perbandingan dengan versi sebelumnya belum diperiksa; belum ada kesimpulan audit pada tahap briefing."
+    "Detail visual dan perbedaan antara panduan D0 serta mockup layar perlu diekstrak pada fase berikutnya dari berkas yang sudah tersedia."
   ],
   "explicitAnswers": []
 }

@@ -157,3 +157,15 @@ body.msa-shell-active>main>p:has(>a.btn[href="/"]:only-child){display:none}
  .msa-portal .portal-stats .ui-stat__label{font-size:12px;line-height:16px}
 }
 @media(min-width:900px){#portal-schedule{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Gaya Pil: shared surface and navigation roles from the latest D0 guide. */
+body[data-msa-portal],body.mentor-account{--msa-ink:var(--ink);--msa-muted:var(--ink-muted);--msa-blue:var(--accent-3-text);--msa-line:var(--line);--msa-paper:var(--surface-100);--msa-canvas:var(--surface-100);--msa-radius:var(--radius-lg)}
+body[data-msa-portal]{font:var(--type-body);background:var(--surface-100)}
+body[data-msa-portal] h1{font:var(--type-greeting);letter-spacing:0}
+body[data-msa-portal] h2{font:var(--type-title)}
+body[data-msa-portal] :focus-visible{outline:3px solid var(--focus-ring)}
+body[data-msa-portal] .msa-eyebrow{text-transform:none;letter-spacing:0;font:var(--type-label)}
+body[data-msa-portal] :is(.ui-card,.ui-stat,.msa-event-card){box-shadow:none}
+body[data-msa-portal] .msa-sidebar{border-radius:0;box-shadow:none;background:var(--surface-100)}
+body[data-msa-portal] .ui-nav__item[aria-current=page]{background:var(--accent-yellow);color:var(--ink)}
+body[data-msa-portal] .msa-hero{background:var(--primary);color:var(--on-primary);box-shadow:none}

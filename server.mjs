@@ -18,11 +18,14 @@ for(const file of ['ui-absen.html','ui/absen-charts.js','ui/absen-data.js','ui/a
 // UI overhaul: token, komponen, font dan ikon self-host (tanpa halaman aplikasi).
 for(const file of ['ui/msa-tokens.css','ui/msa-components.css','ui/msa-admin.css','ui/msa-auth.css','assets/fonts/baloo2-latin.woff2','assets/fonts/nunito-sans-latin.woff2','assets/icons/ui-sprite.svg'])allowed.add(file);
 for(const file of ['msa-visual.js','msa-visual.css','msa-visual.json','assets/msa-visual-default.jpg','assets/msa-visual-welcome.jpg','assets/msa-visual-auth.jpg','assets/msa-visual-dashboard.jpg','assets/msa-visual-program.jpg','assets/msa-visual-campaign.jpg'])allowed.add(file);
-export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
+allowed.add('assets/msa-auth-documentation.png');
+export function createPrototypeServer({mentorMode=false,review=false,apiOrigin='http://127.0.0.1:4175',visual}={}){
   if(mentorMode)localOrigin(apiOrigin);
   const assets=new Set([...allowed,'pairing-client.js','device-storage.js','secure-mentor.js','mentor-attendance.js']);
+  // Tinjauan hanya pada server mandiri; root Mentor dan pemanggil legacy tetap tertutup.
+  if(review&&!mentorMode)for(const file of ['index.html','ui-review.html','ui/pil.js','ui/pil-data.js','ui/pil.css','ui/pil-kit.css','ui/pil-charts.js','ui/review.js','ui/review-data.js','ui/review.css','ui/review-kit.css','ui/review-charts.js','docs/ui-overhaul/C10-preview.png','docs/ui-overhaul/BRIEF.md'])assets.add(file);
   return http.createServer(async(req,res)=>{try{
-    const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||'';
+    const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname).replace(/^\//,'')||(review&&!mentorMode?'index.html':'');
     if(await visualPublicRoute(req,res,url,mentorMode?visual:undefined))return;
     const recovery=['account-recovery.html','account-recovery.js','msa-intake.css'].includes(name);
     const personal=recovery||['mentor-account.html','mentor-account.js','mentor-session-schedule.js','mentor-account.css','account-devices-ui.js','account-devices.css'].includes(name);
@@ -42,5 +45,5 @@ export function createPrototypeServer({mentorMode=false,apiOrigin='http://127.0.
   }catch{res.writeHead(500);res.end('Halaman tidak dapat dibuka');}});
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  createPrototypeServer().listen(port,'127.0.0.1',()=>console.log(`ABC Ministry Service App: http://127.0.0.1:${port}`));
+  createPrototypeServer({review:true}).listen(port,'127.0.0.1',()=>console.log(`ABC Ministry Service App: http://127.0.0.1:${port}`));
 }

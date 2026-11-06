@@ -1,8 +1,8 @@
 {
   "preset": "neutral",
   "slots": {
-    "welcome": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
-    "login": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
+    "welcome": { "file": "msa-auth-documentation.png", "position": "50% 58%", "alt": "Ilustrasi: tangan orang dewasa menata kartu belajar berwarna di meja kelas." },
+    "login": { "file": "msa-auth-documentation.png", "position": "50% 58%", "alt": "Ilustrasi: tangan orang dewasa menata kartu belajar berwarna di meja kelas." },
     "registration": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
     "dashboard": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },
     "program": { "file": "msa-visual-default.jpg", "position": "50% 45%", "alt": "" },

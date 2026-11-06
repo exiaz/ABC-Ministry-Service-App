@@ -47,7 +47,8 @@ test('Komponen: semua class berawalan ui-, tanpa sudut 8/16px pada tombol, input
   const bad=[...new Set(selectors)].filter(s=>!s.startsWith('.ui-')&&!/^\.\d/.test(s)&&!['.is-yellow','.is-pale','.is-selected'].includes(s));
   assert.deepEqual(bad,[]);
   assert.doesNotMatch(components,/border-radius:\s*(8|16)px/);
-  for(const v of ['--radius-pill:999px','--radius-lg:28px','--radius-xl:36px','--nav-height:72px','--fab-size:56px','--control-primary:56px','--nav-clearance:96px'])assert.ok(tokens.includes(v),v);
+  // Latest D0 replaces the historical C10 dimensions; contrast checks stay intact.
+  for(const v of ['--radius-pill:999px','--radius-lg:32px','--radius-xl:40px','--nav-height:72px','--fab-size:56px','--control-primary:60px','--nav-clearance:112px'])assert.ok(tokens.includes(v),v);
 });
 
 test('Berkas aset ada dan diizinkan server statis tanpa mengubah header keamanan',()=>{

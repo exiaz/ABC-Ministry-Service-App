@@ -159,3 +159,28 @@ body.account-recovery.ui-root dialog.ui-auth__dialog .ui-btn-group>.ui-btn{flex:
 }
 @media (max-width:899px){.ui-auth-login #account-login{display:block}.ui-auth__tips{margin-top:24px}.ui-auth__form{display:flex;flex-direction:column;gap:24px}}
 @media (prefers-reduced-motion:reduce){.ui-auth [aria-busy=true] .ui-btn--primary[disabled]::before{animation:none}}
+
+/* Gaya Pil terbaru: media kiri dan form kanan pada desktop, sheet putih di ponsel.
+   Hanya lapisan tampilan; slot terpublikasi dan seluruh hook autentikasi dipertahankan. */
+html:has(body.mentor-account #account-login:not([hidden])){background:var(--surface-100)}
+body.ui-auth-page[data-auth-screen],body.mentor-account:has(#account-login:not([hidden])){background:var(--surface-100)}
+body.ui-auth-page[data-auth-screen] main,body.mentor-account main:has(#account-login:not([hidden])){background:var(--surface-100);color:var(--ink);box-shadow:none;border-radius:var(--radius-xl) var(--radius-xl) 0 0}
+body.ui-auth-page[data-auth-screen] #portal-brand,body.mentor-account:has(#account-login:not([hidden])) #account-brand{background:var(--surface-100);box-shadow:none;border:1px solid var(--line);border-radius:var(--radius-pill)}
+.ui-auth .ui-auth__tips{display:none}
+.ui-auth .ui-auth__form,.ui-auth-login #account-login{display:block}
+.ui-auth .ui-h-screen,.ui-auth .ui-h-greeting,.ui-auth-page #portal-heading h1{font:var(--type-greeting)}
+.ui-auth :is(.ui-input,.ui-select){min-height:var(--field-height);background:var(--surface-soft)}
+.ui-auth .ui-password{background:var(--surface-soft)}
+.ui-auth .ui-btn--secondary{background:var(--surface-soft);border-color:var(--surface-soft);color:var(--ink)}
+.ui-auth :is(.ui-btn,input,select){box-shadow:none;transition-duration:var(--motion-duration);transition-timing-function:var(--motion-ease)}
+body.ui-auth-page #portal-feedback:not(:empty),body.mentor-account:has(#account-login:not([hidden])) #account-feedback:not(:empty){background:var(--surface-100);border:2px solid var(--primary);border-radius:var(--radius-lg);color:var(--ink)}
+.ui-auth-page .msa-visual:has(>img[src$="msa-auth-documentation.png"])::after,body.mentor-account #account-login .msa-visual:has(>img[src$="msa-auth-documentation.png"])::after{content:'Ilustrasi kegiatan belajar';position:absolute;right:16px;bottom:48px;padding:4px 12px;background:var(--surface-100);color:var(--ink-muted);font:var(--type-label);border-radius:var(--radius-pill)}
+@media(min-width:900px){
+ body.ui-auth-page[data-auth-screen] main,body.mentor-account main:has(#account-login:not([hidden])){max-width:none;width:auto;margin:0;min-height:100svh;padding:80px max(40px,calc((50vw - 440px)/2)) 40px calc(50vw + 60px);border-radius:var(--radius-flat);display:flex;flex-direction:column;justify-content:center}
+ body.ui-auth-page #portal-welcome .msa-visual,body.mentor-account #account-login .msa-visual{position:fixed;left:40px;top:40px;right:auto;bottom:40px;width:calc(50vw - 40px);height:calc(100svh - 80px);border-radius:var(--radius-xl);z-index:0}
+ body.ui-auth-page[data-auth-screen] #portal-brand,body.mentor-account:has(#account-login:not([hidden])) #account-brand{position:fixed;top:64px;left:64px}
+ body.ui-auth-page[data-auth-screen] :is(#portal-heading,#portal-login,#portal-feedback,#portal-local),body.ui-auth-page #portal-welcome .ui-auth__body,body.mentor-account #account-login .ui-auth__main{position:relative;z-index:1;width:100%;max-width:440px}
+ .ui-auth-login #account-login{display:block;grid-template-columns:none}
+ body.ui-auth-page[data-auth-screen] #portal-welcome{margin:0}
+ .ui-auth-page .msa-visual:has(>img[src$="msa-auth-documentation.png"])::after,body.mentor-account #account-login .msa-visual:has(>img[src$="msa-auth-documentation.png"])::after{bottom:24px}
+}

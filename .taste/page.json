@@ -1,64 +1,69 @@
 {
   "version": 1,
   "page": {
-    "title": "Tinjauan UI/UX",
+    "title": "ABC Ministry Service App",
     "route": "/",
-    "description": "Laporan review ABC MSA dengan tampilan pemeriksaan per area. Referensi desktop dipilih sebagai acuan komposisi utama, dengan penerapannya menunggu pemeriksaan visual PDF."
+    "description": "Welcome, masuk, beranda Mentor dan Admin, absensi, pelayanan, kalender, serta dasbor mengikuti mockup terbaru dalam mockup ui_ux. Default pengguna tanpa sesi adalah Welcome; pengguna dengan sesi sah diarahkan ke beranda sesuai capabilities server."
   },
   "architecture": {
-    "contract": "Layar ini menjawab: bagian UI/UX ABC MSA mana yang sudah dapat dinilai, dan pemeriksaan apa yang perlu dilakukan berikutnya? Kesimpulan awal: bukti visual belum lengkap sehingga peningkatan usability belum dapat disimpulkan.",
+    "contract": "Layar awal menjawab: bagaimana saya masuk untuk melanjutkan pelayanan? Setelah masuk, beranda Mentor menjawab sesi mana yang perlu dikerjakan, sedangkan beranda Admin menjawab pelayanan mana yang memerlukan tindakan.",
     "mode": "operate_monitor",
     "novelty": "low",
-    "grid": "Pada 1440px: sidebar 230px termasuk garis + gutter 24px + kanvas 1162px + gutter 24px = 1440px. Kanvas: kolom utama 754px + gap 24px + rail 384px = 1162px. Pada 1365px: 230 + 24 + 1087 + 24 = 1365; kolom utama 679 + gap 24 + rail 384 = 1087. Blok penuh mengikuti kedua tepi kanvas.",
-    "signatureRule": "Gunakan tangga merah ABC dari brand system: warna pekat pada satu aksi utama dan tanda kecil, tint pucat pada pilihan dan konteks. Signature pelayanan, kelompok, dan tanggal dipakai pada pemeriksaan Mentor. Referensi pengguna yang dipilih mengungguli komposisi sheet setelah isi visualnya dapat diverifikasi.",
-    "rhythm": "Sparse: padding dan gap 24px; baris informasi 45px, baris interaktif minimal 48px, baris bersubline 64px. Gunakan Nunito Sans dan skala brand system. Navigasi memakai pitch 48px agar area sentuh tidak bertumpang tindih."
+    "grid": "Gunakan shell referensi sesuai brand system. Desktop 1440px: sidebar 272px + gutter kiri 40px + kanvas 1088px + gutter kanan 40px = 1440px. Grid konten 12 kolom: 12 × 76px + 11 × 16px = 1088px. Tiga kolom objek: 3 × 352px + 2 × 16px = 1088px. Dua kolom sama: 536px + 16px + 536px = 1088px. Pasangan utama dan pendamping: 720px + 16px + 352px = 1088px. Pada 1365px, gunakan fr untuk kanvas 1013px dengan tepi tetap seimbang. Autentikasi tanpa sidebar memakai kanvas 1360px: media 700px + gap 80px + formulir 440px + ruang sisi kanan 140px; seluruhnya berada di dalam margin jendela 40px.",
+    "signatureRule": "Gunakan face dan unit identitas pelayanan dari brand system: tanggal, pelayanan, sekolah atau kelompok, PIC bila relevan, serta status berikon dan teks. Referensi Pil yang telah diperiksa mengungguli komposisi Framed sheet pada layar yang dicakupnya. Pertahankan permukaan datar, satu fokus utama, dan nesting secukupnya; jangan menambahkan frame L, top bar kosong, atau ruang Tinjauan UI/UX.",
+    "rhythm": "Ikuti token brand system. Grid utama menggunakan gap 16px, kelompok isi berjarak 24px, baris terkait berjarak 8px. Padding kartu 16–24px, gutter desktop 40px. Baris siswa minimal 64px; kartu pelayanan sekitar 104px; target interaksi minimal 48px. Judul, angka, label, kontrol kapsul, dan radius memakai peran yang sudah ditetapkan brand system. Tidak ada entrance."
   },
   "navigation": [
     {
-      "label": "Tinjauan UI/UX",
-      "target": "#/tinjauan"
-    },
-    {
-      "label": "Portal",
-      "target": "#/portal"
-    },
-    {
-      "label": "Masuk",
-      "target": "#/masuk"
-    },
-    {
-      "label": "Mentor",
-      "target": "#/mentor"
-    },
-    {
-      "label": "Organisasi dan program",
-      "target": "#/organisasi"
+      "label": "Beranda",
+      "target": "#/beranda"
     },
     {
       "label": "Pelayanan",
       "target": "#/pelayanan"
     },
     {
-      "label": "Pengguna",
-      "target": "#/pengguna"
+      "label": "Kalender",
+      "target": "#/kalender"
+    },
+    {
+      "label": "Dasbor kehadiran",
+      "target": "#/dasbor"
+    },
+    {
+      "label": "Jadwal",
+      "target": "#/jadwal"
+    },
+    {
+      "label": "Absensi",
+      "target": "#/absensi"
+    },
+    {
+      "label": "Riwayat",
+      "target": "#/riwayat"
+    },
+    {
+      "label": "Akun",
+      "target": "#/akun"
     }
   ],
   "navigationDesign": {
     "layoutCase": "app-shell",
-    "layout": "Ruled T-frame sesuai brand system. Sidebar menampilkan logo asli, ABC MSA, cakupan Tinjauan UI/UX, dan tujuan berlabel. Top bar 64px memuat breadcrumb serta pencarian pemeriksaan. Tidak membuat workspace switcher untuk laporan dengan satu cakupan.",
+    "layout": "Navigasi disaring menurut konteks dan capabilities, bukan ditampilkan sekaligus. Admin: Beranda, Pelayanan, Kalender, Dasbor kehadiran, Akun. Mentor: Beranda, Jadwal, Absensi sebagai aksi pusat, Riwayat, Akun. Autentikasi tidak memakai sidebar atau navigasi bawah. Desktop menggunakan sidebar putih referensi; ponsel menggunakan navigasi pil mengambang. Absensi mengganti navigasi bawah dengan bilah aksi tugas.",
     "behavior": [
-      "Rute / membuka #/tinjauan sebagai tampilan default yang lengkap.",
-      "Setiap tujuan membuka view tersendiri, bukan anchor pada halaman panjang.",
-      "Rute laporan terpisah dari URL dan hash aplikasi ABC MSA.",
-      "Navigasi aktif menggunakan aria-current dan tint dari brand system.",
-      "Pencarian global menampilkan hasil pada daftar pemeriksaan dan mempertahankan kata pencarian.",
-      "Perpindahan view memperbarui judul dokumen dan fokus ke satu h1 aktif.",
-      "Menu sheet mendukung Escape, focus trap, aria-expanded, dan focus return."
+      "Hash adalah identitas view pada preview lokal, bukan pengganti kontrak rute aplikasi.",
+      "Pemetaan operasional mempertahankan msa-portal.html dan #masuk, mentor-account.html beserta hook account-*, msa-events.html beserta #kalender dan #baru, register.html, serta account-recovery.html.",
+      "Tidak mengalihkan rute yang sudah ada atau menghapus hook DOM demi router preview.",
+      "Beranda memakai identitas dan capabilities dari sesi sah. Tidak ada pemilih peran yang memberikan akses.",
+      "Setiap tujuan membuka region view tersendiri, memperbarui aria-current, dan memindahkan fokus ke h1.",
+      "Back dan Forward memulihkan view, filter, pilihan sesi, serta posisi daftar yang relevan.",
+      "View pendukung yang belum memiliki mockup memakai frame sederhana dan data yang memang tersedia, tanpa mengarang modul baru.",
+      "Rute tidak dikenal menampilkan Halaman tidak ditemukan dan tindakan Kembali ke beranda."
     ],
     "transformation": {
-      "compact": "Sampai 640px, sidebar menjadi menu sheet penuh; top bar 56px memuat menu, nama area, dan Cari. Margin konten 16px.",
-      "medium": "641–1100px, sidebar dilipat. Top bar membawa breadcrumb dan pencarian. Margin 24px; metadata tabel menjadi subline.",
-      "expanded": "Di atas 1100px, sidebar 230px dan top bar 64px; konten mengikuti grid terhadap area di samping sidebar."
+      "compact": "Pada maksimal 640px sidebar hilang. Navigasi pil berada 16px dari tepi dan memperhitungkan safe area. Label tetap terbaca dan setiap target minimal 48px. Konten memiliki clearance terhadap navigasi atau bilah aksi.",
+      "medium": "Pada 641–1100px sidebar menjadi menu sheet. Panel bertumpuk jika salah satunya akan kurang dari 340px. Menu mendukung Escape, focus trap, scroll lock, dan fokus kembali.",
+      "expanded": "Di atas 1100px sidebar 272px, satu pemisah kanan, tanpa top bar tambahan. Logo, nama produk, lingkup peran, navigasi, aksi yang diizinkan, serta identitas akun mengikuti referensi desktop."
     }
   },
   "sections": [
@@ -66,586 +71,1039 @@
       "id": "shell",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "app-screen"
+        "app-shell"
       ],
-      "referenceDirectionId": "user-reference-1",
-      "purpose": "Memberi identitas produk dan orientasi area review.",
-      "userQuestion": "Produk dan area apa yang sedang saya tinjau?",
+      "purpose": "Mengidentifikasi produk, pengguna, dan ruang kerja.",
+      "userQuestion": "Saya sedang bekerja di produk dan lingkup apa?",
       "stage": "orient",
       "dependencies": [],
       "evidence": [
-        "msa-brand.js menggunakan assets/abc-movement-logo.png.",
-        "Panduan gaya Pil dipilih sebagai referensi bentuk komponen; isi PDF belum diperiksa."
+        "mockup ui_ux/D0 · Panduan gaya Pil (guideline).pdf",
+        "mockup ui_ux/ABC Ministry Service App · Mockup UI-Dekstop sign-in, homepage admin.pdf",
+        "mockup ui_ux/ABC Ministry Service App · Mockup UI-Dashboard Mentor.pdf",
+        "msa-brand.js",
+        "mentor-account.html",
+        "msa-portal.html"
       ],
       "copy": {
-        "heading": "ABC MSA",
+        "heading": "ABC Ministry Service App",
         "body": [
-          "Tinjauan UI/UX"
+          "Mentor",
+          "Admin",
+          "Superadmin"
         ],
-        "callsToAction": [
-          {
-            "label": "Cari pemeriksaan",
-            "target": "action:open-check-search"
-          }
-        ]
+        "callsToAction": []
       },
-      "layout": "Shell bersama seluruh view, logo asli tanpa wadah berwarna dan pencarian berlabel. Sumber komposisi sementara ialah brand system dan sheet; referensi terpilih belum digunakan untuk mengklaim ukuran atau bentuk PDF. Shell tetap tersedia saat pencarian loading, kosong, atau gagal.",
+      "layout": "Shell bersama dengan varian autentikasi, Mentor, dan pengelolaan. Gunakan logo utuh serta identitas pengguna yang tersedia. Jangan menambahkan notifikasi, switcher organisasi, atau status perangkat sukses tanpa data pendukung.",
       "motion": {
         "purpose": "state_change",
-        "trigger": "press",
-        "behavior": "Menu sheet membuka dan menutup dari tepi; indikator aktif berubah tanpa entrance halaman.",
+        "trigger": "state_change",
+        "behavior": "Perubahan selected dan pembukaan menu mengikuti transisi bersama.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Menu dan indikator langsung berada pada keadaan akhir."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Perubahan langsung."
       },
       "componentNeeds": [],
       "assetNeeds": [
         "abc-movement-logo"
       ],
       "transformation": {
-        "compact": "Top bar dan menu sheet penuh.",
-        "medium": "Top bar, menu sheet, dan pencarian yang mudah dijangkau.",
-        "expanded": "Sidebar berlabel dan top bar dalam ruled T-frame."
+        "compact": "Identitas ringkas dan navigasi bawah sesuai peran.",
+        "medium": "Identitas serta menu sheet.",
+        "expanded": "Sidebar sesuai mockup desktop."
       }
     },
     {
-      "id": "tinjauan-ringkasan",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "kpi-strip-chart-rail"
-      ],
-      "referenceDirectionId": "user-reference-2",
-      "purpose": "Menyampaikan batas kesimpulan dan pekerjaan berikutnya.",
-      "userQuestion": "Apakah versi ini sudah terbukti lebih baik?",
-      "stage": "qualify",
-      "dependencies": [
-        "shell"
-      ],
-      "evidence": [
-        "Logo dan C10-preview.png diperiksa pada Brand phase.",
-        "Mockup desktop dipilih sebagai referensi utama orientasi desktop; isi PDF belum diperiksa.",
-        "Belum ada audit browser atau perbandingan versi pada rangkaian fase ini."
-      ],
-      "copy": {
-        "heading": "Tinjauan UI/UX",
-        "body": [
-          "Bukti visual belum lengkap; peningkatan usability belum dapat disimpulkan.",
-          "Sample data: 10 pemeriksaan menunggu verifikasi, 0 temuan terkonfirmasi."
-        ],
-        "callsToAction": [
-          {
-            "label": "Tinjau portal",
-            "target": "#/portal"
-          }
-        ]
-      },
-      "layout": "View #/tinjauan. Judul penuh 1162px dengan finding di bawahnya dan aksi utama di kanan. Strip angka tunggal terbagi garis, tanpa kartu KPI individual. Tidak ada grafik karena belum ada hasil audit atau seri waktu. Komposisi sheet merupakan rencana sementara hingga referensi desktop dapat ditinjau.",
-      "motion": {
-        "purpose": "feedback",
-        "trigger": "press",
-        "behavior": "Aksi membuka Portal; angka tampil langsung tanpa count-up.",
-        "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Perpindahan langsung dengan fokus pada judul Portal."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Judul 24px; finding dan aksi bertumpuk; angka dalam container dua kolom.",
-        "medium": "Judul dan aksi berbagi baris jika ruang cukup.",
-        "expanded": "Judul, finding, aksi, dan strip angka mengikuti tepi kanvas."
-      }
-    },
-    {
-      "id": "tinjauan-pemeriksaan",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "table-filter-bar"
-      ],
-      "purpose": "Menentukan pemeriksaan berikutnya dan menyediakan akses per area.",
-      "userQuestion": "Bagian mana yang perlu diperiksa berikutnya?",
-      "stage": "act",
-      "dependencies": [
-        "tinjauan-ringkasan"
-      ],
-      "evidence": [
-        "Kategori berasal dari requiredContent brief, bukan cacat yang telah terbukti."
-      ],
-      "copy": {
-        "heading": "Urutan pemeriksaan",
-        "body": [
-          "Sample data: 10 pemeriksaan, seluruhnya Belum diperiksa.",
-          "Portal: navigasi dan akses tindakan.",
-          "Masuk: label, kata sandi, dan kesalahan.",
-          "Mentor: konteks sesi dan absensi.",
-          "Organisasi dan program: hierarki dan pemilihan konteks.",
-          "Pelayanan: daftar, kalender, dan draf.",
-          "Pengguna: pencarian dan perubahan akses."
-        ],
-        "callsToAction": [
-          {
-            "label": "Tampilkan semua",
-            "target": "action:show-all-checks"
-          },
-          {
-            "label": "Hapus filter",
-            "target": "action:clear-check-filters"
-          }
-        ]
-      },
-      "layout": "Kolom utama 754px. Tab Semua, Belum diperiksa, Terverifikasi; toolbar pencarian dan urutan. Tabel tanpa kartu luar: area, pemeriksaan, keadaan, dan Buka. Enam baris awal setinggi 64px, lalu Tampilkan semua. Empat pemeriksaan tambahan mencakup sumber, visual, responsivitas dan aksesibilitas, serta keadaan dan interaksi. Empty: Tidak ada pemeriksaan yang cocok. Zero tetap 0. Loading mempertahankan label dan pitch. Error lokal: Pemeriksaan belum dapat dimuat, dengan Coba lagi.",
-      "motion": {
-        "purpose": "state_change",
-        "trigger": "state_change",
-        "behavior": "Tab, pencarian, dan urutan memperbarui hasil dengan identitas baris stabil.",
-        "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Hasil serta indikator langsung diperbarui."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Pencarian selebar konten; filter tambahan dalam sheet. Baris menjadi dua tingkat dengan tindakan Buka.",
-        "medium": "Tabel empat kolom; uraian menjadi subline bila diperlukan.",
-        "expanded": "Enam baris awal pada kolom utama dengan sumber bukti di rail."
-      }
-    },
-    {
-      "id": "tinjauan-sumber",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "kpi-strip-chart-rail"
-      ],
-      "purpose": "Memperlihatkan sumber yang mendukung atau membatasi review.",
-      "userQuestion": "Bukti apa yang tersedia?",
-      "stage": "prove",
-      "dependencies": [
-        "tinjauan-ringkasan"
-      ],
-      "evidence": [
-        "Empat referensi pengguna telah dipilih dan dipetakan menurut area.",
-        "Pemilihan referensi tidak membuktikan isi PDF sudah diperiksa."
-      ],
-      "copy": {
-        "heading": "Sumber bukti",
-        "body": [
-          "Sample data: 8 entri sumber, 4 tersedia dan 4 belum tersedia.",
-          "Panduan Pil: belum tersedia.",
-          "Mockup desktop: belum tersedia.",
-          "Mockup masuk dan absensi: belum tersedia.",
-          "Mockup Mentor: belum tersedia.",
-          "C10, logo ABC, token lokal, dan markup halaman: tersedia."
-        ],
-        "callsToAction": [
-          {
-            "label": "Lihat sumber",
-            "target": "action:open-source-list"
-          }
-        ]
-      },
-      "layout": "Rail 384px sejajar daftar pemeriksaan. Empat referensi yang belum tersedia tampil sebagai baris ringkas, sumber lokal di bawahnya. Drawer memuat delapan entri dengan nama, path bila ada, jenis bukti, pemetaan referensi, dan batas pemeriksaan. Tidak membuat thumbnail PDF. Empty: Belum ada sumber tercatat. Loading dan error tetap lokal, angka zero dihitung dari entri.",
-      "motion": {
-        "purpose": "state_change",
-        "trigger": "press",
-        "behavior": "Lihat sumber membuka drawer; Escape menutup dan mengembalikan fokus.",
-        "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Drawer langsung tampil atau ditutup."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Ringkasan sumber mendahului daftar; rincian berada di drawer penuh.",
-        "medium": "Sumber menjadi blok selebar konten setelah daftar.",
-        "expanded": "Rail 384px mengikuti tinggi isi tanpa ruang kosong paksa."
-      }
-    },
-    {
-      "id": "tinjauan-kesimpulan",
+      "id": "welcome",
       "layoutFamily": "dashboard",
       "layoutCases": [
         "app-screen"
       ],
-      "purpose": "Menyediakan kesimpulan dan rekomendasi tanpa mengarang hasil.",
-      "userQuestion": "Perbaikan apa yang sudah didukung bukti?",
-      "stage": "de_risk",
-      "dependencies": [
-        "tinjauan-pemeriksaan",
-        "tinjauan-sumber"
-      ],
-      "evidence": [
-        "Belum ada temuan terkonfirmasi dari audit visual dan interaksi saat ini."
-      ],
-      "copy": {
-        "heading": "Rekomendasi",
-        "body": [
-          "Belum ada rekomendasi terkonfirmasi.",
-          "Perbandingan versi dan pengujian interaksi belum dilakukan."
-        ],
-        "callsToAction": []
-      },
-      "layout": "Blok penuh 1162px setelah daftar dan rail. Keadaan kosong ringkas, tidak diberi tinggi berlebihan. Rekomendasi berikutnya wajib memiliki area, bukti, dampak, prioritas, dan koreksi. Loading mempertahankan header; error tidak menghapus hasil lama. Nol temuan tidak berarti bebas masalah.",
-      "motion": {
-        "purpose": "none",
-        "trigger": "none",
-        "behavior": "Wilayah baca statis.",
-        "durationMs": 0,
-        "easing": "linear",
-        "reducedMotion": "Tidak ada perubahan."
-      },
-      "componentNeeds": [],
-      "assetNeeds": [],
-      "transformation": {
-        "compact": "Selebar konten dengan ringkasan langsung terbaca.",
-        "medium": "Selebar konten setelah sumber.",
-        "expanded": "Header dan keadaan kosong terlihat pada viewport awal 1440×900."
-      }
-    },
-    {
-      "id": "portal-review",
-      "layoutFamily": "dashboard",
-      "layoutCases": [
-        "table-filter-bar"
-      ],
-      "referenceDirectionId": "user-reference-2",
-      "purpose": "Memeriksa orientasi portal dan akses tindakan menurut peran.",
-      "userQuestion": "Apakah pengguna dapat menemukan pekerjaan pelayanannya?",
-      "stage": "evaluate",
+      "purpose": "Mengarahkan pengguna ke alur masuk yang benar.",
+      "userQuestion": "Bagaimana saya mulai menggunakan MSA?",
+      "stage": "orient",
       "dependencies": [
         "shell"
       ],
       "evidence": [
-        "msa-portal.html memiliki bagian Welcome, masuk, dan Pelayanan Anda.",
-        "user-reference-2 dipilih untuk desktop dan beranda admin; komposisi PDF belum diverifikasi.",
-        "Visibilitas dan navigasi runtime belum diuji."
+        "PDF Welcome, Sign-in, absensi halaman 1",
+        "msa-portal.html",
+        "brand-system.imageDirection"
       ],
       "copy": {
-        "heading": "Portal",
+        "heading": "ABC Ministry Service App",
         "body": [
-          "Navigasi runtime belum diperiksa.",
-          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Orientasi: nama produk, peran, dan konteks pelayanan.",
-          "Tindakan utama: akses pelayanan sesuai peran.",
-          "Navigasi: tujuan, keadaan aktif, dan kembali."
+          "Absensi jadi lebih ringan.",
+          "Masuk untuk melanjutkan absensi dan jadwal pelayanan."
         ],
         "callsToAction": [
           {
-            "label": "Buka bukti",
-            "target": "action:open-evidence:portal"
+            "label": "Masuk",
+            "target": "#/masuk"
           },
           {
-            "label": "Tinjau masuk",
-            "target": "#/masuk"
+            "label": "Daftar sebagai Volunteer",
+            "target": "/register.html"
+          },
+          {
+            "label": "Masuk sebagai Mentor",
+            "target": "/mentor-account.html"
           }
         ]
       },
-      "layout": "View #/portal dengan satu h1, finding dan satu aksi utama. Tabel tiga skenario 754px dan rail sumber 384px. Tab Cakupan dan Bukti mengubah isi terkait. Empty, zero, loading, dan error mengikuti kontrak pemeriksaan bersama. Referensi terpilih menjadi acuan visual setelah PDF diperiksa; tidak mengarang susunannya.",
+      "layout": "Default view tanpa sesi. Logo, bidang media, finding, lalu satu primary Masuk. Ponsel mengikuti media di atas dan bidang putih membulat di bawah. Desktop mengadaptasi pasangan media dan tindakan dari referensi masuk. Foto placeholder PDF tidak digunakan sebagai aset final. Kegagalan media mempertahankan identitas dan tindakan pada permukaan putih tanpa gambar palsu.",
       "motion": {
-        "purpose": "state_change",
+        "purpose": "feedback",
         "trigger": "press",
-        "behavior": "Tab mengganti isi terkait; drawer membuka bukti tanpa entrance halaman.",
+        "behavior": "Masuk membuka formulir dan memindahkan fokus ke judul.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Isi dan drawer langsung tampil."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
       },
       "componentNeeds": [],
-      "assetNeeds": [],
+      "assetNeeds": [
+        "abc-movement-logo",
+        "msa-auth-documentation"
+      ],
       "transformation": {
-        "compact": "Finding dan aksi lebih dahulu, skenario menjadi daftar, sumber di bawah.",
-        "medium": "Tabel dan sumber ditumpuk.",
-        "expanded": "Tabel dan rail sejajar, semua header dan baris awal terlihat."
+        "compact": "Komposisi D6, tindakan utama terlihat tanpa menunggu media.",
+        "medium": "Media dan isi bertumpuk atau berpasangan sesuai ruang formulir.",
+        "expanded": "Media dan tindakan mengisi kanvas autentikasi, tanpa sidebar."
       }
     },
     {
-      "id": "masuk-review",
+      "id": "masuk",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "table-filter-bar"
+        "app-screen"
       ],
-      "referenceDirectionId": "user-reference-3",
-      "purpose": "Memeriksa alur masuk tanpa menjalankan autentikasi tiruan.",
-      "userQuestion": "Apakah alur masuk jelas dan kesalahannya dapat dipulihkan?",
-      "stage": "evaluate",
+      "purpose": "Mengautentikasi pengguna melalui alur yang tersedia.",
+      "userQuestion": "Bisakah saya masuk dengan akun saya?",
+      "stage": "act",
       "dependencies": [
-        "shell"
+        "welcome"
       ],
       "evidence": [
-        "msa-portal.html memiliki label Username, Kata sandi, tombol Tampilkan, dan tautan pemulihan.",
-        "user-reference-3 dipilih untuk Welcome dan masuk; PDF belum diperiksa.",
-        "Hasil autentikasi belum diuji pada fase ini."
+        "PDF Welcome, Sign-in, absensi halaman 2–4",
+        "PDF Dekstop sign-in, homepage admin halaman 1",
+        "msa-portal.html",
+        "mentor-account.html"
       ],
       "copy": {
         "heading": "Masuk",
         "body": [
-          "Label tersedia pada markup; perilaku masuk belum diuji.",
-          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Form: label, autocomplete, dan tampilkan kata sandi.",
-          "Kesalahan: pesan, fokus, dan percobaan ulang.",
-          "Peralihan: Welcome, daftar, pemulihan, dan akun Mentor."
+          "Masuk untuk melanjutkan absensi dan jadwal pelayanan.",
+          "Username",
+          "Kata sandi",
+          "Tampilkan",
+          "Username atau kata sandi tidak cocok. Periksa lagi, ya.",
+          "Memeriksa…"
         ],
         "callsToAction": [
           {
-            "label": "Buka bukti",
-            "target": "action:open-evidence:masuk"
+            "label": "Masuk",
+            "target": "action:submit-existing-login"
+          },
+          {
+            "label": "Lupa kata sandi?",
+            "target": "/account-recovery.html"
+          },
+          {
+            "label": "Daftar sebagai Volunteer",
+            "target": "/register.html"
           }
         ]
       },
-      "layout": "View #/masuk. Tabel tiga skenario 754px, rail sumber 384px. Tidak menyediakan input kredensial atau tombol Masuk palsu. Drawer memuat bukti markup dan referensi terpilih dengan status pemeriksaannya. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "layout": "Form 440px pada desktop, media di kiri mengikuti D9. Pada ponsel gunakan bidang putih membulat di atas media mengikuti D7. Pertahankan input, autocomplete, batas panjang, tombol tampilkan sandi, dan feedback existing. Opsi Tetap masuk hanya dirender ketika jalur sesi Mentor benar-benar menyediakannya. Loading, kredensial salah, jaringan gagal, pembatasan percobaan, dan sesi kedaluwarsa memiliki pesan berbeda. Tidak membuat login simulasi.",
       "motion": {
         "purpose": "state_change",
-        "trigger": "press",
-        "behavior": "Pemilihan skenario memperbarui bukti pada drawer dengan fokus terkendali.",
+        "trigger": "state_change",
+        "behavior": "Submit memperbarui busy dan feedback tanpa menggeser formulir.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Bukti langsung berubah."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Feedback langsung."
       },
       "componentNeeds": [],
-      "assetNeeds": [],
+      "assetNeeds": [
+        "abc-movement-logo",
+        "msa-auth-documentation"
+      ],
       "transformation": {
-        "compact": "Daftar dua tingkat dan drawer penuh.",
-        "medium": "Tabel dan sumber ditumpuk.",
-        "expanded": "Tabel dan rail sejajar."
+        "compact": "Form penuh dengan label terlihat, input minimal 16px, dan tombol tidak tertutup keyboard.",
+        "medium": "Form tetap terbaca tanpa panel petunjuk kosong yang memakan ruang.",
+        "expanded": "Pasangan media dan form sesuai referensi desktop."
       }
     },
     {
-      "id": "mentor-review",
+      "id": "mentor-pelayanan",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "table-filter-bar"
+        "kpi-strip-chart-rail"
       ],
-      "referenceDirectionId": "user-reference-4",
-      "purpose": "Menilai konteks pelayanan, pemilihan siswa, dan hasil penyimpanan.",
-      "userQuestion": "Apakah Mentor dapat mencatat absensi pada sesi yang benar?",
-      "stage": "evaluate",
+      "purpose": "Memimpin Mentor ke sesi yang perlu dikerjakan.",
+      "userQuestion": "Sesi mana yang perlu saya kerjakan sekarang?",
+      "stage": "act",
       "dependencies": [
-        "shell"
+        "shell",
+        "masuk"
       ],
       "evidence": [
-        "mentor-account.html memiliki area akun dan beranda Mentor.",
-        "PROJECT_STATUS.md melaporkan implementasi beranda dan absensi, bukan pengujian baru.",
-        "user-reference-4 dipilih untuk dashboard Mentor; user-reference-3 menjadi referensi pendamping alur absensi. Keduanya belum diperiksa."
+        "PDF Dashboard Mentor halaman 1",
+        "mentor-account.html",
+        "MASTER_BRIEF.md bagian AUTH A2.3"
       ],
       "copy": {
-        "heading": "Mentor",
+        "heading": "Pelayanan hari ini",
         "body": [
-          "Konteks sesi dan penyimpanan absensi belum diuji.",
-          "Sample data: 4 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Konteks absensi: pelayanan, kelompok, tanggal sesi.",
-          "Daftar siswa: pencarian, pilihan, dan belum diabsen.",
-          "Penyimpanan: menunggu, berhasil, gagal, dan konflik.",
-          "Akses: perangkat, sesi berakhir, dan koneksi terputus."
+          "Sample data",
+          "Kelompok 3 masih memiliki 4 siswa belum diisi.",
+          "SDN Pakel V",
+          "Jumat, 6 November 2026 · 09.00 WIB",
+          "Kelompok 3 · 24 siswa"
         ],
         "callsToAction": [
           {
-            "label": "Tinjau konteks",
-            "target": "action:open-evidence:mentor-context"
+            "label": "Mulai absensi",
+            "target": "#/absensi"
           }
         ]
       },
-      "layout": "View #/mentor. Signature berupa rangkaian label Pelayanan, Kelompok, Tanggal sesi. Nilai yang belum tersedia ditulis Belum diverifikasi, bukan diisi catatan rekaan. Empat skenario pada kolom 754px, sumber pada rail 384px. Tidak membuat roster operasional atau aksi simpan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "layout": "View #/beranda untuk Mentor, satu h1 Beranda. Kartu merah utama 720px, sekitar 240px tinggi, memuat identitas pelayanan dan primary kontekstual. Strip hari berada dekat konteks sesi. Daftar penugasan lain memakai baris ringkas, bukan kartu merah tambahan. Tidak ada penugasan: Belum ada pelayanan pada tanggal ini. Tanpa izin perangkat: tindakan menuju pemeriksaan perangkat, tanpa membuka roster.",
       "motion": {
         "purpose": "state_change",
         "trigger": "press",
-        "behavior": "Pemilihan konteks membuka bukti terkait tanpa mengubah absensi.",
+        "behavior": "Pemilihan hari memperbarui penugasan; Mulai absensi membuka sesi yang sama.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Bukti langsung tampil."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Pilihan dan navigasi langsung."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Konteks di atas daftar, baris minimal 64px, tindakan minimal 48px.",
-        "medium": "Konteks penuh, tabel dan sumber ditumpuk.",
-        "expanded": "Konteks dan aksi sebelum tabel; semua header dan skenario awal terlihat."
+        "compact": "Kartu utama penuh, strip hari dapat bergulir di dalam regionnya.",
+        "medium": "Kartu dan konteks bertumpuk bila perlu.",
+        "expanded": "Kartu 720px berpasangan dengan konteks 352px, tepi bawah diseimbangkan oleh isi."
       }
     },
     {
-      "id": "organisasi-review",
+      "id": "mentor-konteks",
       "layoutFamily": "dashboard",
       "layoutCases": [
-        "table-filter-bar"
+        "app-screen"
       ],
-      "purpose": "Memeriksa hierarki organisasi dan program.",
-      "userQuestion": "Apakah konteks organisasi dan program mudah dibedakan?",
-      "stage": "evaluate",
+      "purpose": "Memperlihatkan kesiapan perangkat dan penugasan cadangan.",
+      "userQuestion": "Apakah perangkat dan penugasan saya memenuhi syarat?",
+      "stage": "de_risk",
       "dependencies": [
-        "shell"
+        "mentor-pelayanan"
       ],
       "evidence": [
-        "msa-core.html berjudul Organisasi dan program; perilaku pengelolaan belum diuji."
+        "PDF Dashboard Mentor halaman 1",
+        "mentor-account.html",
+        "MASTER_BRIEF.md"
       ],
       "copy": {
-        "heading": "Organisasi dan program",
+        "heading": "Perangkat dan penugasan",
         "body": [
-          "Struktur halaman tersedia; pemilihan konteks belum diuji.",
-          "Sample data: 2 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Hierarki: organisasi, program, dan hubungan keduanya.",
-          "Tindakan: pemilihan konteks dan konfirmasi perubahan."
+          "Sample data",
+          "Perangkat perlu diperiksa",
+          "Kelompok utama · Kelompok 3",
+          "Cadangan · Kelompok 5"
         ],
         "callsToAction": [
           {
-            "label": "Buka bukti",
-            "target": "action:open-evidence:organisasi"
+            "label": "Periksa perangkat",
+            "target": "#/perangkat"
+          },
+          {
+            "label": "Lihat riwayat",
+            "target": "#/riwayat"
           }
         ]
       },
-      "layout": "View #/organisasi. Dua baris skenario pada tabel 754px, rail sumber 384px. Panel pendek mengikuti isi. Tidak menambahkan organisasi atau program rekaan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "layout": "Pendamping 352px pada beranda Mentor. Status perangkat mengikuti respons server, bukan nilai fixture yang dianggap otorisasi. Cadangan hanya tampil bila ada penugasan efektif. Loading dan galat hanya memengaruhi blok terkait. Tidak memperpanjang grant atau membuat aktivasi otomatis.",
       "motion": {
-        "purpose": "state_change",
+        "purpose": "feedback",
         "trigger": "press",
-        "behavior": "Buka bukti menampilkan rincian pemeriksaan.",
+        "behavior": "Tindakan membuka konteks perangkat atau riwayat.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Rincian langsung tampil."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Daftar skenario lalu sumber.",
-        "medium": "Tabel dan sumber ditumpuk tanpa tinggi palsu.",
-        "expanded": "Tabel dan rail sejajar di bagian atas."
+        "compact": "Ringkasan kesiapan langsung setelah kartu pelayanan.",
+        "medium": "Dua blok pendek bila muat.",
+        "expanded": "Kolom pendamping tanpa tinggi minimum yang menyisakan ruang kosong."
       }
     },
     {
-      "id": "pelayanan-review",
+      "id": "admin-ringkasan",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "kpi-strip-chart-rail"
+      ],
+      "purpose": "Menunjukkan pekerjaan pengelolaan yang memerlukan tindakan.",
+      "userQuestion": "Apa yang perlu ditangani Admin pada pekan ini?",
+      "stage": "orient",
+      "dependencies": [
+        "shell",
+        "masuk"
+      ],
+      "evidence": [
+        "PDF Dashboard Mentor halaman 5",
+        "PDF Dekstop sign-in, homepage admin halaman 4",
+        "msa-portal.html",
+        "msa-events.html"
+      ],
+      "copy": {
+        "heading": "Beranda",
+        "body": [
+          "Sample data",
+          "3 draf pelayanan memerlukan tindakan pekan ini.",
+          "2–8 November 2026",
+          "7 pelayanan tercatat",
+          "3 draf perlu tindakan",
+          "18 Volunteer bertugas"
+        ],
+        "callsToAction": [
+          {
+            "label": "Tinjau draf",
+            "target": "#/pelayanan?status=draft"
+          }
+        ]
+      },
+      "layout": "View #/beranda untuk Admin. Finding dan aksi tampil di title row, lalu tiga ubin 352px mengikuti referensi. Tujuh pelayanan mencakup satu dibatalkan; label tidak menyebut semuanya akan berlangsung. Data Volunteer pada fixture tidak dipresentasikan sebagai API analitik yang sudah tersedia. Aksi create ditampilkan hanya bila diizinkan.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Tinjau draf membuka daftar dengan filter yang sama.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Tiga nilai menjadi pasangan label dan angka, tanpa orphan pada grid.",
+        "medium": "Tiga kolom hanya bila label muat.",
+        "expanded": "Tiga ubin sejajar sesuai D10, tanpa ikon KPI tambahan."
+      }
+    },
+    {
+      "id": "admin-dasbor-link",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Membuka ringkasan kehadiran dari beranda.",
+      "userQuestion": "Di mana saya memeriksa kehadiran?",
+      "stage": "continue",
+      "dependencies": [
+        "admin-ringkasan"
+      ],
+      "evidence": [
+        "PDF Dekstop sign-in, homepage admin halaman 4"
+      ],
+      "copy": {
+        "heading": "Dasbor kehadiran",
+        "body": [
+          "Sample data",
+          "Anak & Volunteer · 6 pekan terakhir"
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka dasbor",
+            "target": "#/dasbor"
+          }
+        ]
+      },
+      "layout": "Kapsul merah penuh 1088px, sekitar 84px tinggi, sesuai referensi. Bukan grafik tambahan dan bukan primary kedua yang bersaing dengan pekerjaan draf.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Membuka dasbor dengan cakupan periode yang sama.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Kapsul penuh dengan label dan satu affordance.",
+        "medium": "Penuh.",
+        "expanded": "Penuh, sejajar dengan ubin dan daftar pelayanan."
+      }
+    },
+    {
+      "id": "admin-pelayanan",
       "layoutFamily": "dashboard",
       "layoutCases": [
         "table-filter-bar"
       ],
-      "purpose": "Memeriksa alur kegiatan yang tersedia pada halaman pelayanan.",
-      "userQuestion": "Apakah admin dapat menemukan dan mengelola pelayanan dengan jelas?",
+      "purpose": "Menampilkan pelayanan berikutnya dan statusnya.",
+      "userQuestion": "Pelayanan apa yang terdekat dan mana yang masih draf?",
+      "stage": "evaluate",
+      "dependencies": [
+        "admin-ringkasan"
+      ],
+      "evidence": [
+        "PDF Dekstop sign-in, homepage admin halaman 3–4",
+        "msa-events.html"
+      ],
+      "copy": {
+        "heading": "Pelayanan berikutnya",
+        "body": [
+          "Sample data",
+          "Jum 6 Nov · Pelayanan rutin Jumat · SDN Pakel V · Terbit",
+          "Jum 6 Nov · Pelayanan rutin Jumat · SDN Airlangga · Draf",
+          "Sab 7 Nov · Pelayanan SDN Airlangga · Terbit",
+          "Sab 7 Nov · Latihan drama Natal · Draf",
+          "Min 8 Nov · Pertemuan Volunteer baru · Dibatalkan",
+          "Min 8 Nov · Persiapan Natal 2026 · Draf"
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat semua",
+            "target": "#/pelayanan"
+          }
+        ]
+      },
+      "layout": "Beranda Admin: enam kartu pada tiga kolom, dua baris, tinggi sekitar 104px per kartu. Setiap kartu menggunakan signature tanggal, nama, tempat, PIC, serta status. Kartu batal tetap terbaca. Empty, loading, dan error mempertahankan judul; galat memiliki retry nyata. Tidak merentangkan satu kartu kosong ke seluruh baris.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Pilihan pelayanan membuka detail dan mempertahankan identitas objek.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Detail langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Satu kolom, tiga pelayanan pertama lalu Lihat semua.",
+        "medium": "Dua kolom bila masing-masing cukup lebar.",
+        "expanded": "3 × 352px + 2 × 16px, dua baris sejajar."
+      }
+    },
+    {
+      "id": "absensi-ringkasan",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Menunjukkan kemajuan pencatatan sesi yang dipilih.",
+      "userQuestion": "Berapa siswa yang masih perlu dicatat?",
+      "stage": "orient",
+      "dependencies": [
+        "mentor-pelayanan"
+      ],
+      "evidence": [
+        "PDF Dashboard Mentor halaman 2",
+        "PDF Welcome, Sign-in, absensi halaman 5",
+        "mentor-attendance.js"
+      ],
+      "copy": {
+        "heading": "Absensi",
+        "body": [
+          "Sample data",
+          "4 siswa belum diisi sebelum sesi dapat diselesaikan.",
+          "Kelompok 3 · SDN Pakel V",
+          "Jumat, 6 November 2026 · 09.00 WIB",
+          "18 dari 24 siswa hadir · 75%",
+          "Izin 2 siswa · Tidak hadir 0 siswa · Belum diisi 4 siswa"
+        ],
+        "callsToAction": [
+          {
+            "label": "Periksa yang belum diisi",
+            "target": "action:filter-unmarked"
+          }
+        ]
+      },
+      "layout": "View #/absensi dengan satu h1. Kartu fokus gelap mengikuti D2, ring proporsi memiliki teks pembilang, penyebut, dan unit. Ringkasan sekitar 200px tinggi. Pada desktop 720px berpasangan dengan konteks tindakan 352px; pada ponsel ringkasan dipadatkan agar baris siswa pertama terlihat di bagian atas layar. Status Tidak hadir dipertahankan dari kontrak existing meski contoh PDF tidak menampilkannya.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Perubahan lokal memperbarui hitungan dan proporsi dari dataset yang sama.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Angka dan ring langsung mencapai nilai akhir."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Ring kecil dan angka terbaca; detail periode menjadi subline.",
+        "medium": "Ringkasan penuh dengan tindakan di bawah.",
+        "expanded": "Ringkasan 720px, konteks tindakan 352px."
+      }
+    },
+    {
+      "id": "absensi-siswa",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Mencari siswa dan mengubah status kehadiran.",
+      "userQuestion": "Siapa yang perlu dicatat atau diperiksa?",
+      "stage": "act",
+      "dependencies": [
+        "absensi-ringkasan"
+      ],
+      "evidence": [
+        "PDF Dashboard Mentor halaman 2",
+        "mentor-attendance.js"
+      ],
+      "copy": {
+        "heading": "Daftar siswa",
+        "body": [
+          "Sample data",
+          "Semua 24 · Hadir 18 · Izin 2 · Tidak hadir 0 · Belum diisi 4",
+          "Alya Putri · Kelas 3 · Hadir",
+          "Bima Saputra · Kelas 3 · Hadir",
+          "Citra Lestari · Kelas 4 · Belum diisi",
+          "Dafa Ramadhan · Kelas 4 · Izin",
+          "Elsa Wijaya · Kelas 3 · Hadir"
+        ],
+        "callsToAction": [
+          {
+            "label": "Cari nama siswa",
+            "target": "control:student-search"
+          },
+          {
+            "label": "Tinjau & selesaikan",
+            "target": "action:existing-attendance-review"
+          }
+        ]
+      },
+      "layout": "Daftar 720px dengan pencarian dan satu baris filter. Tampilkan seluruh 24 siswa melalui scroll normal, tanpa pagination palsu; lima baris pertama menjadi anggaran desktop. Baris kapsul minimal 64px, inisial, nama, kelas, status teks, dan target status 48px. Pemilihan status membuka pilihan existing yang mencakup unmarked, present, excused, absent. Tidak mengartikan lingkaran kosong sebagai Tidak hadir. Preview fixture hanya mengubah draf lokal; penyimpanan operasional memakai controller existing.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Pencarian, filter, dan status memperbarui baris dengan ID stabil tanpa entrance.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Hasil langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Nama dan status pada baris pertama, kelas pada baris kedua. Filter bergulir dalam region sendiri; baris siswa pertama ditargetkan sebelum 60% tinggi layar.",
+        "medium": "Daftar penuh; tindakan tetap dekat pekerjaan.",
+        "expanded": "Daftar 720px dengan pendamping tindakan di kanan."
+      }
+    },
+    {
+      "id": "absensi-penyimpanan",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Membedakan draf lokal, hasil tersimpan, dan sesi selesai.",
+      "userQuestion": "Apakah perubahan saya sudah tersimpan dan sesi boleh diselesaikan?",
+      "stage": "de_risk",
+      "dependencies": [
+        "absensi-siswa"
+      ],
+      "evidence": [
+        "mentor-attendance.js",
+        "MASTER_BRIEF.md bagian AUTH A2.3",
+        "PDF Welcome, Sign-in, absensi halaman 5"
+      ],
+      "copy": {
+        "heading": "Pencatatan sesi",
+        "body": [
+          "Perubahan belum tersimpan.",
+          "Koneksi terputus. Perubahan belum dikirim.",
+          "Hasil penyimpanan belum dapat dipastikan.",
+          "Catat seluruh siswa sebelum menyelesaikan sesi."
+        ],
+        "callsToAction": [
+          {
+            "label": "Simpan perubahan",
+            "target": "action:existing-save-attendance"
+          },
+          {
+            "label": "Coba lagi",
+            "target": "action:retry-existing-request"
+          },
+          {
+            "label": "Muat ulang",
+            "target": "action:reload-existing-attendance"
+          }
+        ]
+      },
+      "layout": "Pendamping 352px pada desktop, bilah aksi bawah pada ponsel. Hanya satu primary aktif sesuai fase. Tinjau & selesaikan memakai pemeriksaan atau dialog existing, tanpa merancang alur finalisasi baru. Finalisasi disabled selama ada unmarked, sesi bukan draft, atau izin tidak sah. Tidak membuat antrean offline otomatis; retry eksplisit mengikuti receipt existing. Konflik mempertahankan konteks dan meminta reload tanpa mengirim ulang draf lama otomatis.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Status busy, gagal, tersimpan, dan selesai mengikuti hasil controller; tidak ada keberhasilan optimistis.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Feedback langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Bilah aksi tidak menutupi baris terakhir dan aman terhadap keyboard.",
+        "medium": "Panel ringkas di bawah ringkasan atau daftar.",
+        "expanded": "Kolom kanan hanya setinggi isinya, tanpa panel kosong."
+      }
+    },
+    {
+      "id": "dasbor-anak",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "kpi-strip-chart-rail"
+      ],
+      "purpose": "Menilai kehadiran anak dalam periode yang dipilih.",
+      "userQuestion": "Bagaimana kehadiran anak selama enam pekan?",
       "stage": "evaluate",
       "dependencies": [
         "shell"
       ],
       "evidence": [
-        "msa-events.html memiliki heading beranda, kalender, daftar, pembuatan pelayanan, dan tinjauan tanggal.",
-        "Heading tidak membuktikan keberhasilan tindakan runtime."
+        "PDF Dashboard Mentor halaman 3",
+        "PDF Dekstop sign-in, homepage admin halaman 5"
+      ],
+      "copy": {
+        "heading": "Kehadiran anak",
+        "body": [
+          "Sample data",
+          "Kehadiran pekan terakhir 75%, di bawah rerata enam pekan 82%.",
+          "2 Oktober–6 November 2026",
+          "148 siswa · 888 catatan kehadiran",
+          "726 hadir dari 888 catatan · 82%",
+          "Pekan 6 November: 111 hadir, 12 izin, 0 tidak hadir, 25 belum diisi."
+        ],
+        "callsToAction": [
+          {
+            "label": "Periksa pekan terakhir",
+            "target": "action:select-latest-week"
+          }
+        ]
+      },
+      "layout": "View #/dasbor dengan satu h1 Dasbor kehadiran. Kartu fokus merah 720px dipasangkan dengan ringkasan Volunteer 352px; ringkasan status periode terpilih ditempatkan dekat cakupannya. Jangan mencampur angka kelompok 18/24 dengan total program 148 siswa. Tab Anak dan Volunteer mengganti cakupan konten; kontrol periode berada pada satu baris.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Tab, periode, dan kelompok memperbarui semua nilai yang terkait dari satu sumber data.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Nilai langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Satu kolom, kontrol satu baris dan ringkasan utama mendahului grafik.",
+        "medium": "Pendamping pindah di bawah jika terlalu sempit.",
+        "expanded": "720px + 16px + 352px, tinggi mengikuti isi."
+      }
+    },
+    {
+      "id": "dasbor-tren",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "kpi-strip-chart-rail"
+      ],
+      "purpose": "Membandingkan kehadiran antarpekan.",
+      "userQuestion": "Pekan mana yang memiliki kehadiran lebih rendah?",
+      "stage": "prove",
+      "dependencies": [
+        "dasbor-anak"
+      ],
+      "evidence": [
+        "PDF Dashboard Mentor halaman 3",
+        "PDF Dekstop sign-in, homepage admin halaman 5",
+        "brand-system.colorPalette"
+      ],
+      "copy": {
+        "heading": "Tren kehadiran",
+        "body": [
+          "Sample data",
+          "2 Okt 78% · 9 Okt 84% · 16 Okt 80%",
+          "23 Okt 86% · 30 Okt 88% · 6 Nov 75%"
+        ],
+        "callsToAction": []
+      },
+      "layout": "Grafik batang kapsul sesuai referensi, penuh 1088px dan sekitar 240px tinggi. Satu seri kehadiran, skala 0–100% terlihat, tick 0, 25, 50, 75, 100. Nilai setiap batang tertulis, periode terpilih memakai outline dan label selain warna. Biru muda menggunakan penguatan mark sesuai brand system. Tidak memakai luas lingkaran sebagai pengganti tinggi batang. Grafik kosong mempertahankan sumbu; missing bukan nol.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Memilih batang memperbarui periode detail tanpa mengubah skala.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Pilihan langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Grafik 160–200px, enam nilai tetap terbaca; label tanggal dipadatkan tanpa scroll halaman.",
+        "medium": "Penuh.",
+        "expanded": "Penuh, sejajar dengan ringkasan di atas."
+      }
+    },
+    {
+      "id": "dasbor-volunteer",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "kpi-strip-chart-rail"
+      ],
+      "purpose": "Memperlihatkan kebutuhan slot Volunteer.",
+      "userQuestion": "Slot pelayanan mana yang belum terisi?",
+      "stage": "evaluate",
+      "dependencies": [
+        "dasbor-anak"
+      ],
+      "evidence": [
+        "PDF Dashboard Mentor halaman 4",
+        "PDF Dekstop sign-in, homepage admin halaman 5",
+        "MASTER_BRIEF.md batas analitik relawan"
+      ],
+      "copy": {
+        "heading": "Volunteer",
+        "body": [
+          "Sample data",
+          "4 dari 22 slot pekan ini belum terisi.",
+          "18 slot terisi · 4 slot kosong · 82% keterisian",
+          "Rerata keterisian enam pekan · 84%",
+          "SDN Airlangga · Kelompok 4 · Butuh 1 Volunteer",
+          "SDN Kertajaya · Kelompok 2 · Butuh 2 Volunteer",
+          "Latihan drama Natal · Butuh 1 Volunteer"
+        ],
+        "callsToAction": [
+          {
+            "label": "Lihat pelayanan",
+            "target": "#/pelayanan"
+          }
+        ]
+      },
+      "layout": "Pada tab Anak tampilkan ringkasan gelap 352px. Pada tab Volunteer gunakan ringkasan dan daftar tiga kebutuhan sebagai isi utama view yang sama. Angka adalah slot, bukan klaim jumlah orang hadir. Rerata 84% dihitung dari snapshot slot, bukan disebut rerata hadir. Tidak menambahkan penugasan atau analitik backend baru; data contoh dapat dibaca dan difilter lokal.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Tab dan pilihan kebutuhan memperbarui konteks pelayanan tanpa membuat penugasan.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Konten langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Ringkasan, lalu tiga baris kebutuhan dua tingkat.",
+        "medium": "Ringkasan dan daftar bertumpuk bila perlu.",
+        "expanded": "Ringkasan pendamping pada tab Anak; ringkasan dan daftar seimbang pada tab Volunteer."
+      }
+    },
+    {
+      "id": "pelayanan-daftar",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Menemukan pelayanan dan membuka tindakan yang diizinkan.",
+      "userQuestion": "Pelayanan mana yang perlu saya buka?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "D0 kartu pelayanan",
+        "PDF Dekstop sign-in, homepage admin halaman 3–4",
+        "msa-events.html"
       ],
       "copy": {
         "heading": "Pelayanan",
         "body": [
-          "Daftar dan kalender tersedia pada markup; interaksinya belum diuji.",
-          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Penelusuran: daftar, pencarian, dan cakupan tanggal.",
-          "Kalender: tanggal pilihan dan konteks pelayanan.",
-          "Draf: label keadaan, tindakan utama, dan tinjau tanggal."
+          "Sample data",
+          "7 pelayanan · 3 terbit · 3 draf · 1 dibatalkan",
+          "Pelayanan rutin Jumat · SDN Pakel V · Kak Rina",
+          "Latihan drama Natal · Ruang serbaguna · Kak Sari"
         ],
         "callsToAction": [
           {
-            "label": "Buka bukti",
-            "target": "action:open-evidence:pelayanan"
+            "label": "Buat pelayanan",
+            "target": "/msa-events.html#baru"
+          },
+          {
+            "label": "Atur ulang",
+            "target": "action:reset-service-filters"
           }
         ]
       },
-      "layout": "View #/pelayanan. Tiga skenario dalam tabel 754px, rail 384px. Tidak membuat kalender operasional, pelayanan baru, atau grafik laporan. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "layout": "View #/pelayanan. Pencarian, tab status, organisasi, program, dan tanggal memakai data yang sama dengan beranda. Daftar kartu pelayanan memakai signature; detail terpilih tampil sebagai region sendiri. Form buat, edit, publish, dan cancel tetap memakai implementasi existing dengan grant dan konfirmasi existing. Tidak mendesain workflow pengelolaan baru.",
       "motion": {
         "purpose": "state_change",
-        "trigger": "press",
-        "behavior": "Pemilihan skenario mengganti bukti dan selected state.",
+        "trigger": "state_change",
+        "behavior": "Filter dan sorting memperbarui hasil, hitungan, dan selected tanpa kehilangan fokus.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Bukti dan selected state berubah langsung."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Hasil langsung."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Skenario dua tingkat, sumber di bawah, drawer penuh.",
-        "medium": "Tabel dan sumber ditumpuk.",
-        "expanded": "Tabel dan rail sejajar tanpa panel kosong yang diregangkan."
+        "compact": "Satu baris filter atau sheet; kartu dua tingkat; detail menggantikan daftar sementara.",
+        "medium": "Dua kolom objek atau daftar dengan detail di bawah.",
+        "expanded": "Tiga kolom objek, detail membuka region terpisah tanpa mengubah ID."
       }
     },
     {
-      "id": "pengguna-review",
+      "id": "kalender",
       "layoutFamily": "dashboard",
       "layoutCases": [
         "table-filter-bar"
       ],
-      "purpose": "Memeriksa pencarian pengguna dan tindakan perubahan akses.",
-      "userQuestion": "Apakah admin memahami siapa yang dipilih dan akses apa yang berubah?",
+      "purpose": "Menemukan pelayanan menurut hari dan cakupan.",
+      "userQuestion": "Apa pelayanan pada tanggal yang dipilih?",
+      "stage": "evaluate",
+      "dependencies": [
+        "pelayanan-daftar"
+      ],
+      "evidence": [
+        "PDF Welcome, Sign-in, absensi halaman 6–8",
+        "msa-events.html"
+      ],
+      "copy": {
+        "heading": "Kalender",
+        "body": [
+          "Sample data",
+          "2–8 November 2026",
+          "Jumat, 6 November · 2 pelayanan",
+          "Sabtu, 7 November · 2 pelayanan",
+          "Belum ada pelayanan yang cocok dengan filter."
+        ],
+        "callsToAction": [
+          {
+            "label": "Filter pelayanan",
+            "target": "action:open-calendar-filters"
+          },
+          {
+            "label": "Atur ulang filter",
+            "target": "action:reset-calendar-filters"
+          }
+        ]
+      },
+      "layout": "View #/kalender. Strip pekan dan agenda per tanggal mengikuti D8. Satu tanggal selected, status tertulis, dan kartu pelayanan memakai sumber objek yang sama. Sheet filter memuat organisasi, program, status, serta Terapkan dan Atur ulang. Tampilan Bulan hanya tersedia jika controller existing mendukung rentang dan hasil yang benar; jika tidak, pertahankan pekan dan agenda tanpa tombol mati. Tidak menambahkan ilustrasi kosong.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Navigasi tanggal dan filter memperbarui agenda; sheet mendukung Escape dan fokus kembali.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Agenda dan sheet langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Strip hari dan satu baris filter; agenda pertama tampil sebelum kontrol memenuhi layar.",
+        "medium": "Agenda dua kolom hanya bila kartu tetap terbaca.",
+        "expanded": "Strip pekan penuh dan kartu agenda sejajar pada grid utama."
+      }
+    },
+    {
+      "id": "jadwal",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Membuka penugasan Mentor tanpa membuat fitur penjadwalan baru.",
+      "userQuestion": "Penugasan mana yang berlaku untuk saya?",
+      "stage": "continue",
+      "dependencies": [
+        "mentor-pelayanan"
+      ],
+      "evidence": [
+        "mentor-account.html",
+        "D0 peta layar"
+      ],
+      "copy": {
+        "heading": "Jadwal",
+        "body": [
+          "Sample data",
+          "Jumat, 6 November · 09.00 WIB · Kelompok 3 · SDN Pakel V"
+        ],
+        "callsToAction": [
+          {
+            "label": "Buka pelayanan",
+            "target": "#/beranda"
+          }
+        ]
+      },
+      "layout": "View pendukung #/jadwal memakai daftar penugasan yang sudah tersedia, judul, dan satu kartu identitas sesi. Tidak mengarang kalender Mentor atau penyuntingan jadwal yang belum dimockup.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Pilihan sesi membuka konteks yang sama.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Daftar satu kolom.",
+        "medium": "Daftar penuh.",
+        "expanded": "Daftar maksimal 720px tanpa panel kosong pendamping."
+      }
+    },
+    {
+      "id": "riwayat",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Membaca catatan sesi yang tersedia tanpa mengubah histori.",
+      "userQuestion": "Catatan sesi mana yang dapat saya periksa?",
+      "stage": "continue",
+      "dependencies": [
+        "mentor-pelayanan"
+      ],
+      "evidence": [
+        "D0 peta layar",
+        "MASTER_BRIEF.md aturan histori"
+      ],
+      "copy": {
+        "heading": "Riwayat",
+        "body": [
+          "Pilih sesi yang tersedia untuk memeriksa catatan absensi."
+        ],
+        "callsToAction": [
+          {
+            "label": "Kembali ke beranda",
+            "target": "#/beranda"
+          }
+        ]
+      },
+      "layout": "View pendukung #/riwayat, frame, h1, dan daftar sesi hanya jika adapter existing menyediakan data berizin. Tanpa adapter, tampilkan Catatan sesi belum tersedia. Tidak menambah endpoint riwayat, kontrol koreksi, atau riwayat finalisasi rekaan.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Kembali memulihkan konteks beranda.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Navigasi langsung."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Satu region baca.",
+        "medium": "Satu region baca.",
+        "expanded": "Kolom baca tanpa membentangkan pesan singkat menjadi kartu besar."
+      }
+    },
+    {
+      "id": "akun-perangkat",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Mengakses konteks akun dan perangkat yang sudah tersedia.",
+      "userQuestion": "Akun dan perangkat apa yang sedang digunakan?",
       "stage": "de_risk",
       "dependencies": [
         "shell"
       ],
       "evidence": [
-        "msa-users.html memiliki Daftar pengguna dan Konfirmasi perubahan akses.",
-        "Otorisasi dan hasil perubahan akses belum diuji pada fase ini."
+        "mentor-account.html",
+        "msa-portal.html",
+        "D0 peta layar"
       ],
       "copy": {
-        "heading": "Pengguna",
+        "heading": "Akun",
         "body": [
-          "Konfirmasi perubahan akses tersedia pada markup; perilakunya belum diuji.",
-          "Sample data: 3 skenario pemeriksaan, seluruhnya Belum diperiksa.",
-          "Penelusuran: identitas, pencarian, dan filter.",
-          "Pemilihan: pengguna yang dipilih dan tindakan tersedia.",
-          "Perubahan akses: konsekuensi, konfirmasi, dan hasil."
+          "Identitas akun dan akses mengikuti sesi yang sedang aktif."
         ],
         "callsToAction": [
           {
-            "label": "Buka bukti",
-            "target": "action:open-evidence:pengguna"
+            "label": "Perangkat saya",
+            "target": "#/perangkat"
+          },
+          {
+            "label": "Keluar",
+            "target": "action:existing-logout"
           }
         ]
       },
-      "layout": "View #/pengguna. Tiga skenario dalam tabel 754px, rail 384px. Tidak memuat data pribadi atau menyediakan perubahan akses operasional. Empty, zero, loading, dan error mengikuti kontrak bersama.",
+      "layout": "View #/akun memiliki h1 Akun. View #/perangkat memiliki h1 Perangkat dan memakai region pengelolaan perangkat existing. Tidak membuat pengaturan profil, transfer perangkat, pemulihan grant, atau penggunaan kuota. Logout dan pemeriksaan perangkat tetap melalui handler existing.",
       "motion": {
         "purpose": "state_change",
         "trigger": "press",
-        "behavior": "Buka bukti membuka drawer tanpa mengubah akses pengguna.",
+        "behavior": "Pembukaan perangkat dan logout mempertahankan feedback serta pengelolaan fokus existing.",
         "durationMs": 180,
-        "easing": "cubic-bezier(0.2,0,0,1)",
-        "reducedMotion": "Drawer langsung tampil."
+        "easing": "cubic-bezier(0.2, 0, 0, 1)",
+        "reducedMotion": "Perubahan langsung."
       },
       "componentNeeds": [],
       "assetNeeds": [],
       "transformation": {
-        "compact": "Daftar dua tingkat, identitas tidak terpotong, sumber di bawah.",
-        "medium": "Tabel mempertahankan identitas dan tindakan; sumber ditumpuk.",
-        "expanded": "Tabel dan rail mengikuti grid bersama."
+        "compact": "Satu region akun atau perangkat pada satu waktu.",
+        "medium": "Panel menyesuaikan isi.",
+        "expanded": "Kolom konteks dengan tinggi alami, tanpa pola usage atau billing."
       }
     }
   ],
   "responsive": [
-    "Verifikasi pada 360, 390, 768, 1365, dan 1440px tanpa overflow horizontal halaman.",
-    "Pada 1440×900, setiap view memperlihatkan judul, finding, seluruh header bloknya, dan baris awal atau figur. Semua view tidak ditampilkan sekaligus.",
-    "Default menempatkan ringkasan sekitar y=88–208, daftar dan rail mulai sekitar y=232, serta header Rekomendasi sebelum y=820. Ukuran akhir diverifikasi setelah font dimuat.",
-    "Pada 390px, baris pemeriksaan pertama dimulai dalam 60% atas viewport; filter tambahan masuk sheet.",
-    "Rail ditumpuk ketika kolom terlalu sempit. Panel tidak diberi tinggi palsu.",
-    "Ponsel memakai judul 24px, isi 14px, subline minimal 12px, dan target interaksi minimal 48px."
+    "Default tanpa sesi adalah Welcome yang lengkap; layar lain merupakan view terpisah, bukan bagian panjang di bawah Welcome.",
+    "Pada 1440×900, beranda Admin menampilkan title dan finding, tiga nilai, tautan dasbor, serta header dan dua baris pelayanan. Anggaran: offset 40px + header 80px + gap 16px + nilai 128px + gap 16px + tautan 84px + gap 24px + judul daftar 32px + gap 16px + dua baris 224px + padding bawah 40px = 800px.",
+    "Pada 1440×900, beranda Mentor menampilkan kartu pelayanan, status perangkat, penugasan cadangan, dan akses riwayat. Absensi menampilkan ringkasan, filter, tindakan, dan sedikitnya lima baris siswa; seluruh daftar tetap dapat digulir.",
+    "Dasbor desktop menampilkan ringkasan anak, ringkasan Volunteer, serta grafik enam pekan dalam layar pertama. Tab Volunteer menampilkan header dan tiga kebutuhan slot pada layar pertamanya.",
+    "Uji 360, 390, 768, 1100, 1365, dan 1440px. Tidak ada overflow horizontal halaman.",
+    "Ponsel memakai sisi 24px sesuai referensi, dapat dipadatkan menjadi 16px pada 360px bila diperlukan untuk keterbacaan. Jangan mengecilkan teks atau target sentuh untuk mempertahankan kolom.",
+    "Pada 641–1100px sidebar menjadi menu sheet; pasangan panel ditumpuk ketika salah satu kurang dari 340px.",
+    "Navigasi bawah dan bilah aksi memperhitungkan safe area serta ruang akhir daftar. Tombol tidak menutupi siswa terakhir.",
+    "Filter dan tab dapat menggulir di dalam regionnya; halaman tidak bergulir ke samping.",
+    "Pada ponsel, daftar dan detail tampil satu region pada satu waktu; kembali memulihkan posisi serta filter."
   ],
   "interactions": [
-    "Pencarian, tab, urutan, Tampilkan semua, Hapus filter, navigasi, dan drawer mengubah keadaan lokal laporan. Tidak ada backend atau sinkronisasi langsung.",
-    "Check memiliki ID stabil. Scenario ditautkan ke check induk dan tidak menambah total check.",
-    "Pencarian mencocokkan area dan uraian. Hitungan hasil dan keadaan kosong berasal dari hasil yang sama.",
-    "Buka menuju view area. Pemeriksaan lintas area membuka drawer sumber, visual, aksesibilitas, atau keadaan interaksi.",
-    "Baris interaktif memiliki hover ringan, selected state berbasis ID, fokus terlihat, dan disabled beralasan bila tindakan tidak tersedia. Pembacaan bukti tetap tersedia walau audit belum selesai.",
-    "Sumber PDF yang belum tersedia dapat dibuka untuk membaca nama dan keterbatasannya, tanpa tombol Buka PDF palsu.",
-    "Tab memakai aria-selected dan panel terkait; loading memakai aria-busy; hasil pencarian diumumkan secara singkat.",
-    "Drawer memiliki judul aksesibel, Escape, focus trap, dan focus return. Pergantian view menutup drawer lama.",
-    "Transisi 180ms dengan easing brand system dapat diinterupsi oleh input cepat. Wilayah baca statis tidak dianimasikan.",
-    "Reduced motion mempertahankan seluruh operasi dengan perubahan langsung.",
-    "Error hanya tampil jika pemuatan lokal benar-benar gagal. Tidak ada kontrol simulasi kegagalan dalam alur pengguna.",
-    "Pemeriksaan tidak dapat ditandai lulus tanpa bukti. Artefak awal merupakan laporan baca dengan penelusuran lokal."
+    "Autentikasi memakai handler existing. Validasi kosong, tampilkan sandi, busy, galat kredensial, jaringan, pembatasan percobaan, dan pemulihan fokus harus benar-benar berfungsi.",
+    "Opsi sesi persisten hanya dirender ketika didukung jalur existing. Tidak menyimpan kata sandi atau membuat sesi dari pilihan UI.",
+    "Navigasi, Back, Forward, tab, filter, pencarian, pilihan tanggal, dan pilihan objek memiliki perubahan state nyata serta dapat dioperasikan dengan keyboard.",
+    "Filter pelayanan dan kalender menggunakan AND antarkriteria. Pencarian nama case-insensitive; sorting stabil memakai tanggal, waktu, lalu ID. Reset mengembalikan cakupan awal.",
+    "Sheet filter memiliki pilihan sementara. Terapkan mengubah hasil, sedangkan menutup tanpa menerapkan mempertahankan filter sebelumnya.",
+    "Hitungan tab siswa dihitung dari roster sesi, sementara jumlah hasil pencarian dihitung dari hasil yang cocok. Kedua cakupan diberi nama yang jelas.",
+    "Perubahan status siswa memperbarui draf lokal dan ringkasan. Save, finalize, dan correct tetap melalui controller serta kontrak existing.",
+    "Finalisasi tidak tersedia selama ada siswa unmarked. Status absent tetap dapat dipilih meski nilai awalnya nol.",
+    "Offline tidak membuat antrean atau pengiriman otomatis baru. Hasil write yang belum pasti tidak disebut berhasil; retry eksplisit mengikuti permintaan existing.",
+    "Penolakan izin tidak membuka data privat. Konflik revisi tidak menimpa data server dan tidak mengirim ulang perubahan lama secara otomatis.",
+    "Pada fixture lokal, navigasi, filter, grafik, dan draf dapat bekerja tanpa backend. Kontrol write yang tidak memiliki adapter sah dinonaktifkan dengan alasan Penyimpanan tidak tersedia; tidak memberi sukses palsu.",
+    "Setiap kontrol memiliki hover tonal, pressed, fokus terlihat, selected atau expanded semantik, dan disabled dengan alasan yang relevan.",
+    "Setiap blok data mempertahankan header saat loading, empty, zero, atau error. Loading memakai bidang abu datar tanpa shimmer; refresh mempertahankan nilai sebelumnya sampai hasil tersedia.",
+    "Retry hanya tampil bila benar-benar mengulangi operasi. Tidak menambahkan refresh palsu untuk dataset statis.",
+    "Seluruh transisi menggunakan 180ms dan cubic-bezier(0.2, 0, 0, 1), dapat diinterupsi. Reduced motion menggunakan keadaan akhir langsung.",
+    "Foto gagal dimuat tidak menghalangi login. Jangan menampilkan teks placeholder dari PDF."
   ],
   "acceptanceCriteria": [
-    "Lingkup tetap penyajian laporan review, bukan redesign aplikasi atau audit yang telah selesai. Fase Page Blueprint tidak mengubah berkas, dependensi, aset, atau data aplikasi.",
-    "Referensi utama dipilih secara eksplisit: page.referenceDirectionId adalah user-reference-2. Pemetaan bagian: shell ke user-reference-1, ringkasan dan Portal ke user-reference-2, Masuk ke user-reference-3, Mentor ke user-reference-4 dengan user-reference-3 sebagai pendamping absensi.",
-    "Pemilihan referensi adalah keputusan arah, bukan klaim pemeriksaan visual. Keempat PDF belum tersedia pada lokasi yang diperiksa. Komposisi yang dapat diekstrak setelah PDF tersedia mengungguli sheet; jangan mengarang isi atau menyatakan kesetiaan visual sebelum pemeriksaan.",
-    "Bagian yang tidak memiliki referensi pengguna yang relevan tidak diberi referenceDirectionId. Diagram, tabel laporan, dan tampilan administrasi lain mengikuti brand system serta sheet.",
-    "Inventaris objek: View memiliki id, route, title, finding, sourceIds; Check memiliki id, area, question, state, scenarioIds, evidenceIds; Scenario memiliki id, parentCheckId, label, state; Source memiliki id, nama atau path, availability, inspectionKind, referenceDirectionId bila relevan; Finding memiliki id, checkId, evidenceIds, impact, priority, correction.",
-    "Inventaris pekerjaan: membaca batas kesimpulan, membuka area, memeriksa bukti, lalu menyusun koreksi yang didukung bukti. Pekerjaan tersering adalah membuka pemeriksaan area, satu klik dari ringkasan.",
-    "Mentor, Volunteer, dan admin adalah pengguna aplikasi yang dinilai, bukan akun rekaan laporan. Nama produk, logo, istilah pelayanan, dan konteks pelayanan-kelompok-tanggal menjaga identitas ABC MSA.",
-    "Dataset representatif memiliki 7 view, 10 check, 18 scenario area, 8 source, dan 0 finding. Semua check dan scenario berkeadaan Belum diperiksa. Ini struktur contoh laporan, bukan hasil audit.",
-    "Distribusi scenario: Portal 3 + Masuk 3 + Mentor 4 + Organisasi dan program 2 + Pelayanan 3 + Pengguna 3 = 18.",
-    "Sepuluh check terdiri atas enam area aplikasi dan empat pemeriksaan lintas area: sumber referensi, visual, responsivitas dan aksesibilitas, serta keadaan dan interaksi. Terverifikasi 0 + belum diperiksa 10 = total 10.",
-    "Delapan source terdiri atas empat PDF belum tersedia serta C10-preview.png, logo ABC, ui/msa-tokens.css, dan kelompok markup lima halaman yang tersedia. Kelompok markup dihitung sebagai satu entri sumber. Tersedia 4 + belum tersedia 4 = total 8.",
-    "Hitungan berasal dari dataset dan diverifikasi dengan assert. Tab, ringkasan, drawer, dan pencarian menggunakan variabel yang sama. Unit selalu pemeriksaan, skenario, sumber, atau temuan.",
-    "Setiap copy.body yang membawa angka mencantumkan Sample data. Saat dirender, label Sample data tampil satu kali per view sebagai pemberitahuan tenang.",
-    "Setiap blok mendukung empty, zero, loading, dan error: header tetap ada, nol tidak diganti nilai kosong, skeleton tanpa shimmer, error lokal dengan Coba lagi bila pemuatan ulang tersedia. Blok statis tidak memiliki loading buatan.",
-    "Setiap rekomendasi wajib menyebut area, bukti, dampak, prioritas, dan koreksi. Laporan historis dibedakan dari pengujian langsung. Tidak adanya temuan tidak berarti tidak ada masalah.",
-    "Gunakan brand system tanpa warna atau font baru. Logo asli dipertahankan. Pada implementasi berikutnya, pemuatan Nunito Sans, bobot, angka tabular, dan kontras hasil render wajib diverifikasi.",
-    "Setiap view memiliki satu h1 aktif. Semua tujuan navigasi adalah view nyata tanpa dead link atau anchor pengganti layar.",
-    "Verifikasi browser berikutnya mencakup pencarian, urutan, tab kosong, Tampilkan semua, navigasi, drawer, Escape, focus return, input cepat, reduced motion, dan seluruh lebar yang ditentukan. Screenshot bukan bukti perilaku.",
-    "Belum diperiksa: isi empat PDF, perbandingan versi, perilaku browser, perangkat fisik, dan screen reader. Tidak ada klaim peningkatan usability atau kesiapan produksi."
+    "Fase ini hanya menghasilkan blueprint. Tidak mengubah berkas, menjalankan implementasi, memasang dependensi, atau menjalankan server.",
+    "Inventaris objek: identity memiliki id, displayName, initials, roleLabel, capabilities; organization dan program memiliki id serta name; service memiliki id, organizationId, programId nullable, title, startAt, timezone, venue, picId, lifecycle, revision; session memiliki id, serviceId, groupId, startAt, state, revision; student memiliki id, displayName, classLabel, groupId; attendance memiliki sessionId, studentId, status, updatedAt; volunteerSlot memiliki id, serviceId, groupId nullable, volunteerId nullable.",
+    "Satuan: waktu ISO dengan timezone Asia/Jakarta dan label WIB, jumlah siswa, jumlah pelayanan, jumlah slot, serta persen dengan denominator eksplisit. ID stabil tidak berasal dari indeks hasil filter.",
+    "Pengguna adalah Mentor, Admin, dan Superadmin dengan capabilities berbeda. Frekuensi diasumsikan: Mentor membuka sebelum dan selama sesi; Admin memeriksa jadwal serta draf harian. Pekerjaan paling sering diasumsikan mencatat absensi, dengan Mulai absensi satu klik dari beranda Mentor. Asumsi ini bukan hasil riset pengguna.",
+    "Benda khas produk adalah identitas pelayanan, kelompok, sekolah, PIC, tanggal sesi, status kehadiran, penugasan utama dan cadangan, serta perangkat berizin. Logo dan nama produk hadir pada shell.",
+    "Dataset contoh menggunakan clock 6 November 2026 dan pekan 2–8 November 2026. Clock fixture tidak mengganti waktu atau aturan server operasional.",
+    "Shape fixture: 2 organisasi ilustratif, 3 program ilustratif, 7 service, 6 kelompok, 148 siswa fiktif, 36 session berupa 6 kelompok × 6 pekan, 888 attendance berupa 148 siswa × 6 pekan, 18 identitas Volunteer fiktif, 22 volunteerSlot pekan terpilih, dan 6 snapshot keterisian slot. Tidak menyalin data pribadi anak nyata.",
+    "Tujuh service terdiri dari 3 published, 3 draft, dan 1 cancelled. Tanggal: 4 November satu published; 6 November satu published dan satu draft; 7 November satu published dan satu draft; 8 November satu cancelled dan satu draft. Assert seluruh status berjumlah 7 dan setiap serviceId unik.",
+    "Nama service contoh: Pojok Ceria sesi 4; Pelayanan rutin Jumat di SDN Pakel V; Pelayanan rutin Jumat di SDN Airlangga; Pelayanan SDN Airlangga; Latihan drama Natal; Pertemuan Volunteer baru; Persiapan Natal 2026. Semua diperlakukan sebagai representative records, bukan kegiatan operasional terverifikasi.",
+    "Jumlah siswa per kelompok adalah 24, 25, 24, 25, 25, 25. Assert jumlahnya 148. Kelompok 3 memiliki 24 siswa.",
+    "Status sesi Kelompok 3 pada 6 November adalah 18 present, 2 excused, 0 absent, dan 4 unmarked. Assert 18 + 2 + 0 + 4 === 24 serta round(18 / 24 × 100) === 75.",
+    "Contoh urutan siswa awal: Alya Putri present, Bima Saputra present, Citra Lestari unmarked, Dafa Ramadhan excused, Elsa Wijaya present. Nama lainnya harus fiktif, unik menurut ID, dan melengkapi 24 objek sesuai hitungan.",
+    "Pada pekan terakhir, enam kelompok memiliki present 18,19,18,19,18,19; excused masing-masing 2; absent masing-masing 0; unmarked 4,4,4,4,5,4. Assert total 111 present + 12 excused + 0 absent + 25 unmarked === 148.",
+    "Enam pekan berurutan adalah 2,9,16,23,30 Oktober dan 6 November 2026. Present per pekan 116,124,118,127,130,111 dari 148 siswa. Untuk lima pekan awal, non-present dibentuk dari excused 12,10,12,8,7 dan absent 20,14,18,13,11; unmarked nol. Pekan terakhir memakai pembagian yang sudah ditetapkan.",
+    "Assert total attendance 888, total present 726, dan round(726 / 888 × 100) === 82. Label grafik dibulatkan menjadi 78,84,80,86,88,75 persen. Nilai rerata dihitung dari catatan, bukan rata-rata label yang telah dibulatkan.",
+    "Pekan terakhir program 111/148 dan kelompok 18/24 sama-sama 75%, tetapi cakupannya berbeda dan harus disebutkan. Jangan memakai 18 siswa sebagai bagian langsung dari total 148 pada kartu program.",
+    "VolunteerSlot pekan terpilih: 18 terisi dan 4 kosong dari 22, sehingga keterisian dibulatkan 82%. Empat slot kosong terbagi pada tiga kebutuhan sebesar 1,2,1. Assert seluruh bagian cocok.",
+    "Snapshot slot enam pekan memiliki kapasitas masing-masing 22 dan terisi 18,18,18,19,20,18. Assert total terisi 111 dari kapasitas 132 dan rerata keterisian dibulatkan 84%. Jangan menamai metrik ini kehadiran Volunteer karena sumbernya slot.",
+    "Teks Sample data tercantum pada copy.body setiap blok yang memuat angka contoh dan dirender sekali per view sebagai pemberitahuan tenang. Identitas fixture tidak dipresentasikan sebagai akun operasional.",
+    "Seluruh angka dan fakta berulang berasal dari modul data yang sama. Assert roster tidak memiliki studentId ganda, setiap attendance merujuk siswa dan sesi sah, status hanya enum existing, serta filter tidak mengubah dataset sumber.",
+    "Nol tampil sebagai 0 dengan unit. Missing atau belum tersedia tampil sebagai tanda minus kecil dan keterangan yang tepat, bukan nol, persen kesiapan, atau sukses.",
+    "Referensi empat PDF sudah diperiksa pada fase Brand. Catalog pada fase ini kosong, sehingga tidak membuat referenceDirectionId user-reference-# yang tidak diberikan. Bukti memakai path PDF dan nomor halaman pada evidence.",
+    "Setiap view memiliki tepat satu h1 aktif dalam dokumen. Region tidak aktif tidak meninggalkan h1 ganda. Seluruh elemen interaktif mempunyai box minimal 48×48 CSS px tanpa target bertumpang tindih.",
+    "Satu primary per konteks kerja. Navigasi pusat tidak menjadi primary tambahan ketika bilah tugas absensi aktif.",
+    "Peta layar D0 belum menyediakan desain Jadwal Mentor, Riwayat, Akun, Daftar Volunteer, atau Tinjauan sebelum selesai. Gunakan tujuan dan handler existing, atau view pendukung minimal yang telah dijelaskan; tidak menambah desain alur penuh di luar cakupan.",
+    "Analitik anak dan Volunteer pada blueprint adalah fixture lokal. Keberadaan mockup dan rute preview tidak menjadi klaim backend agregasi, sinkronisasi live, atau penugasan Volunteer sudah diimplementasikan.",
+    "Aset abc-movement-logo merujuk assets/abc-movement-logo.png. Aset msa-auth-documentation adalah kebutuhan media welcome/masuk yang belum dinyatakan ready; fase Assets harus memeriksa slot atau berkas yang sesuai dan provenance-nya. Jangan memakai aset placeholder default sebagai foto final tanpa pemeriksaan.",
+    "Tidak ada perubahan warna atau font dari brand system. Font lokal harus dimuat dan diverifikasi lewat document.fonts.ready, loaded FontFace, document.fonts.check pada bobot aktual, serta pengukuran digit tabular.",
+    "Verifikasi Build mencakup browser console assertions dataset, navigasi dan history, kombinasi filter, reset, pencarian cepat, perubahan status, kondisi finalisasi, galat dan retry, Escape, focus return, keyboard, reduced motion, serta ukuran layar yang ditetapkan. Pemeriksaan runtime tersebut belum dijalankan pada fase ini.",
+    "Pertahankan kontrak request/response, IDs, name, data-*, ARIA yang dibaca JS, DOM replacement hooks, rute operasional, server authorization, dan histori absensi. Tidak mengubah backend atau mengaktifkan gate produksi.",
+    "Pekerjaan lokal yang sudah ada serta berkas C10 tetap dipertahankan. Blueprint ini tidak memberi izin commit, deploy, penghapusan, atau penggantian pekerjaan yang tidak terkait."
   ]
 }

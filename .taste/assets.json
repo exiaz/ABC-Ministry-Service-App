@@ -4,63 +4,144 @@
     {
       "id": "abc-movement-logo",
       "kind": "image",
-      "status": "existing",
-      "purpose": "Identitas ABC MSA pada shell laporan.",
+      "status": "ready",
+      "purpose": "Identitas asli ABC Movement pada shell, Welcome, dan Masuk.",
       "requirements": [
-        "Berkas lokal telah diperiksa secara visual dan memiliki signature PNG valid.",
-        "Dimensi asli 2392×1018 piksel, ukuran 126387 byte; memenuhi batas raster.",
-        "Pertahankan seluruh bentuk, warna, dan proporsi. Gunakan object-fit: contain tanpa crop atau pewarnaan ulang.",
-        "Gunakan berkas proyek langsung; tidak perlu menyalin atau menghasilkan logo baru."
+        "PNG lokal diperiksa visual dan signature-nya valid: 2392×1018 piksel, 126387 byte.",
+        "Pertahankan seluruh simbol, tulisan, warna, dan proporsi. Gunakan object-fit: contain tanpa crop atau recolor.",
+        "Tidak membuat logo atau monogram pengganti."
       ],
       "role": "logo",
       "sectionIds": [
-        "shell"
+        "shell",
+        "welcome",
+        "masuk"
       ],
       "aspectRatio": "1196:509",
-      "composition": "Logo lengkap berupa tangan dan tulisan ABC Movement pada bidang horizontal. Tempatkan utuh di kepala sidebar atau menu sheet, dengan nama produk sebagai teks terpisah. Tidak menimpa logo dengan teks atau memasukkannya ke wadah berwarna.",
+      "composition": "Logo horizontal lengkap dengan simbol tangan di kiri dan tulisan ABC Movement di kanan. Tampilkan utuh pada bidang putih; nama aplikasi berada di luar gambar.",
       "source": {
         "kind": "project",
         "reference": "assets/abc-movement-logo.png",
-        "license": "Aset merek existing proyek; digunakan untuk identitas ABC MSA, tanpa mengasumsikan lisensi redistribusi publik."
+        "license": "Aset merek existing proyek. Tidak mengasumsikan lisensi redistribusi publik."
       },
       "destination": "assets/abc-movement-logo.png"
     },
     {
+      "id": "msa-auth-documentation",
+      "kind": "image",
+      "status": "ready",
+      "purpose": "Media autentikasi mengikuti subjek tangan dan kartu belajar pada mockup terbaru.",
+      "requirements": [
+        "Gambar selesai dibuat dan disimpan sebagai PNG asli: 1024×1536 piksel, 1572864 piksel total, 2495863 byte.",
+        "Gambar penuh dan crop mendatar 1024×560 telah diperiksa visual. Subjek tangan serta kartu tetap terbaca; tidak ada wajah, tulisan, watermark, atau logo buatan.",
+        "Gunakan object-fit: cover. Mulai dengan object-position: 50% 50% pada desktop dan 50% 58% pada media mendatar ponsel; verifikasi kembali pada layout aktual.",
+        "Ini ilustrasi sintetis bergaya fotografi, bukan dokumentasi kegiatan ABC nyata. Deskripsi aksesibel dan keterangan media harus menyatakan sifat ilustratifnya.",
+        "Asli disalin tanpa konversi; metadata PNG termasuk chunk caBX dipertahankan. SHA256: f714b632ca52b63bc11f3d8565a3c15725b56f0801611582af27342d90ebc908.",
+        "Jangan menimpa msa-visual-default.jpg. Integrasi ke slot atau elemen gambar dilakukan saat Build, tanpa mengubah kontrak publikasi media.",
+        "Pemeriksaan crop aset telah dilakukan; layout halaman dan integrasi browser belum diuji."
+      ],
+      "role": "photography",
+      "sectionIds": [
+        "welcome",
+        "masuk"
+      ],
+      "aspectRatio": "2:3",
+      "composition": "Dua tangan orang dewasa menata kartu merah, kuning, dan biru di meja kayu kelas. Sudut kamera miring dari atas dengan cahaya jendela lembut. Tangan dan kartu menjadi fokus tengah hingga bagian bawah; kiri atas berupa meja yang tenang untuk penempatan logo terpisah. Tanpa wajah anak, identitas orang, teks, atau antarmuka raster.",
+      "source": {
+        "kind": "generated",
+        "reference": "image_gen.imagegen; output exec-08663ecb-66a8-4713-98a2-b98e715e22e6.png; session 01a1aafc-62bb-7b01-903f-13ff60b9000b",
+        "license": "Dihasilkan untuk proyek ini melalui image_gen. Bukan foto kegiatan nyata dan tidak membuktikan afiliasi, identitas, atau dukungan pihak lain."
+      },
+      "destination": "assets/msa-auth-documentation.png"
+    },
+    {
       "id": "font-nunito-sans",
       "kind": "font",
-      "status": "existing",
-      "purpose": "Font antarmuka bersama untuk seluruh tampilan laporan.",
+      "status": "ready",
+      "purpose": "Font antarmuka, navigasi, label, kontrol, dan keterangan sesuai brand system.",
       "requirements": [
-        "Berkas lokal berukuran 31076 byte memiliki magic bytes wOF2 dan berhasil didekompresi; panjang tabel hasil dekompresi sesuai direktori WOFF2.",
-        "Metadata internal menunjukkan keluarga Nunito Sans dan sumbu wght 200–1000. Gunakan bobot normal 400, 500, 600, dan 700 sesuai brand system; tidak memerlukan italic.",
-        "Lisensi lokal tersedia pada assets/fonts/OFL-NunitoSans.txt. Pertahankan bersama font.",
-        "Keluarga, rentang bobot, dan lisensi dikonfirmasi melalui [metadata resmi Google Fonts](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/METADATA.pb) dan [lisensi resmi](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/OFL.txt). Pemeriksaan ini tidak membuktikan berkas lokal identik dengan versi upstream terbaru.",
-        "Tidak ada unduhan baru sehingga header Content-Type unduhan tidak tersedia.",
-        "Pada Build, muat berkas lokal, tunggu document.fonts.ready, dan periksa FontFace serta document.fonts.check untuk seluruh bobot yang digunakan.",
-        "Tabel GSUB lokal tidak memuat fitur tnum. Perubahan lebar digit dan perilaku angka tabular belum diuji di browser; jangan menyatakan pemeriksaan tipografi tersebut lulus atau mengganti keluarga tanpa keputusan desain."
+        "Berkas WOFF2 lokal valid, 31076 byte. Magic wOF2, panjang header, dan dekompresi Brotli diperiksa.",
+        "Tabel nama mengidentifikasi Nunito Sans; sumbu wght lokal mencakup 200–1000 sehingga bobot 400, 600, 700, dan 800 tersedia.",
+        "Gunakan berkas normal variable yang tersedia. Tidak memerlukan italic atau keluarga pengganti.",
+        "Lisensi lokal assets/fonts/OFL-NunitoSans.txt harus tetap menyertai font.",
+        "Keluarga dan rentang bobot diperiksa terhadap [metadata resmi Google Fonts](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/METADATA.pb); ketentuan diperiksa pada [OFL resmi](https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/OFL.txt).",
+        "Font digunakan kembali tanpa unduhan baru, sehingga header Content-Type unduhan tidak tersedia. Pemeriksaan ini tidak menyatakan berkas lokal identik dengan upstream terbaru.",
+        "Build harus memeriksa document.fonts.ready, loaded FontFace, document.fonts.check pada bobot aktual, serta perubahan lebar digit dengan tabular-nums. Pemeriksaan browser tersebut belum dijalankan."
       ],
       "role": "font",
       "sectionIds": [
         "shell",
-        "tinjauan-ringkasan",
-        "tinjauan-pemeriksaan",
-        "tinjauan-sumber",
-        "tinjauan-kesimpulan",
-        "portal-review",
-        "masuk-review",
-        "mentor-review",
-        "organisasi-review",
-        "pelayanan-review",
-        "pengguna-review"
+        "welcome",
+        "masuk",
+        "mentor-pelayanan",
+        "mentor-konteks",
+        "admin-ringkasan",
+        "admin-dasbor-link",
+        "admin-pelayanan",
+        "absensi-ringkasan",
+        "absensi-siswa",
+        "absensi-penyimpanan",
+        "dasbor-anak",
+        "dasbor-tren",
+        "dasbor-volunteer",
+        "pelayanan-daftar",
+        "kalender",
+        "jadwal",
+        "riwayat",
+        "akun-perangkat"
       ],
       "aspectRatio": "1:1",
-      "composition": "Aset nonvisual tanpa crop atau penempatan gambar; digunakan sebagai font teks, label, kontrol, dan angka.",
+      "composition": "Aset nonvisual untuk teks antarmuka; tidak memiliki crop atau titik fokus gambar.",
       "source": {
         "kind": "project",
         "reference": "assets/fonts/nunito-sans-latin.woff2",
-        "license": "SIL Open Font License 1.1; Copyright 2016 The Nunito Sans Project Authors. Lisensi lokal: assets/fonts/OFL-NunitoSans.txt."
+        "license": "SIL Open Font License 1.1. Copyright 2016 The Nunito Sans Project Authors. Lisensi lokal: assets/fonts/OFL-NunitoSans.txt."
       },
       "destination": "assets/fonts/nunito-sans-latin.woff2"
+    },
+    {
+      "id": "font-baloo-2",
+      "kind": "font",
+      "status": "ready",
+      "purpose": "Judul dan angka mengikuti penggunaan eksplisit dalam panduan D0 terbaru.",
+      "requirements": [
+        "Berkas WOFF2 lokal valid, 33188 byte. Magic wOF2, panjang header, dan dekompresi Brotli diperiksa.",
+        "Tabel nama mengidentifikasi Baloo 2; sumbu wght lokal mencakup 400–800 sehingga bobot 700 dan 800 yang disetujui tersedia.",
+        "Gunakan hanya untuk judul dan angka sesuai brand system, bukan teks panjang atau keluarga tambahan.",
+        "Lisensi lokal assets/fonts/OFL-Baloo2.txt harus tetap menyertai font.",
+        "Keluarga dan rentang bobot diperiksa terhadap [metadata resmi Google Fonts](https://raw.githubusercontent.com/google/fonts/main/ofl/baloo2/METADATA.pb); ketentuan diperiksa pada [OFL resmi](https://raw.githubusercontent.com/google/fonts/main/ofl/baloo2/OFL.txt).",
+        "Font digunakan kembali tanpa unduhan baru, sehingga header Content-Type unduhan tidak tersedia. Tidak menambahkan varian italic.",
+        "Pemuatan browser pada bobot aktual dan kemampuan angka tabular harus diverifikasi saat Build; belum diuji pada fase ini."
+      ],
+      "role": "font",
+      "sectionIds": [
+        "welcome",
+        "masuk",
+        "mentor-pelayanan",
+        "mentor-konteks",
+        "admin-ringkasan",
+        "admin-dasbor-link",
+        "admin-pelayanan",
+        "absensi-ringkasan",
+        "absensi-siswa",
+        "absensi-penyimpanan",
+        "dasbor-anak",
+        "dasbor-tren",
+        "dasbor-volunteer",
+        "pelayanan-daftar",
+        "kalender",
+        "jadwal",
+        "riwayat",
+        "akun-perangkat"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Aset nonvisual untuk judul dan angka; tidak memiliki crop atau area aman gambar.",
+      "source": {
+        "kind": "project",
+        "reference": "assets/fonts/baloo2-latin.woff2",
+        "license": "SIL Open Font License 1.1. Copyright 2019 The Baloo 2 Project Authors. Lisensi lokal: assets/fonts/OFL-Baloo2.txt."
+      },
+      "destination": "assets/fonts/baloo2-latin.woff2"
     }
   ]
 }

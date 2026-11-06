@@ -1,5 +1,5 @@
 // Static, same-origin media slots; configuration never grants access to data.
-const files=new Set(['msa-visual-default.jpg','msa-visual-welcome.jpg','msa-visual-auth.jpg','msa-visual-dashboard.jpg','msa-visual-program.jpg','msa-visual-campaign.jpg']);
+const files=new Set(['msa-auth-documentation.png','msa-visual-default.jpg','msa-visual-welcome.jpg','msa-visual-auth.jpg','msa-visual-dashboard.jpg','msa-visual-program.jpg','msa-visual-campaign.jpg']);
 const slots=new Set(['welcome','login','registration','dashboard','program','campaign']);
 const presets=new Set(['neutral','warm','bright']);
 export function applyVisualMetadata(img,meta={}){
